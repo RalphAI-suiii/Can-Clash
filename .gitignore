@@ -1,0 +1,20 @@
+# Generated Godot data
+.godot/
+.import/
+export.cfg
+
+# Generated builds (retain directory placeholder)
+builds/*
+!builds/.gitkeep
+
+# Credentials and temporary files
+.env
+.env.*
+*.tmp
+~$*.docx
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
