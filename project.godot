@@ -1,20 +1,35 @@
-; Godot 4 project scaffold.
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
+
 config/name="Can Clash"
 run/main_scene="res://ui/main_menu/main_menu.tscn"
-config/features=PackedStringArray("4.0", "GL Compatibility")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
+
 LanSession="*res://autoload/lan_session.gd"
 UserSettings="*res://autoload/user_settings.gd"
 
 [display]
+
 window/size/viewport_width=1280
 window/size/viewport_height=720
 
 [rendering]
+
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
