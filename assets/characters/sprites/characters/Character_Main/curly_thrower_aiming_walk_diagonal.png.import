@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dh2t3n0eymtgy"
-path="res://.godot/imported/skeleton_swordless.png-cf42e13205a58313e469c52d16effefb.ctex"
+uid="uid://d273pvstni83c"
+path="res://.godot/imported/curly_thrower_aiming_walk_diagonal.png-6ab5050b7ee775f0c0c2bb3a76bba12a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/Character_Main/skeleton_swordless.png"
-dest_files=["res://.godot/imported/skeleton_swordless.png-cf42e13205a58313e469c52d16effefb.ctex"]
+source_file="res://assets/characters/sprites/characters/Character_Main/curly_thrower_aiming_walk_diagonal.png"
+dest_files=["res://.godot/imported/curly_thrower_aiming_walk_diagonal.png-6ab5050b7ee775f0c0c2bb3a76bba12a.ctex"]
 
 [params]
 

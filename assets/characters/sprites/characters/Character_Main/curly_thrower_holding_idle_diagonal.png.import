@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxm6fboaprggp"
-path="res://.godot/imported/slime.png-53d2adc5f842b2b8fb79bfdc313898fb.ctex"
+uid="uid://olcc6m57cetf"
+path="res://.godot/imported/curly_thrower_holding_idle_diagonal.png-3453594df185b8f7a5cc7aec2e9a563a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/Character_Main/slime.png"
-dest_files=["res://.godot/imported/slime.png-53d2adc5f842b2b8fb79bfdc313898fb.ctex"]
+source_file="res://assets/characters/sprites/characters/Character_Main/curly_thrower_holding_idle_diagonal.png"
+dest_files=["res://.godot/imported/curly_thrower_holding_idle_diagonal.png-3453594df185b8f7a5cc7aec2e9a563a.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://byduq841w4sv0"
-path="res://.godot/imported/curly_thrower_aiming_walk_cardinal.png-0a968cb20f59366ee30b2b0add87e20b.ctex"
+uid="uid://c2ivobg7urdl0"
+path="res://.godot/imported/player.png-e3cfff394a85fc015c731a6c5e190412.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/Character_Main/curly_thrower_aiming_walk_cardinal.png"
-dest_files=["res://.godot/imported/curly_thrower_aiming_walk_cardinal.png-0a968cb20f59366ee30b2b0add87e20b.ctex"]
+source_file="res://assets/characters/sprites/characters/player.png"
+dest_files=["res://.godot/imported/player.png-e3cfff394a85fc015c731a6c5e190412.ctex"]
 
 [params]
 
