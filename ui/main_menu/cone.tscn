@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://ca08cfq6j6on6"]
+
+[ext_resource type="Texture2D" uid="uid://bghqkx0y1nd8l" path="res://level/level assets/traffic_cone_sprite.png" id="1_cwpsq"]
+
+[sub_resource type="Gradient" id="Gradient_bpbph"]
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ja20v"]
+gradient = SubResource("Gradient_bpbph")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2aqsa"]
+size = Vector2(35.5, 17)
+
+[node name="Cone" type="StaticBody2D" unique_id=1184795123]
+
+[node name="Shadow" type="Sprite2D" parent="." unique_id=644919023]
+position = Vector2(-325.53125, 306.00003)
+scale = Vector2(0.38330075, 0.34667978)
+texture = SubResource("GradientTexture2D_ja20v")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=772254055]
+position = Vector2(-329, 293)
+scale = Vector2(0.2798742, 0.27570093)
+texture = ExtResource("1_cwpsq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=512676666]
+position = Vector2(-332.75, 312.5)
+shape = SubResource("RectangleShape2D_2aqsa")

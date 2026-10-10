@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://drne8vm37gy1n"]
+
+[ext_resource type="Shader" uid="uid://wg77thppnmqn" path="res://ui/main_menu/bench_1.gdshader" id="1_1eqfr"]
+[ext_resource type="Shader" uid="uid://d2ahdujasc82j" path="res://ui/main_menu/crate_hsv.gdshader" id="2_1eqfr"]
+[ext_resource type="Texture2D" uid="uid://ba3fo4dc3fhvy" path="res://level/level assets/crate_plain_toon_34.png" id="2_h4dbk"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pw7m7"]
+shader = ExtResource("1_1eqfr")
+shader_parameter/outline_color = Color(0.07, 0.05, 0.05, 1)
+shader_parameter/outline_width = 6.0
+shader_parameter/smooth_px = 1.5
+shader_parameter/saturation = 1.3
+shader_parameter/brightness = 1.1
+shader_parameter/steps = 8.0
+
+[sub_resource type="Gradient" id="Gradient_ijkcq"]
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_2aqsa"]
+gradient = SubResource("Gradient_ijkcq")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_oklum"]
+shader = ExtResource("2_1eqfr")
+shader_parameter/outline_color = Color(0.16, 0.1, 0.12, 1)
+shader_parameter/outline_width = 16.0
+shader_parameter/shadow_cutoff = 0.8
+shader_parameter/dark_threshold = 0.15
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rjr2y"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2aqsa"]
+size = Vector2(58.5, 38)
+
+[node name="Crate" type="StaticBody2D" unique_id=596633096]
+
+[node name="Shadow" type="Sprite2D" parent="." unique_id=1131874009]
+material = SubResource("ShaderMaterial_pw7m7")
+position = Vector2(-158.09375, -203.75)
+scale = Vector2(1.5654297, 1.1328125)
+texture = SubResource("GradientTexture2D_2aqsa")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1266757318]
+material = SubResource("ShaderMaterial_oklum")
+position = Vector2(-180.01898, -222)
+scale = Vector2(0.10627967, 0.121140145)
+texture = ExtResource("2_h4dbk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1661954232]
+material = SubResource("ShaderMaterial_rjr2y")
+position = Vector2(-180.25, -201)
+shape = SubResource("RectangleShape2D_2aqsa")
