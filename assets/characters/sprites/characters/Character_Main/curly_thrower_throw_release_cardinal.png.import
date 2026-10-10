@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c26i2yisq88ng"
-path="res://.godot/imported/skeleton.png-717531fff9ed324f816d2f7cd0cdef26.ctex"
+uid="uid://cq1qiphk3ag2a"
+path="res://.godot/imported/curly_thrower_throw_release_cardinal.png-f1f18603c41e526c6d65d7d131cc5669.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/skeleton.png"
-dest_files=["res://.godot/imported/skeleton.png-717531fff9ed324f816d2f7cd0cdef26.ctex"]
+source_file="res://assets/characters/sprites/characters/Character_Main/curly_thrower_throw_release_cardinal.png"
+dest_files=["res://.godot/imported/curly_thrower_throw_release_cardinal.png-f1f18603c41e526c6d65d7d131cc5669.ctex"]
 
 [params]
 

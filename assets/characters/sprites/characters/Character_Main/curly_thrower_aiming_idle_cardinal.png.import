@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxm6fboaprggp"
-path="res://.godot/imported/slime.png-7c08b1262f7cbaec9692f02ec314a053.ctex"
+uid="uid://y1wrvxjcoexn"
+path="res://.godot/imported/curly_thrower_aiming_idle_cardinal.png-bc67fad463d9993d8a5186ee66727aa2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/slime.png"
-dest_files=["res://.godot/imported/slime.png-7c08b1262f7cbaec9692f02ec314a053.ctex"]
+source_file="res://assets/characters/sprites/characters/Character_Main/curly_thrower_aiming_idle_cardinal.png"
+dest_files=["res://.godot/imported/curly_thrower_aiming_idle_cardinal.png-bc67fad463d9993d8a5186ee66727aa2.ctex"]
 
 [params]
 
