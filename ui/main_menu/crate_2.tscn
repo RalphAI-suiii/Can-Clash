@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://bbcs0r147jwxw"]
+
+[ext_resource type="Shader" uid="uid://d2ahdujasc82j" path="res://ui/main_menu/crate_hsv.gdshader" id="1_1m337"]
+[ext_resource type="Texture2D" uid="uid://ba3fo4dc3fhvy" path="res://level/level assets/crate_plain_toon_34.png" id="2_1m337"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ijkcq"]
+
+[sub_resource type="Gradient" id="Gradient_opqnm"]
+offsets = PackedFloat32Array(0, 0.7331731)
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_2aqsa"]
+gradient = SubResource("Gradient_opqnm")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.9, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1eqfr"]
+shader = ExtResource("1_1m337")
+shader_parameter/outline_color = Color(0.16, 0.1, 0.12, 1)
+shader_parameter/outline_width = 16.0
+shader_parameter/shadow_cutoff = 0.8
+shader_parameter/dark_threshold = 0.15
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2aqsa"]
+size = Vector2(59, 45)
+
+[node name="Crate 2" type="StaticBody2D" unique_id=296779461]
+
+[node name="Shadow" type="Sprite2D" parent="." unique_id=767444691]
+material = SubResource("ShaderMaterial_ijkcq")
+position = Vector2(-143, 219.00002)
+scale = Vector2(2.636719, 1.6484374)
+texture = SubResource("GradientTexture2D_2aqsa")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1509930057]
+material = SubResource("ShaderMaterial_1eqfr")
+position = Vector2(-167.94307, 201)
+scale = Vector2(0.10928604, 0.1300475)
+texture = ExtResource("2_1m337")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1657203708]
+position = Vector2(-171.5, 224)
+shape = SubResource("RectangleShape2D_2aqsa")
