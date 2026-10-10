@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxm6fboaprggp"
-path="res://.godot/imported/slime.png-7c08b1262f7cbaec9692f02ec314a053.ctex"
+uid="uid://c4g1a6wbewj5t"
+path="res://.godot/imported/Blue_Buttons_Pixel.png-b7836b28c0936d5a90d12b3bff9a1f0a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/slime.png"
-dest_files=["res://.godot/imported/slime.png-7c08b1262f7cbaec9692f02ec314a053.ctex"]
+source_file="res://assets/characters/sprites/Buttons/Blue_Buttons_Pixel.png"
+dest_files=["res://.godot/imported/Blue_Buttons_Pixel.png-b7836b28c0936d5a90d12b3bff9a1f0a.ctex"]
 
 [params]
 

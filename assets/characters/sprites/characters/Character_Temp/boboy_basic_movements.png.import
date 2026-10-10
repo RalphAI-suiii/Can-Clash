@@ -2,26 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-<<<<<<<< Updated upstream:level/level assets/Basketball ring.png.import
-uid="uid://cyng5k3lsmv2l"
-path="res://.godot/imported/Basketball ring.png-9f0b1523d0608f265131e039a095aa63.ctex"
-========
-uid="uid://5aphxvjxn03l"
+uid="uid://i1lnswnscvlm"
 path="res://.godot/imported/boboy_basic_movements.png-d1c980a1d1cf618db43272d9d0db1d8c.ctex"
->>>>>>>> Stashed changes:assets/characters/sprites/characters/Character_Temp/boboy_basic_movements.png.import
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-<<<<<<<< Updated upstream:level/level assets/Basketball ring.png.import
-source_file="res://level/level assets/Basketball ring.png"
-dest_files=["res://.godot/imported/Basketball ring.png-9f0b1523d0608f265131e039a095aa63.ctex"]
-========
 source_file="res://assets/characters/sprites/characters/Character_Temp/boboy_basic_movements.png"
 dest_files=["res://.godot/imported/boboy_basic_movements.png-d1c980a1d1cf618db43272d9d0db1d8c.ctex"]
->>>>>>>> Stashed changes:assets/characters/sprites/characters/Character_Temp/boboy_basic_movements.png.import
 
 [params]
 

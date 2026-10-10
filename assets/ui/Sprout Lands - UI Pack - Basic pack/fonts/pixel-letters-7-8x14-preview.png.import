@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dh2t3n0eymtgy"
-path="res://.godot/imported/skeleton_swordless.png-5b044b76e4e0e313bda68808d5395a00.ctex"
+uid="uid://m6bx1udda4lt"
+path="res://.godot/imported/pixel-letters-7-8x14-preview.png-f2468ee850a9ac40ff82b4d2901abeea.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/skeleton_swordless.png"
-dest_files=["res://.godot/imported/skeleton_swordless.png-5b044b76e4e0e313bda68808d5395a00.ctex"]
+source_file="res://assets/ui/Sprout Lands - UI Pack - Basic pack/fonts/pixel-letters-7-8x14-preview.png"
+dest_files=["res://.godot/imported/pixel-letters-7-8x14-preview.png-f2468ee850a9ac40ff82b4d2901abeea.ctex"]
 
 [params]
 

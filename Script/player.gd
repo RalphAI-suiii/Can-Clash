@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 
 const SPEED = 150.0
-const SPRINT_SPEED = 200.0
+const SPRINT_SPEED = 210.0
 
 
 var last_direction: Vector2 = Vector2.RIGHT

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c2ivobg7urdl0"
-path="res://.godot/imported/player.png-e3cfff394a85fc015c731a6c5e190412.ctex"
+uid="uid://csdbopgvcrr51"
+path="res://.godot/imported/Small Square Buttons.png-e950fc7a0ab8859c0857361aeb4007de.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/sprites/characters/player.png"
-dest_files=["res://.godot/imported/player.png-e3cfff394a85fc015c731a6c5e190412.ctex"]
+source_file="res://assets/ui/Sprout Lands - UI Pack - Basic pack/Sprite sheets/buttons/Small Square Buttons.png"
+dest_files=["res://.godot/imported/Small Square Buttons.png-e950fc7a0ab8859c0857361aeb4007de.ctex"]
 
 [params]
 
