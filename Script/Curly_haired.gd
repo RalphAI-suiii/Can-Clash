@@ -21,16 +21,15 @@ func _ready() -> void:
 	charge_bar.value = 0.0
 	charge_bar.hide()
 
+	animated_sprite_2d.animation_finished.connect(
+		_on_animation_finished
+	)
+
 
 func _physics_process(delta: float) -> void:
-	# Keep the player still while throwing.
+	# Don't interrupt the throwing animation.
 	if is_throwing:
 		velocity = Vector2.ZERO
-
-		if not animated_sprite_2d.is_playing():
-			is_throwing = false
-			process_animation()
-
 		move_and_slide()
 		return
 
@@ -39,7 +38,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		charge_time += delta
 
-		# Cycle from 0 to 1 and back to 0.
+		# Cycle from 0 to 1, then back to 0.
 		var cycle: float = fmod(
 			charge_time,
 			MAX_CHARGE_TIME * 2.0
@@ -52,27 +51,23 @@ func _physics_process(delta: float) -> void:
 				(cycle - MAX_CHARGE_TIME) / MAX_CHARGE_TIME
 			)
 
-		# Release the mouse button to throw.
 		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			throw_slipper()
 
 		move_and_slide()
 		return
 
-	# Begin charging on left-click.
+	process_movement()
+	process_animation()
+	move_and_slide()
+
+	# Begin charging after normal movement processing.
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		is_charging = true
 		charge_time = 0.0
 		charge_bar.value = 0.0
 		charge_bar.show()
-
 		velocity = Vector2.ZERO
-		move_and_slide()
-		return
-
-	process_movement()
-	process_animation()
-	move_and_slide()
 
 
 func process_movement() -> void:
@@ -129,7 +124,8 @@ func play_animation(prefix: String, dir: Vector2) -> void:
 		animation_name = prefix + "_throw_down"
 
 	if animated_sprite_2d.sprite_frames.has_animation(animation_name):
-		animated_sprite_2d.play(animation_name)
+		if animated_sprite_2d.animation != animation_name:
+			animated_sprite_2d.play(animation_name)
 	else:
 		print("Missing animation: ", animation_name)
 
@@ -138,7 +134,7 @@ func throw_slipper() -> void:
 	is_charging = false
 	is_throwing = true
 
-	# Save the charge amount before hiding the bar.
+	# Save charge before hiding the bar.
 	var final_charge: float = charge_bar.value
 	print("Final charge: ", final_charge)
 
@@ -173,3 +169,9 @@ func throw_slipper() -> void:
 		process_animation()
 
 	charge_time = 0.0
+
+
+func _on_animation_finished() -> void:
+	if is_throwing:
+		is_throwing = false
+		process_animation()

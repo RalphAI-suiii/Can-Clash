@@ -724,11 +724,14 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kinv7"]
+size = Vector2(103, 178.5)
+
 [node name="CharacterBody2D" type="CharacterBody2D" unique_id=1655025507]
 script = ExtResource("1_d1lv1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=962167718]
-position = Vector2(378, 249)
+position = Vector2(387, 248)
 sprite_frames = SubResource("SpriteFrames_kinv7")
 animation = &"diagonal_walk_throw_down_right"
 
@@ -744,3 +747,7 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_a871j")
 max_value = 0.1
 step = 1.0
 show_percentage = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=96173865]
+position = Vector2(368.5, 275.75)
+shape = SubResource("RectangleShape2D_kinv7")
