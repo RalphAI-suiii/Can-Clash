@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://di2v0cx2kll5h"]
+
+[ext_resource type="Texture2D" uid="uid://bxssj3f8u6bn6" path="res://level/level assets/tire_sprite.png" id="1_7rxo6"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2aqsa"]
+radius = 21.023796
+
+[node name="Tire" type="StaticBody2D" unique_id=350812182]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1639770866]
+position = Vector2(-214, 211.00002)
+scale = Vector2(0.30056193, 0.3548387)
+texture = ExtResource("1_7rxo6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=625030107]
+position = Vector2(-221, 223)
+shape = SubResource("CircleShape2D_2aqsa")

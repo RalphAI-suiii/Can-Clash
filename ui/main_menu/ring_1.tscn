@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://dtcbgwbqmtof7"]
+
+[ext_resource type="Material" uid="uid://b7533vivfghjf" path="res://prop_look.tres" id="1_bag0y"]
+[ext_resource type="Texture2D" uid="uid://rrro0bjc10ym" path="res://level/level assets/Ring_2_toon.png" id="2_bag0y"]
+
+[sub_resource type="Gradient" id="Gradient_cdx66"]
+offsets = PackedFloat32Array(0, 0.47355768, 0.8245192)
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_2aqsa"]
+gradient = SubResource("Gradient_cdx66")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s4pem"]
+size = Vector2(61, 111)
+
+[node name="Ring 1" type="StaticBody2D" unique_id=73946155]
+
+[node name="Shadow" type="Sprite2D" parent="." unique_id=2092813340]
+position = Vector2(829, 9)
+scale = Vector2(1.5546875, 0.453125)
+texture = SubResource("GradientTexture2D_2aqsa")
+
+[node name="Hoop" type="Sprite2D" parent="." unique_id=32616060]
+material = ExtResource("1_bag0y")
+position = Vector2(780, -89.00001)
+scale = Vector2(0.44165343, 0.4631829)
+texture = ExtResource("2_bag0y")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1478957660]
+position = Vector2(850.5, -36.5)
+shape = SubResource("RectangleShape2D_s4pem")

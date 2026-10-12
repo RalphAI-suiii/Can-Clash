@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://cr2qaxx4m8vrc"]
+
+[ext_resource type="Texture2D" uid="uid://5njjgo7hs1hb" path="res://level/level assets/blue_barrel_sprite.png" id="1_plyg4"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_chpoi"]
+radius = 19.102814
+height = 52.328613
+
+[node name="StaticBody2D" type="StaticBody2D" unique_id=924135560]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2060294774]
+position = Vector2(-215, -222.99998)
+scale = Vector2(0.4013975, 0.46236196)
+texture = ExtResource("1_plyg4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1849570808]
+position = Vector2(-223, -202)
+rotation = 1.66057
+shape = SubResource("CapsuleShape2D_chpoi")

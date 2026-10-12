@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://dsnmyiieiaa2v"]
+
+[ext_resource type="PackedScene" uid="uid://dpk2s2pnni6mc" path="res://ui/main_menu/shadow.tscn" id="1_5spa4"]
+[ext_resource type="Texture2D" uid="uid://dian2nym6udrm" path="res://level/level assets/bench_1_toon.png" id="2_5spa4"]
+[ext_resource type="Shader" uid="uid://wg77thppnmqn" path="res://ui/main_menu/bench_1.gdshader" id="2_pw7m7"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pw7m7"]
+shader = ExtResource("2_pw7m7")
+shader_parameter/outline_color = Color(0.07, 0.05, 0.05, 1)
+shader_parameter/outline_width = 6.0
+shader_parameter/smooth_px = 1.5
+shader_parameter/saturation = 1.3
+shader_parameter/brightness = 1.1
+shader_parameter/steps = 8.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ja20v"]
+size = Vector2(212, 36)
+
+[node name="Bench 1" type="StaticBody2D" unique_id=2050172484]
+
+[node name="Shadow" parent="." unique_id=954342124 instance=ExtResource("1_5spa4")]
+position = Vector2(-190.49998, -324.99997)
+scale = Vector2(1.7109374, 0.56250006)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1420785351]
+material = SubResource("ShaderMaterial_pw7m7")
+position = Vector2(-188.12502, -375.00003)
+scale = Vector2(0.5201672, 0.5123698)
+texture = ExtResource("2_5spa4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2019432064]
+position = Vector2(-186, -336)
+shape = SubResource("RectangleShape2D_ja20v")

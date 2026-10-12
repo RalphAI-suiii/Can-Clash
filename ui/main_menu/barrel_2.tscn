@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://bwo0egp8p5sh5"]
+
+[ext_resource type="Texture2D" uid="uid://lkynnamexpci" path="res://level/level assets/red_barrel_sprite.png" id="1_jw2s6"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2aqsa"]
+radius = 25.010132
+height = 58.00659
+
+[node name="Barrel2" type="StaticBody2D" unique_id=1652396726]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=277612512]
+position = Vector2(259.00003, -230)
+scale = Vector2(0.4072207, 0.46546957)
+texture = ExtResource("1_jw2s6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1581560734]
+position = Vector2(253, -220)
+rotation = -3.1381166
+shape = SubResource("CapsuleShape2D_2aqsa")

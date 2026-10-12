@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c2og2016jn4yb"]
+
+[ext_resource type="Shader" uid="uid://bsj25bfwg058r" path="res://ui/main_menu/crate.gdshader" id="1_50bgh"]
+
+[resource]
+shader = ExtResource("1_50bgh")
+shader_parameter/outline_color = Color(0.06, 0.04, 0.04, 1)
+shader_parameter/outline_width = 3.0
