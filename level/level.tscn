@@ -1683,6 +1683,18 @@ texture = ExtResource("10_h74y2")
 sources/1 = SubResource("TileSetAtlasSource_qao3l")
 sources/3 = SubResource("TileSetAtlasSource_lknku")
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ja20v"]
+size = Vector2(1563.5, 268)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_c0ij6"]
+size = Vector2(491, 1023)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_chpoi"]
+size = Vector2(449, 1041.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_h7w1x"]
+size = Vector2(1578, 410)
+
 [node name="Level" type="Node2D" unique_id=1634818931]
 position = Vector2(995, 704)
 
@@ -1702,11 +1714,6 @@ texture = ExtResource("4_b7y0n")
 y_sort_enabled = true
 position = Vector2(-17, -2)
 
-[node name="Player" type="CharacterBody2D" parent="World" unique_id=18993402]
-position = Vector2(-147, -212)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Player" unique_id=1272748946]
-
 [node name="Bench 1" parent="World" unique_id=2050172484 instance=ExtResource("5_v4yay")]
 material = SubResource("ShaderMaterial_5spa4")
 position = Vector2(-182, -29)
@@ -1725,7 +1732,7 @@ tile_map_data = PackedByteArray("AAAkAPP/AAAfACMAAAAlAPP/AAAgACMAAAAnANT/AQADAAM
 tile_set = SubResource("TileSet_ja20v")
 
 [node name="Crate" parent="World" unique_id=596633096 instance=ExtResource("11_7cdnq")]
-position = Vector2(15, 2)
+position = Vector2(16, -1)
 
 [node name="Crate1_2" parent="World" unique_id=485152506 instance=ExtResource("11_7cdnq")]
 position = Vector2(377, -3)
@@ -1757,3 +1764,21 @@ position = Vector2(587, -84)
 [node name="TrashCan" parent="World" unique_id=1828797167 instance=ExtResource("17_xdahv")]
 
 [node name="Barrel2" parent="World" unique_id=1652396726 instance=ExtResource("18_krw8e")]
+
+[node name="World Border" type="StaticBody2D" parent="World" unique_id=1642110461]
+
+[node name="Top Fence" type="CollisionShape2D" parent="World/World Border" unique_id=460494150]
+position = Vector2(17.25, -656)
+shape = SubResource("RectangleShape2D_ja20v")
+
+[node name="Left Fence" type="CollisionShape2D" parent="World/World Border" unique_id=1879610958]
+position = Vector2(-1005.5, -22.5)
+shape = SubResource("RectangleShape2D_c0ij6")
+
+[node name="Right Fence" type="CollisionShape2D" parent="World/World Border" unique_id=1007348113]
+position = Vector2(1012.5, -33.75)
+shape = SubResource("RectangleShape2D_chpoi")
+
+[node name="Bottom" type="CollisionShape2D" parent="World/World Border" unique_id=874346247]
+position = Vector2(17, 663)
+shape = SubResource("RectangleShape2D_h7w1x")
