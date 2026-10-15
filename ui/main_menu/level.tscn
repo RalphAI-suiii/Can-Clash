@@ -19,6 +19,8 @@
 [ext_resource type="PackedScene" uid="uid://70ijmpvyqkg8" path="res://ui/main_menu/trash_can.tscn" id="17_rbpum"]
 [ext_resource type="PackedScene" uid="uid://bwo0egp8p5sh5" path="res://ui/main_menu/barrel_2.tscn" id="18_nco8f"]
 
+[ext_resource type="PackedScene" uid="uid://dg2r5g2f78qmx" path="res://level/world_border.tscn" id="22_border"]
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_u184e"]
 texture = ExtResource("1_lhn87")
 texture_region_size = Vector2i(32, 32)
@@ -1761,4 +1763,6 @@ position = Vector2(254.25, 237)
 position = Vector2(650, -285.5)
 
 [node name="Barrel2" parent="World" unique_id=1652396726 instance=ExtResource("18_nco8f")]
+
+[node name="World Border" parent="World" instance=ExtResource("22_border")]
 position = Vector2(253, -191)
