@@ -1,0 +1,430 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/Sunset Campground Battle Stage.png" id="1_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/Logo.png" id="2_logo"]
+[ext_resource type="FontFile" path="res://assets/fonts/TitanOne-Regular.ttf" id="3_font"]
+[ext_resource type="Script" path="res://ui/character_select/character_select.gd" id="4_script"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/hat_thrower_aiming_idle_cardinal.png" id="5_hat"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/headband_thrower_aiming_idle_cardinal.png" id="6_band"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/glasses_thrower_aiming_idle_cardinal.png" id="7_glasses"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/curly_thrower_holding_idle_diagonal.png" id="8_curly"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/heavyweight_idle_walk_inbetween_8dir_24x8_280x273.png" id="9_bullcap"]
+
+[sub_resource type="StyleBoxFlat" id="PanelStyle"]
+bg_color = Color(1, 0.925, 0.761, 1)
+border_width_left = 10
+border_width_top = 10
+border_width_right = 10
+border_width_bottom = 10
+border_color = Color(0.204, 0.106, 0.071, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.12, 0.055, 0.02, 0.5)
+shadow_size = 12
+shadow_offset = Vector2(0, 12)
+
+[sub_resource type="StyleBoxFlat" id="CardNormal"]
+bg_color = Color(1, 0.976, 0.891, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.431, 0.247, 0.145, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="CardHover"]
+bg_color = Color(1, 0.976, 0.891, 1)
+border_width_left = 7
+border_width_top = 7
+border_width_right = 7
+border_width_bottom = 7
+border_color = Color(0.863, 0.431, 0.059, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="CardSelected"]
+bg_color = Color(1, 0.792, 0.408, 1)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0.204, 0.106, 0.071, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="BlueButton"]
+bg_color = Color(0, 0, 1, 1)
+border_width_bottom = 6
+border_color = Color(0, 0.105, 0.614, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="BluePressed"]
+bg_color = Color(0, 0, 0.76, 1)
+border_width_top = 3
+border_color = Color(0, 0.08, 0.4, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="GreenButton"]
+bg_color = Color(0, 0.392, 0, 1)
+border_width_bottom = 6
+border_color = Color(0, 0.23, 0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="GreenPressed"]
+bg_color = Color(0, 0.29, 0, 1)
+border_width_top = 3
+border_color = Color(0, 0.18, 0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="ButtonGroup" id="CharacterGroup"]
+allow_unpress = false
+
+[sub_resource type="AtlasTexture" id="HatPortrait"]
+atlas = ExtResource("5_hat")
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="HeadBandPortrait"]
+atlas = ExtResource("6_band")
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="GlassesPortrait"]
+atlas = ExtResource("7_glasses")
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="CurlyPortrait"]
+atlas = ExtResource("8_curly")
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="BullcapPortrait"]
+atlas = ExtResource("9_bullcap")
+region = Rect2(0, 273, 280, 273)
+
+[node name="CharacterSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+script = ExtResource("4_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("1_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.07, 0.09, 0.3)
+
+[node name="Logo" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -190.0
+offset_top = -8.0
+offset_right = 190.0
+offset_bottom = 208.0
+mouse_filter = 2
+texture = ExtResource("2_logo")
+expand_mode = 1
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -810.0
+offset_top = -310.0
+offset_right = 810.0
+offset_bottom = 355.0
+theme_override_styles/panel = SubResource("PanelStyle")
+
+[node name="Title" type="Label" parent="Panel"]
+layout_mode = 1
+offset_left = 60.0
+offset_top = 20.0
+offset_right = 1560.0
+offset_bottom = 98.0
+theme_override_colors/font_color = Color(1, 0.969, 0.867, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 55
+text = "CHOOSE YOUR CHARACTER"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HatThrower" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 80.0
+offset_top = 125.0
+offset_right = 340.0
+offset_bottom = 515.0
+theme_override_styles/normal = SubResource("CardNormal")
+theme_override_styles/hover = SubResource("CardHover")
+theme_override_styles/pressed = SubResource("CardSelected")
+theme_override_styles/hover_pressed = SubResource("CardSelected")
+theme_override_styles/focus = SubResource("CardHover")
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("CharacterGroup")
+
+[node name="Portrait" type="TextureRect" parent="Panel/HatThrower"]
+layout_mode = 1
+offset_left = 20.0
+offset_top = 34.0
+offset_right = 240.0
+offset_bottom = 268.0
+mouse_filter = 2
+texture = SubResource("HatPortrait")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Panel/HatThrower"]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 300.0
+offset_right = 250.0
+offset_bottom = 362.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 25
+text = "Hat Thrower"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HeadBand" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 380.0
+offset_top = 125.0
+offset_right = 640.0
+offset_bottom = 515.0
+theme_override_styles/normal = SubResource("CardNormal")
+theme_override_styles/hover = SubResource("CardHover")
+theme_override_styles/pressed = SubResource("CardSelected")
+theme_override_styles/hover_pressed = SubResource("CardSelected")
+theme_override_styles/focus = SubResource("CardHover")
+toggle_mode = true
+button_group = SubResource("CharacterGroup")
+
+[node name="Portrait" type="TextureRect" parent="Panel/HeadBand"]
+layout_mode = 1
+offset_left = 20.0
+offset_top = 34.0
+offset_right = 240.0
+offset_bottom = 268.0
+mouse_filter = 2
+texture = SubResource("HeadBandPortrait")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Panel/HeadBand"]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 300.0
+offset_right = 250.0
+offset_bottom = 362.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 25
+text = "Head Band"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GlassesThrower" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 680.0
+offset_top = 125.0
+offset_right = 940.0
+offset_bottom = 515.0
+theme_override_styles/normal = SubResource("CardNormal")
+theme_override_styles/hover = SubResource("CardHover")
+theme_override_styles/pressed = SubResource("CardSelected")
+theme_override_styles/hover_pressed = SubResource("CardSelected")
+theme_override_styles/focus = SubResource("CardHover")
+toggle_mode = true
+button_group = SubResource("CharacterGroup")
+
+[node name="Portrait" type="TextureRect" parent="Panel/GlassesThrower"]
+layout_mode = 1
+offset_left = 20.0
+offset_top = 34.0
+offset_right = 240.0
+offset_bottom = 268.0
+mouse_filter = 2
+texture = SubResource("GlassesPortrait")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Panel/GlassesThrower"]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 300.0
+offset_right = 250.0
+offset_bottom = 362.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 24
+text = "Glasses Thrower"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CurlyHaired" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 980.0
+offset_top = 125.0
+offset_right = 1240.0
+offset_bottom = 515.0
+theme_override_styles/normal = SubResource("CardNormal")
+theme_override_styles/hover = SubResource("CardHover")
+theme_override_styles/pressed = SubResource("CardSelected")
+theme_override_styles/hover_pressed = SubResource("CardSelected")
+theme_override_styles/focus = SubResource("CardHover")
+toggle_mode = true
+button_group = SubResource("CharacterGroup")
+
+[node name="Portrait" type="TextureRect" parent="Panel/CurlyHaired"]
+layout_mode = 1
+offset_left = 20.0
+offset_top = 34.0
+offset_right = 240.0
+offset_bottom = 268.0
+mouse_filter = 2
+texture = SubResource("CurlyPortrait")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Panel/CurlyHaired"]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 300.0
+offset_right = 250.0
+offset_bottom = 362.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 25
+text = "Curly Haired"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BullcapHead" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 1280.0
+offset_top = 125.0
+offset_right = 1540.0
+offset_bottom = 515.0
+theme_override_styles/normal = SubResource("CardNormal")
+theme_override_styles/hover = SubResource("CardHover")
+theme_override_styles/pressed = SubResource("CardSelected")
+theme_override_styles/hover_pressed = SubResource("CardSelected")
+theme_override_styles/focus = SubResource("CardHover")
+toggle_mode = true
+button_group = SubResource("CharacterGroup")
+
+[node name="Portrait" type="TextureRect" parent="Panel/BullcapHead"]
+layout_mode = 1
+offset_left = 20.0
+offset_top = 34.0
+offset_right = 240.0
+offset_bottom = 268.0
+mouse_filter = 2
+texture = SubResource("BullcapPortrait")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="Panel/BullcapHead"]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 300.0
+offset_right = 250.0
+offset_bottom = 362.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 25
+text = "Bullcap Head"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Status" type="Label" parent="Panel"]
+layout_mode = 1
+offset_left = 300.0
+offset_top = 528.0
+offset_right = 1320.0
+offset_bottom = 568.0
+theme_override_colors/font_color = Color(0.341, 0.204, 0.122, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 24
+text = "Hat Thrower selected"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Back" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 80.0
+offset_top = 576.0
+offset_right = 340.0
+offset_bottom = 641.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 31
+theme_override_styles/normal = SubResource("BlueButton")
+theme_override_styles/hover = SubResource("BlueButton")
+theme_override_styles/pressed = SubResource("BluePressed")
+text = "Back"
+
+[node name="Confirm" type="Button" parent="Panel"]
+layout_mode = 1
+offset_left = 1200.0
+offset_top = 576.0
+offset_right = 1540.0
+offset_bottom = 641.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 31
+theme_override_styles/normal = SubResource("GreenButton")
+theme_override_styles/hover = SubResource("GreenButton")
+theme_override_styles/pressed = SubResource("GreenPressed")
+text = "Confirm"

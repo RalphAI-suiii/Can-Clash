@@ -1,0 +1,227 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/Sunset Campground Battle Stage.png" id="1_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/Logo.png" id="2_logo"]
+[ext_resource type="FontFile" path="res://assets/fonts/TitanOne-Regular.ttf" id="3_font"]
+[ext_resource type="Script" path="res://ui/lobby/join_local.gd" id="4_script"]
+
+[sub_resource type="StyleBoxFlat" id="Card"]
+bg_color = Color(1, 0.925, 0.761, 1)
+border_width_left = 10
+border_width_top = 10
+border_width_right = 10
+border_width_bottom = 10
+border_color = Color(0.204, 0.106, 0.071, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.12, 0.055, 0.02, 0.5)
+shadow_size = 12
+shadow_offset = Vector2(0, 12)
+
+[sub_resource type="StyleBoxFlat" id="Input"]
+bg_color = Color(1, 0.976, 0.891, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.431, 0.247, 0.145, 1)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+content_margin_left = 18.0
+content_margin_right = 18.0
+
+[sub_resource type="StyleBoxFlat" id="InputFocus"]
+bg_color = Color(1, 0.976, 0.891, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0, 0.35, 0.8, 1)
+corner_radius_top_left = 13
+corner_radius_top_right = 13
+corner_radius_bottom_right = 13
+corner_radius_bottom_left = 13
+
+[sub_resource type="StyleBoxFlat" id="BlueButton"]
+bg_color = Color(0, 0, 1, 1)
+border_width_bottom = 6
+border_color = Color(0, 0.105, 0.614, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="BluePressed"]
+bg_color = Color(0, 0, 0.76, 1)
+border_width_top = 3
+border_color = Color(0, 0.08, 0.4, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="GreenButton"]
+bg_color = Color(0, 0.392, 0, 1)
+border_width_bottom = 6
+border_color = Color(0, 0.23, 0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="JoinLocal" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+script = ExtResource("4_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("1_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.07, 0.09, 0.3)
+
+[node name="Logo" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -190.0
+offset_top = 2.0
+offset_right = 190.0
+offset_bottom = 218.0
+mouse_filter = 2
+texture = ExtResource("2_logo")
+expand_mode = 1
+
+[node name="Card" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -470.0
+offset_top = -220.0
+offset_right = 470.0
+offset_bottom = 260.0
+theme_override_styles/panel = SubResource("Card")
+
+[node name="Title" type="Label" parent="Card"]
+layout_mode = 1
+offset_left = 48.0
+offset_top = 28.0
+offset_right = 892.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 0.969, 0.867, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 53
+text = "JOIN LOCAL GAME"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Instructions" type="Label" parent="Card"]
+layout_mode = 1
+offset_left = 50.0
+offset_top = 119.0
+offset_right = 890.0
+offset_bottom = 160.0
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 25
+text = "Enter the host's address on your local network"
+horizontal_alignment = 1
+
+[node name="AddressLabel" type="Label" parent="Card"]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 184.0
+offset_right = 840.0
+offset_bottom = 224.0
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 28
+text = "HOST IP ADDRESS"
+
+[node name="Address" type="LineEdit" parent="Card"]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 230.0
+offset_right = 840.0
+offset_bottom = 297.0
+theme_override_colors/font_color = Color(0.204, 0.106, 0.071, 1)
+theme_override_colors/font_placeholder_color = Color(0.455, 0.298, 0.216, 1)
+theme_override_colors/caret_color = Color(0, 0.25, 0.7, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 29
+theme_override_styles/normal = SubResource("Input")
+theme_override_styles/focus = SubResource("InputFocus")
+placeholder_text = "e.g. 192.168.1.20"
+max_length = 45
+clear_button_enabled = true
+
+[node name="Status" type="Label" parent="Card"]
+layout_mode = 1
+offset_left = 75.0
+offset_top = 308.0
+offset_right = 865.0
+offset_bottom = 350.0
+theme_override_colors/font_color = Color(0.341, 0.204, 0.122, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 22
+text = "Join a game on the same Wi-Fi or LAN."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Back" type="Button" parent="Card"]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 371.0
+offset_right = 320.0
+offset_bottom = 438.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 31
+theme_override_styles/normal = SubResource("BlueButton")
+theme_override_styles/hover = SubResource("BlueButton")
+theme_override_styles/pressed = SubResource("BluePressed")
+text = "Back"
+
+[node name="Join" type="Button" parent="Card"]
+layout_mode = 1
+offset_left = 540.0
+offset_top = 371.0
+offset_right = 840.0
+offset_bottom = 438.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 31
+theme_override_styles/normal = SubResource("GreenButton")
+theme_override_styles/hover = SubResource("GreenButton")
+theme_override_styles/pressed = SubResource("GreenButton")
+text = "Join Game"
