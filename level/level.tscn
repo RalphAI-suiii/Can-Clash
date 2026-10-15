@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" uid="uid://70ijmpvyqkg8" path="res://ui/main_menu/trash_can.tscn" id="17_xdahv"]
 [ext_resource type="PackedScene" uid="uid://bwo0egp8p5sh5" path="res://ui/main_menu/barrel_2.tscn" id="18_krw8e"]
 [ext_resource type="Script" uid="uid://ckmgcysooimme" path="res://level/camera_2d.gd" id="20_kp5pi"]
+[ext_resource type="PackedScene" path="res://scenes/Player movement neutral.tscn" id="21_neutral_player"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kp5pi"]
 texture = ExtResource("1_tv7ir")
@@ -5135,6 +5136,9 @@ texture = ExtResource("4_b7y0n")
 [node name="World" type="Node2D" parent="." unique_id=715399497]
 y_sort_enabled = true
 position = Vector2(-17, -2)
+
+[node name="PlayerMovementNeutral" parent="World" instance=ExtResource("21_neutral_player")]
+position = Vector2(-439, 313)
 
 [node name="Bench 1" parent="World" unique_id=2050172484 instance=ExtResource("5_v4yay")]
 material = SubResource("ShaderMaterial_5spa4")
