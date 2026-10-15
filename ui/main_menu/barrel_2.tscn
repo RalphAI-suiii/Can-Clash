@@ -9,11 +9,11 @@ height = 58.00659
 [node name="Barrel2" type="StaticBody2D" unique_id=1652396726]
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=277612512]
-position = Vector2(259.00003, -230)
+position = Vector2(6.00003, -39)
 scale = Vector2(0.4072207, 0.46546957)
 texture = ExtResource("1_jw2s6")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1581560734]
-position = Vector2(253, -220)
+position = Vector2(0, -29)
 rotation = -3.1381166
 shape = SubResource("CapsuleShape2D_2aqsa")

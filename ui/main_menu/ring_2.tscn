@@ -22,17 +22,17 @@ size = Vector2(88.0748, 111)
 rotation = 0.017738398
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=1482595193]
-position = Vector2(919.0281, 13.24457)
+position = Vector2(47.54653, -5.75543)
 scale = Vector2(2.0336478, 0.453125)
 texture = SubResource("GradientTexture2D_2aqsa")
 
 [node name="Hoop" type="Sprite2D" parent="." unique_id=1986056835]
 material = ExtResource("1_ah12q")
-position = Vector2(959.32715, -96.37686)
+position = Vector2(87.84558, -115.37686)
 scale = Vector2(0.5000259, 0.4631829)
 texture = ExtResource("2_ah12q")
 flip_h = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1564036336]
-position = Vector2(871.48157, -36.500008)
+position = Vector2(0, -55.500008)
 shape = SubResource("RectangleShape2D_s4pem")
