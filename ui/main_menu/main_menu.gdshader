@@ -14,13 +14,14 @@ uniform float softness : hint_range(0.01, 0.3) = 0.06;
 
 void fragment() {
     vec4 tex = texture(TEXTURE, UV);
-    float patch = texture(wear_noise, UV * patch_scale).r;
+    float patch_noise = texture(wear_noise, UV * patch_scale).r;
     float chip = texture(wear_noise, UV * chip_scale + vec2(0.37, 0.61)).r;
 
     // white lines have a high minimum channel, red paint does not
     float is_line = step(0.8, min(min(tex.r, tex.g), tex.b));
 
     // wear: broad patches decide where paint thins, chips add a few nicks
-    float n = mix(patch, chip, 0.35);
+    float n = mix(patch_noise, chip, 0.35);
     float wear = mix(paint_wear, line_wear, is_line);
     float keep = smoothstep(wear, wear + softness, n);
+	}
