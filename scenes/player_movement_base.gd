@@ -5,6 +5,8 @@ extends CharacterBody2D
 @export var sprint_speed: float = 200.0
 @export var acceleration: float = 850.0
 @export var stopping_friction: float = 1050.0
+@export var idle_sprite_y: float = -87.0
+@export var walk_sprite_y: float = -87.0
 
 const DIRECTIONS: Array[String] = [
 	"right", "down_right", "down", "down_left",
@@ -46,6 +48,8 @@ func _physics_process(delta: float) -> void:
 func _play(action: String, direction: Vector2) -> void:
 	var sector: int = (roundi(direction.angle() / (PI / 4.0)) + 8) % 8
 	var animation_name: StringName = StringName(action + "_" + DIRECTIONS[sector])
+	var visual_y: float = idle_sprite_y if action == "idle" else walk_sprite_y
+	sprite.position = Vector2(sprite.position.x, visual_y)
 	if sprite.animation != animation_name or not sprite.is_playing():
 		var keep_step: bool = action == "walk" and String(sprite.animation).begins_with("walk_")
 		var step_frame: int = sprite.frame
