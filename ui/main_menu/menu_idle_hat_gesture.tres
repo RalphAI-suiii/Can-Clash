@@ -1,71 +1,43 @@
-[gd_resource type="SpriteFrames" format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://t2ucopwvl6lb"]
 
-[ext_resource type="Texture2D" path="res://assets/characters/sprites/menu_idle/hat_thrower_gesture_12.png" id="1_sheet"]
-[ext_resource type="Texture2D" path="res://assets/characters/sprites/menu_idle/hat_thrower_inbetween_12.png" id="2_sheet"]
+[ext_resource type="Texture2D" uid="uid://mr12odlhqppr" path="res://assets/characters/sprites/menu_idle/hat_thrower_gesture_12.png" id="1_sheet"]
+[ext_resource type="Texture2D" uid="uid://t43lwfnp4sb5" path="res://assets/characters/sprites/menu_idle/hat_thrower_inbetween_12.png" id="2_sheet"]
 
 [sub_resource type="AtlasTexture" id="frame_00"]
 atlas = ExtResource("1_sheet")
 region = Rect2(45, 20, 320, 330)
 
-[sub_resource type="AtlasTexture" id="frame_01"]
-atlas = ExtResource("1_sheet")
-region = Rect2(402, 20, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_02"]
-atlas = ExtResource("1_sheet")
-region = Rect2(756, 20, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_03"]
-atlas = ExtResource("1_sheet")
-region = Rect2(1112, 21, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_04"]
-atlas = ExtResource("1_sheet")
-region = Rect2(32, 383, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_05"]
-atlas = ExtResource("1_sheet")
-region = Rect2(408, 383, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_06"]
-atlas = ExtResource("1_sheet")
-region = Rect2(754, 383, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_07"]
-atlas = ExtResource("1_sheet")
-region = Rect2(1116, 382, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_08"]
-atlas = ExtResource("1_sheet")
-region = Rect2(35, 732, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_09"]
-atlas = ExtResource("1_sheet")
-region = Rect2(404, 732, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_10"]
-atlas = ExtResource("1_sheet")
-region = Rect2(763, 732, 320, 330)
-
-[sub_resource type="AtlasTexture" id="frame_11"]
-atlas = ExtResource("1_sheet")
-region = Rect2(1126, 732, 320, 330)
-
 [sub_resource type="AtlasTexture" id="between_00"]
 atlas = ExtResource("2_sheet")
 region = Rect2(48, 21, 320, 330)
+
+[sub_resource type="AtlasTexture" id="frame_01"]
+atlas = ExtResource("1_sheet")
+region = Rect2(402, 20, 320, 330)
 
 [sub_resource type="AtlasTexture" id="between_01"]
 atlas = ExtResource("2_sheet")
 region = Rect2(404, 21, 320, 330)
 
+[sub_resource type="AtlasTexture" id="frame_02"]
+atlas = ExtResource("1_sheet")
+region = Rect2(756, 20, 320, 330)
+
 [sub_resource type="AtlasTexture" id="between_02"]
 atlas = ExtResource("2_sheet")
 region = Rect2(761, 21, 320, 330)
 
+[sub_resource type="AtlasTexture" id="frame_03"]
+atlas = ExtResource("1_sheet")
+region = Rect2(1112, 21, 320, 330)
+
 [sub_resource type="AtlasTexture" id="between_03"]
 atlas = ExtResource("2_sheet")
 region = Rect2(1119, 21, 320, 330)
+
+[sub_resource type="AtlasTexture" id="frame_04"]
+atlas = ExtResource("1_sheet")
+region = Rect2(32, 383, 320, 330)
 
 [sub_resource type="AtlasTexture" id="between_04"]
 atlas = ExtResource("2_sheet")
@@ -75,29 +47,165 @@ region = Rect2(41, 384, 320, 330)
 atlas = ExtResource("2_sheet")
 region = Rect2(400, 384, 320, 330)
 
+[sub_resource type="AtlasTexture" id="frame_06"]
+atlas = ExtResource("1_sheet")
+region = Rect2(754, 383, 320, 330)
+
 [sub_resource type="AtlasTexture" id="between_06"]
 atlas = ExtResource("2_sheet")
 region = Rect2(759, 384, 320, 330)
+
+[sub_resource type="AtlasTexture" id="frame_07"]
+atlas = ExtResource("1_sheet")
+region = Rect2(1116, 382, 320, 330)
 
 [sub_resource type="AtlasTexture" id="between_07"]
 atlas = ExtResource("2_sheet")
 region = Rect2(1120, 384, 320, 330)
 
+[sub_resource type="AtlasTexture" id="frame_08"]
+atlas = ExtResource("1_sheet")
+region = Rect2(35, 732, 320, 330)
+
 [sub_resource type="AtlasTexture" id="between_08"]
 atlas = ExtResource("2_sheet")
 region = Rect2(37, 733, 320, 330)
+
+[sub_resource type="AtlasTexture" id="frame_09"]
+atlas = ExtResource("1_sheet")
+region = Rect2(404, 732, 320, 330)
 
 [sub_resource type="AtlasTexture" id="between_09"]
 atlas = ExtResource("2_sheet")
 region = Rect2(404, 733, 320, 330)
 
+[sub_resource type="AtlasTexture" id="frame_10"]
+atlas = ExtResource("1_sheet")
+region = Rect2(763, 732, 320, 330)
+
 [sub_resource type="AtlasTexture" id="between_10"]
 atlas = ExtResource("2_sheet")
 region = Rect2(768, 733, 320, 330)
+
+[sub_resource type="AtlasTexture" id="frame_11"]
+atlas = ExtResource("1_sheet")
+region = Rect2(1126, 732, 320, 330)
 
 [sub_resource type="AtlasTexture" id="between_11"]
 atlas = ExtResource("2_sheet")
 region = Rect2(1126, 733, 320, 330)
 
 [resource]
-animations = [{"frames": [{"duration": 12.0, "texture": SubResource("frame_00")}, {"duration": 12.0, "texture": SubResource("between_11")}, {"duration": 12.0, "texture": SubResource("frame_11")}, {"duration": 12.0, "texture": SubResource("between_10")}, {"duration": 12.0, "texture": SubResource("frame_10")}, {"duration": 12.0, "texture": SubResource("between_09")}, {"duration": 12.0, "texture": SubResource("frame_09")}, {"duration": 12.0, "texture": SubResource("between_10")}, {"duration": 12.0, "texture": SubResource("frame_10")}, {"duration": 12.0, "texture": SubResource("between_11")}, {"duration": 12.0, "texture": SubResource("frame_11")}], "loop": true, "name": &"idle", "speed": 60.0}, {"frames": [{"duration": 12.0, "texture": SubResource("frame_00")}, {"duration": 12.0, "texture": SubResource("between_00")}, {"duration": 12.0, "texture": SubResource("frame_01")}, {"duration": 12.0, "texture": SubResource("between_01")}, {"duration": 12.0, "texture": SubResource("frame_02")}, {"duration": 12.0, "texture": SubResource("between_02")}, {"duration": 12.0, "texture": SubResource("frame_03")}, {"duration": 12.0, "texture": SubResource("between_03")}, {"duration": 12.0, "texture": SubResource("frame_04")}, {"duration": 12.0, "texture": SubResource("between_04")}, {"duration": 12.0, "texture": SubResource("between_05")}, {"duration": 12.0, "texture": SubResource("frame_06")}, {"duration": 12.0, "texture": SubResource("between_06")}, {"duration": 12.0, "texture": SubResource("frame_07")}, {"duration": 12.0, "texture": SubResource("between_07")}, {"duration": 12.0, "texture": SubResource("frame_08")}, {"duration": 12.0, "texture": SubResource("between_08")}, {"duration": 12.0, "texture": SubResource("frame_09")}, {"duration": 12.0, "texture": SubResource("between_09")}, {"duration": 12.0, "texture": SubResource("frame_10")}, {"duration": 12.0, "texture": SubResource("between_10")}, {"duration": 12.0, "texture": SubResource("frame_11")}, {"duration": 12.0, "texture": SubResource("between_11")}], "loop": false, "name": &"gesture", "speed": 60.0}]
+animations = [{
+"frames": [{
+"duration": 12.0,
+"texture": SubResource("frame_00")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_00")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_01")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_01")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_02")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_02")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_03")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_03")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_04")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_04")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_05")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_06")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_06")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_07")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_07")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_08")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_08")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_09")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_09")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_10")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_10")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_11")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_11")
+}],
+"loop": 0,
+"name": &"gesture",
+"speed": 60.0
+}, {
+"frames": [{
+"duration": 12.0,
+"texture": SubResource("frame_00")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_11")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_11")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_10")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_10")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_09")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_09")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_10")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_10")
+}, {
+"duration": 12.0,
+"texture": SubResource("between_11")
+}, {
+"duration": 12.0,
+"texture": SubResource("frame_11")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 60.0
+}]
