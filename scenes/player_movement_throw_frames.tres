@@ -1,0 +1,346 @@
+[gd_resource type="SpriteFrames" load_steps=69 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/hat_thrower_aiming_idle_cardinal.png" id="1_aim_cardinal"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/hat_thrower_aiming_idle_diagonal.png" id="2_aim_diagonal"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/hat_thrower_throw_release_cardinal.png" id="3_throw_cardinal"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/characters/Character_Main/hat_thrower_throw_release_diagonal.png" id="4_throw_diagonal"]
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_0_0"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_0_1"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(280, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_0_2"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(560, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_0_3"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(840, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_1_0"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(0, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_1_1"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(280, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_1_2"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(560, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_1_3"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(840, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_2_0"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(0, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_2_1"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(280, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_2_2"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(560, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_2_3"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(840, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_3_0"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(0, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_3_1"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(280, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_3_2"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(560, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_cardinal_3_3"]
+atlas = ExtResource("1_aim_cardinal")
+filter_clip = true
+region = Rect2(840, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_0_0"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_0_1"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(280, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_0_2"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(560, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_0_3"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(840, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_1_0"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(0, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_1_1"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(280, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_1_2"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(560, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_1_3"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(840, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_2_0"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(0, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_2_1"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(280, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_2_2"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(560, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_2_3"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(840, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_3_0"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(0, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_3_1"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(280, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_3_2"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(560, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_aim_diagonal_3_3"]
+atlas = ExtResource("2_aim_diagonal")
+filter_clip = true
+region = Rect2(840, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_0_0"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_0_1"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(280, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_0_2"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(560, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_0_3"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(840, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_1_0"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(0, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_1_1"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(280, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_1_2"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(560, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_1_3"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(840, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_2_0"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(0, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_2_1"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(280, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_2_2"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(560, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_2_3"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(840, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_3_0"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(0, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_3_1"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(280, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_3_2"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(560, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_cardinal_3_3"]
+atlas = ExtResource("3_throw_cardinal")
+filter_clip = true
+region = Rect2(840, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_0_0"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(0, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_0_1"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(280, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_0_2"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(560, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_0_3"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(840, 0, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_1_0"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(0, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_1_1"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(280, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_1_2"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(560, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_1_3"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(840, 273, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_2_0"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(0, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_2_1"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(280, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_2_2"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(560, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_2_3"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(840, 546, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_3_0"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(0, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_3_1"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(280, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_3_2"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(560, 819, 280, 273)
+
+[sub_resource type="AtlasTexture" id="frame_throw_diagonal_3_3"]
+atlas = ExtResource("4_throw_diagonal")
+filter_clip = true
+region = Rect2(840, 819, 280, 273)
+
+[resource]
+animations = [
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_cardinal_0_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_0_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_0_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_0_3")}], "loop": 1, "name": &"aim_down", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_cardinal_1_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_1_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_1_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_1_3")}], "loop": 1, "name": &"aim_left", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_cardinal_2_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_2_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_2_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_2_3")}], "loop": 1, "name": &"aim_up", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_cardinal_3_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_3_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_3_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_cardinal_3_3")}], "loop": 1, "name": &"aim_right", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_diagonal_0_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_0_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_0_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_0_3")}], "loop": 1, "name": &"aim_down_left", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_diagonal_1_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_1_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_1_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_1_3")}], "loop": 1, "name": &"aim_up_left", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_diagonal_2_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_2_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_2_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_2_3")}], "loop": 1, "name": &"aim_up_right", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_aim_diagonal_3_0")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_3_1")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_3_2")}, {"duration": 1.0, "texture": SubResource("frame_aim_diagonal_3_3")}], "loop": 1, "name": &"aim_down_right", "speed": 2.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_cardinal_0_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_0_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_0_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_0_3")}], "loop": 0, "name": &"throw_down", "speed": 8.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_cardinal_1_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_1_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_1_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_1_3")}], "loop": 0, "name": &"throw_left", "speed": 8.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_cardinal_2_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_2_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_2_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_2_3")}], "loop": 0, "name": &"throw_up", "speed": 8.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_cardinal_3_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_3_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_3_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_cardinal_3_3")}], "loop": 0, "name": &"throw_right", "speed": 8.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_diagonal_0_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_0_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_0_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_0_3")}], "loop": 0, "name": &"throw_down_left", "speed": 8.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_diagonal_1_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_1_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_1_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_1_3")}], "loop": 0, "name": &"throw_up_left", "speed": 8.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_diagonal_2_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_2_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_2_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_2_3")}], "loop": 0, "name": &"throw_up_right", "speed": 8.0},
+{"frames": [{"duration": 1.0, "texture": SubResource("frame_throw_diagonal_3_0")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_3_1")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_3_2")}, {"duration": 1.0, "texture": SubResource("frame_throw_diagonal_3_3")}], "loop": 0, "name": &"throw_down_right", "speed": 8.0}
+]

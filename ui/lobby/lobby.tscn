@@ -1,9 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=9 format=3 uid="uid://ct83rfkae2cej"]
 
 [ext_resource type="Texture2D" path="res://assets/ui/Sunset Campground Battle Stage.png" id="1_bg"]
 [ext_resource type="Texture2D" path="res://assets/ui/Logo.png" id="2_logo"]
 [ext_resource type="FontFile" path="res://assets/fonts/TitanOne-Regular.ttf" id="3_font"]
-[ext_resource type="Script" path="res://ui/lobby/lobby.gd" id="4_script"]
+[ext_resource type="Script" uid="uid://bf0rwnyo0ikie" path="res://ui/lobby/lobby.gd" id="4_script"]
 
 [sub_resource type="StyleBoxFlat" id="Card"]
 bg_color = Color(1, 0.925, 0.761, 1)
@@ -62,11 +62,13 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[node name="Lobby" type="Control"]
+[node name="Lobby" type="Control" unique_id=1304564313]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 1920.0
-offset_bottom = 1080.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("4_script")
 
 [node name="Background" type="TextureRect" parent="."]

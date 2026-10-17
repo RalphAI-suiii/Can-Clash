@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bopmf0nedmja"]
 
-[ext_resource type="Script" path="res://game/can/can.gd" id="1"]
+[ext_resource type="Script" uid="uid://sj03b8ixiamy" path="res://game/can/can.gd" id="1"]
 
-[node name="Can" type="RigidBody3D"]
+[node name="Can" type="RigidBody3D" unique_id=2093790461]
 script = ExtResource("1")

@@ -8,7 +8,7 @@ const SPRINT_SPEED = 210.0
 var last_direction: Vector2 = Vector2.RIGHT
 
 @onready var player: CharacterBody2D = $"."
-@onready var animated_sprite_2d: AnimatedSprite2D = $AnimatedSprite2D
+@onready var animated_sprite_2d: AnimatedSprite2D = $Visuals/AnimatedSprite2D
 
 
 func _physics_process(_delta: float) -> void:

@@ -19,15 +19,15 @@ size = Vector2(212, 36)
 [node name="Bench 1" type="StaticBody2D" unique_id=2050172484]
 
 [node name="Shadow" parent="." unique_id=954342124 instance=ExtResource("1_5spa4")]
-position = Vector2(-190.49998, -324.99997)
+position = Vector2(-4.49998, -6.99997)
 scale = Vector2(1.7109374, 0.56250006)
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1420785351]
 material = SubResource("ShaderMaterial_pw7m7")
-position = Vector2(-188.12502, -375.00003)
+position = Vector2(-2.12502, -57.00003)
 scale = Vector2(0.5201672, 0.5123698)
 texture = ExtResource("2_5spa4")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2019432064]
-position = Vector2(-186, -336)
+position = Vector2(0, -18)
 shape = SubResource("RectangleShape2D_ja20v")

@@ -19,15 +19,15 @@ size = Vector2(35.5, 17)
 [node name="Cone" type="StaticBody2D" unique_id=1184795123]
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=644919023]
-position = Vector2(-325.53125, 306.00003)
+position = Vector2(7.21875, -14.99997)
 scale = Vector2(0.38330075, 0.34667978)
 texture = SubResource("GradientTexture2D_ja20v")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=772254055]
-position = Vector2(-329, 293)
+position = Vector2(3.75, -28)
 scale = Vector2(0.2798742, 0.27570093)
 texture = ExtResource("1_cwpsq")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=512676666]
-position = Vector2(-332.75, 312.5)
+position = Vector2(0, -8.5)
 shape = SubResource("RectangleShape2D_2aqsa")

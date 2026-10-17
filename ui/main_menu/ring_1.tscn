@@ -21,16 +21,16 @@ size = Vector2(61, 111)
 [node name="Ring 1" type="StaticBody2D" unique_id=73946155]
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=2092813340]
-position = Vector2(829, 9)
+position = Vector2(-21.5, -10)
 scale = Vector2(1.5546875, 0.453125)
 texture = SubResource("GradientTexture2D_2aqsa")
 
 [node name="Hoop" type="Sprite2D" parent="." unique_id=32616060]
 material = ExtResource("1_bag0y")
-position = Vector2(780, -89.00001)
+position = Vector2(-70.5, -108.00001)
 scale = Vector2(0.44165343, 0.4631829)
 texture = ExtResource("2_bag0y")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1478957660]
-position = Vector2(850.5, -36.5)
+position = Vector2(0, -55.5)
 shape = SubResource("RectangleShape2D_s4pem")
