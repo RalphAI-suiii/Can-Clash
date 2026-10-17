@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://b2sxqwguo44qe"]
+
+[ext_resource type="Script" uid="uid://6youanmn3i66" path="res://Script/score_board.gd" id="1_f5a1c"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_puokm"]
+bg_color = Color(0.10368674, 0.13551286, 0.4123434, 1)
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+expand_margin_left = 10.0
+expand_margin_top = 10.0
+expand_margin_right = 10.0
+expand_margin_bottom = 10.0
+
+[node name="CanvasLayer" type="CanvasLayer" unique_id=600983100]
+
+[node name="ScoreBoard" type="Control" parent="." unique_id=984445860]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 60.0
+offset_bottom = 60.0
+offset_transform_position = Vector2(20, 20)
+offset_transform_scale = Vector2(0, 0)
+script = ExtResource("1_f5a1c")
+
+[node name="PanelContainer" type="PanelContainer" parent="ScoreBoard" unique_id=444069909]
+layout_mode = 0
+offset_right = 134.0
+offset_bottom = 110.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_puokm")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScoreBoard/PanelContainer" unique_id=1026900573]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitileLabel" type="Label" parent="ScoreBoard/PanelContainer/VBoxContainer" unique_id=1908667129]
+layout_mode = 2
+text = "SCOREBOARD"
