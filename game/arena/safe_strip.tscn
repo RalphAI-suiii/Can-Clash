@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://dwuwd4y8xgdgp"]
 
-[ext_resource type="Script" path="res://game/arena/safe_strip.gd" id="1"]
+[ext_resource type="Script" uid="uid://udfcrff3cjxa" path="res://game/arena/safe_strip.gd" id="1"]
 
-[node name="SafeStrip" type="Area3D"]
+[node name="SafeStrip" type="Area3D" unique_id=859741765]
 script = ExtResource("1")

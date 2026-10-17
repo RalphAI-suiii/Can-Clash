@@ -20,15 +20,15 @@ size = Vector2(38.625, 26.5)
 [node name="TrashCan" type="StaticBody2D" unique_id=1828797167]
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=443996008]
-position = Vector2(665.74994, -309.625)
+position = Vector2(15.74994, -24.125)
 scale = Vector2(0.45703056, 0.5527345)
 texture = SubResource("GradientTexture2D_2aqsa")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1557490429]
-position = Vector2(652.9062, -319.625)
+position = Vector2(2.9062, -34.125)
 scale = Vector2(0.39051956, 0.40188158)
 texture = ExtResource("1_0n0jv")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1978988856]
-position = Vector2(650, -298.75)
+position = Vector2(0, -13.25)
 shape = SubResource("RectangleShape2D_2aqsa")

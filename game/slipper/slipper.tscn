@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bry2d3fdcq4hh"]
 
-[ext_resource type="Script" path="res://game/slipper/slipper.gd" id="1"]
+[ext_resource type="Script" uid="uid://e7q3ocfbwecy" path="res://game/slipper/slipper.gd" id="1"]
 
-[node name="Slipper" type="Node3D"]
+[node name="Slipper" type="Node3D" unique_id=738346960]
 script = ExtResource("1")
