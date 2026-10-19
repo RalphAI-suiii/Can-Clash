@@ -1,4 +1,4 @@
-[gd_resource type="SpriteFrames" format=3 uid="uid://65mgffckefjs"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://c3ni1ud4udwlf"]
 
 [ext_resource type="Texture2D" uid="uid://c0l085nrhvkb7" path="res://assets/characters/sprites/characters/Character_Main/hat_thrower_aiming_idle_cardinal.png" id="1_aim_cardinal"]
 [ext_resource type="Texture2D" uid="uid://b17gyhl7jtjg2" path="res://assets/characters/sprites/characters/Character_Main/hat_thrower_aiming_idle_diagonal.png" id="2_aim_diagonal"]

@@ -23,7 +23,7 @@
 [ext_resource type="PackedScene" uid="uid://70ijmpvyqkg8" path="res://ui/main_menu/trash_can.tscn" id="17_xdahv"]
 [ext_resource type="PackedScene" uid="uid://bwo0egp8p5sh5" path="res://ui/main_menu/barrel_2.tscn" id="18_krw8e"]
 [ext_resource type="Script" uid="uid://ckmgcysooimme" path="res://level/camera_2d.gd" id="20_kp5pi"]
-[ext_resource type="PackedScene" path="res://scenes/Player movement neutral.tscn" id="21_neutral_player"]
+[ext_resource type="PackedScene" path="res://scenes/Thrower Hat Thrower.tscn" id="21_neutral_player"]
 [ext_resource type="PackedScene" uid="uid://dg2r5g2f78qmx" path="res://level/world_border.tscn" id="22_border"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kp5pi"]

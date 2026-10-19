@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/taya_can.gd" id="1_can_script"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/taya/tin_can_upright.png" id="2_can_image"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_can"]
+radius = 22.0
+
+[node name="Can" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+motion_mode = 1
+script = ExtResource("1_can_script")
+base_path = NodePath("../CanBase")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -27)
+shape = SubResource("CircleShape2D_can")
+
+[node name="CanSprite" type="Sprite2D" parent="."]
+position = Vector2(0, -28)
+scale = Vector2(0.085, 0.085)
+texture = ExtResource("2_can_image")
+region_enabled = true
+region_rect = Rect2(397, 295, 486, 655)

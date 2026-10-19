@@ -2,11 +2,11 @@ extends Control
 
 const CHARACTER_NAMES := ["Hat Thrower", "Head Band", "Glasses Thrower", "Curly Haired", "Bullcap Head"]
 const CHARACTER_SCENES := [
-	"res://scenes/Hat_Thrower.tscn",
-	"res://scenes/Head_Band.tscn",
-	"res://scenes/Glasses_Thrower.tscn",
-	"res://scenes/Curly_haired.tscn",
-	"res://scenes/Bullcap_Head.tscn",
+	"res://scenes/Thrower Hat Thrower.tscn",
+	"res://scenes/Thrower Head Band.tscn",
+	"res://scenes/Thrower Glasses Thrower.tscn",
+	"res://scenes/Thrower Curly Haired.tscn",
+	"res://scenes/Thrower Bullcap Head.tscn",
 ]
 
 @onready var cards: Array[Button] = [
