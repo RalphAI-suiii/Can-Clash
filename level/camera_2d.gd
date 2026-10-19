@@ -1,7 +1,7 @@
 extends Camera2D
 
 @export var top_y := 0.0
-@export var bottom_y := 1250.0
+@export var bottom_y := 1190.0
 @export var center_x := 940.0
 @export var y_offset := -150.0  # negative = level moves down on screen
 
