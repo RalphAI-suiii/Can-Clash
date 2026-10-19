@@ -9,6 +9,7 @@ const GROUND_FRICTION: float = 330.0
 const FLOOR_BOUNCE: float = 0.34
 const WALL_BOUNCE: float = 0.55
 const CAN_HIT_RADIUS: float = 35.0
+const WALL_COLLISION_MASK: int = 1 | 8 # World and slipper-only dividers.
 
 @export var pickup_radius: float = 72.0
 
@@ -22,11 +23,13 @@ var angular_speed: float = 0.0
 var age: float = 0.0
 var floor_bounces: int = 0
 var resting: bool = false
+var launch_origin: Vector2
 
 
-func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float) -> void:
+func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float, origin: Vector2) -> void:
 	throw_owner = thrower
 	global_position = release_point
+	launch_origin = origin
 	charge_ratio = clampf(charge, 0.0, 1.0)
 	velocity = aim.normalized() * lerpf(260.0, 540.0, charge_ratio)
 	vertical_speed = lerpf(190.0, 305.0, charge_ratio)
@@ -53,11 +56,12 @@ func pick_up(actor: Node2D) -> bool:
 func _physics_process(delta: float) -> void:
 	if resting:
 		return
+	# Sweep the hand-to-release gap too, so close throws cannot spawn past a wall.
+	var previous_position: Vector2 = launch_origin if age == 0.0 else global_position
+	var next_position: Vector2 = global_position + velocity * delta
 	age += delta
-	var previous_position: Vector2 = global_position
-	var next_position: Vector2 = previous_position + velocity * delta
 	if velocity.length_squared() > 1.0:
-		var ray := PhysicsRayQueryParameters2D.create(previous_position, next_position, 1)
+		var ray := PhysicsRayQueryParameters2D.create(previous_position, next_position, WALL_COLLISION_MASK)
 		var wall: Dictionary = get_world_2d().direct_space_state.intersect_ray(ray)
 		if not wall.is_empty():
 			next_position = wall.position + wall.normal * 3.0
@@ -119,8 +123,9 @@ func _physics_process(delta: float) -> void:
 func _draw() -> void:
 	var power: float = charge_ratio
 	var shadow_alpha: float = 0.23 / (1.0 + height * 0.02)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.4))
-	draw_circle(Vector2.ZERO, 25.0, Color(0.18, 0.12, 0.08, shadow_alpha))
+	draw_set_transform(Vector2(6, 6), 0.0, Vector2(1.0, 0.4))
+	for ring in range(6, 0, -1):
+		draw_circle(Vector2.ZERO, 23.0 + ring * 2.0, Color(0.18, 0.12, 0.08, shadow_alpha / 6.0))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if not resting and velocity.length() > 55.0 and height > 2.0:
 		var trail: Vector2 = -velocity.normalized()
