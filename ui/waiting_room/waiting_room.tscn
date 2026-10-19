@@ -1,0 +1,223 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://ui/waiting_room/waiting_room.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://ui/waiting_room/waiting_room_background.tscn" id="2_background"]
+[ext_resource type="PackedScene" path="res://scenes/Player movement neutral.tscn" id="3_player"]
+[ext_resource type="Script" path="res://ui/waiting_room/waiting_room_player.gd" id="4_movement"]
+[ext_resource type="PackedScene" path="res://scenes/Player_ready.tscn" id="5_ready"]
+[ext_resource type="FontFile" path="res://assets/fonts/TitanOne-Regular.ttf" id="6_font"]
+
+[sub_resource type="StyleBoxFlat" id="ButtonNormal"]
+bg_color = Color(0, 0.18, 0.8, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.1, 0.07, 0.18, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.06, 0.04, 0.02, 0.35)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="ButtonHover"]
+bg_color = Color(0.04, 0.28, 0.98, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.1, 0.07, 0.18, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="ButtonPressed"]
+bg_color = Color(0.12, 0.36, 0.2, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.06, 0.19, 0.1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="ButtonFocus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.83, 0.25, 1)
+expand_margin_left = 6.0
+expand_margin_top = 6.0
+expand_margin_right = 6.0
+expand_margin_bottom = 6.0
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="Theme" id="HUDTheme"]
+default_font = ExtResource("6_font")
+default_font_size = 24
+Label/colors/font_color = Color(1, 0.96, 0.85, 1)
+Label/colors/font_outline_color = Color(0.14, 0.07, 0.04, 1)
+Label/constants/outline_size = 6
+Button/colors/font_color = Color(1, 0.96, 0.85, 1)
+Button/colors/font_hover_color = Color(1, 0.96, 0.85, 1)
+Button/colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
+Button/styles/normal = SubResource("ButtonNormal")
+Button/styles/hover = SubResource("ButtonHover")
+Button/styles/pressed = SubResource("ButtonPressed")
+Button/styles/hover_pressed = SubResource("ButtonPressed")
+Button/styles/focus = SubResource("ButtonFocus")
+
+[sub_resource type="Theme" id="RosterTheme"]
+default_font = ExtResource("6_font")
+default_font_size = 20
+Label/colors/font_color = Color(1, 0.96, 0.85, 1)
+
+[sub_resource type="StyleBoxFlat" id="HelpPanel"]
+bg_color = Color(0.12, 0.16, 0.3, 0.96)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 24.0
+content_margin_top = 18.0
+content_margin_right = 24.0
+content_margin_bottom = 18.0
+
+[sub_resource type="Theme" id="HelpTheme"]
+default_font = ExtResource("6_font")
+default_font_size = 22
+Label/colors/font_color = Color(1, 0.96, 0.85, 1)
+
+[node name="WaitingRoom" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="GrassFill" type="Polygon2D" parent="."]
+color = Color(0.36, 0.61, 0.22, 1)
+polygon = PackedVector2Array(-2000, -1200, 2000, -1200, 2000, 1200, -2000, 1200)
+
+[node name="Background" parent="." instance=ExtResource("2_background")]
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+position = Vector2(0, 100)
+scale = Vector2(0.65, 0.65)
+script = ExtResource("4_movement")
+walk_speed = 240.0
+sprint_speed = 340.0
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -40)
+zoom = Vector2(0.8, 0.8)
+
+[node name="ReadyPanel" parent="." instance=ExtResource("5_ready")]
+
+[node name="Player_ready" parent="ReadyPanel" index="0"]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 440.0
+offset_bottom = 80.0
+theme = SubResource("RosterTheme")
+row_height = 56.0
+panel_width = 400.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="Screen" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = SubResource("HUDTheme")
+
+[node name="Title" type="Label" parent="HUD/Screen"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 40.0
+offset_right = 300.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 48
+text = "WAITING ROOM"
+horizontal_alignment = 1
+vertical_alignment = 1
+mouse_filter = 2
+
+[node name="LeaveButton" type="Button" parent="HUD/Screen"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = 104.0
+grow_horizontal = 0
+text = "Leave"
+
+[node name="Help" type="PanelContainer" parent="HUD/Screen"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -146.0
+offset_right = 620.0
+offset_bottom = -40.0
+grow_vertical = 0
+mouse_filter = 2
+theme = SubResource("HelpTheme")
+theme_override_styles/panel = SubResource("HelpPanel")
+
+[node name="Text" type="Label" parent="HUD/Screen/Help"]
+layout_mode = 2
+text = "WASD / Arrow keys to move\nShift to sprint. Explore while you wait!"
+mouse_filter = 2
+
+[node name="ReadyStatus" type="Label" parent="HUD/Screen"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -440.0
+offset_top = -194.0
+offset_right = -40.0
+offset_bottom = -144.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 24
+text = "YOU ARE NOT READY"
+horizontal_alignment = 2
+vertical_alignment = 1
+mouse_filter = 2
+
+[node name="ReadyButton" type="Button" parent="HUD/Screen"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -360.0
+offset_top = -134.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 36
+toggle_mode = true
+text = "Ready"
+tooltip_text = "Toggle your ready status. You can keep moving after readying up."
+
+[editable path="ReadyPanel"]
