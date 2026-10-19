@@ -79,7 +79,7 @@ func _physics_process(delta: float) -> void:
 		_taya_physics_process(delta)
 		return
 	if attack_state == AttackState.FREE:
-		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not is_instance_valid(active_slipper):
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not is_instance_valid(active_slipper) and get_viewport().gui_get_hovered_control() == null:
 			_start_charge()
 		else:
 			super._physics_process(delta)
@@ -418,7 +418,7 @@ func _on_attack_frame_changed() -> void:
 	burst.charge_ratio = charge_ratio
 	var slipper = SLIPPER_VISUAL.new()
 	get_parent().add_child(slipper)
-	slipper.launch(self, release_point, attack_direction, charge_ratio)
+	slipper.launch(self, release_point, attack_direction, charge_ratio, global_position + THROW_ORIGIN)
 	active_slipper = slipper
 
 

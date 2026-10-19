@@ -207,5 +207,6 @@ func _draw() -> void:
 	if state == State.CARRIED:
 		return
 	var alpha: float = 0.24 / (1.0 + height * 0.025)
-	draw_set_transform(Vector2(0, -2), 0.0, Vector2(1.0, 0.38))
-	draw_circle(Vector2.ZERO, 29.0, Color(0.17, 0.12, 0.09, alpha))
+	draw_set_transform(Vector2(7, 6), 0.0, Vector2(1.0, 0.38))
+	for ring in range(6, 0, -1):
+		draw_circle(Vector2.ZERO, 27.0 + ring * 2.0, Color(0.17, 0.12, 0.09, alpha / 6.0))
