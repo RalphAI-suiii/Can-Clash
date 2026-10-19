@@ -1,11 +1,5 @@
 [gd_scene format=3 uid="uid://ctylcjwbdoti8"]
 
-[ext_resource type="Script" uid="uid://cxnhosbujipei" path="res://Script/player.gd" id="1_v6fml"]
-[ext_resource type="PackedScene" uid="uid://dthgsqijaagvn" path="res://scenes/Curly_haired.tscn" id="2_v6fml"]
+[ext_resource type="PackedScene" path="res://scenes/Thrower Curly Haired.tscn" id="1_role"]
 
-[node name="Player" type="CharacterBody2D" unique_id=413896104]
-position = Vector2(56, -6)
-script = ExtResource("1_v6fml")
-
-[node name="CharacterBody2D" parent="." unique_id=1655025507 instance=ExtResource("2_v6fml")]
-position = Vector2(-187, -36)
+[node name="Player" instance=ExtResource("1_role")]

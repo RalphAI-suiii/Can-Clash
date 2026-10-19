@@ -2,12 +2,21 @@ extends CharacterBody2D
 
 ## Reusable eight-direction movement. The scene origin is at the character's feet.
 @export var walk_speed: float = 100.0
-@export var sprint_speed: float = 200.0
+@export var sprint_speed: float = 150.0
 @export var acceleration: float = 850.0
 @export var stopping_friction: float = 1050.0
 @export var idle_sprite_y: float = -87.0
 @export var walk_sprite_y: float = -87.0
 @export var walk_scale_multiplier: float = 1.0
+@export var mirror_down_left_walk: bool = false
+@export var mirror_up_left_walk: bool = false
+@export var diagonal_walk_scale: float = 1.0
+@export var down_diagonal_walk_scale: float = 1.0
+@export var up_diagonal_walk_scale: float = 1.0
+@export var up_diagonal_lean_degrees: float = 0.0
+@export var diagonal_walk_y_offset: float = 0.0
+@export var sprint_cardinal_scale: float = 1.0
+@export var sprint_cardinal_y_offset: float = 0.0
 
 const DIRECTIONS: Array[String] = [
 	"right", "down_right", "down", "down_left",
@@ -40,7 +49,8 @@ func _physics_process(delta: float) -> void:
 		facing = input_direction
 
 	if velocity.length_squared() > 12.0 * 12.0:
-		_play("walk", facing)
+		var sprint_animation: bool = Input.is_action_pressed("sprint") and sprite.sprite_frames.has_animation("sprint_down")
+		_play("sprint" if sprint_animation else "walk", facing)
 		sprite.speed_scale = clampf(velocity.length() / 150.0, 0.45, 1.35)
 	else:
 		_play("idle", facing)
@@ -49,12 +59,42 @@ func _physics_process(delta: float) -> void:
 
 func _play(action: String, direction: Vector2) -> void:
 	var sector: int = (roundi(direction.angle() / (PI / 4.0)) + 8) % 8
-	var animation_name: StringName = StringName(action + "_" + DIRECTIONS[sector])
+	var moving: bool = action == "walk" or action == "sprint"
+	var mirror_down_left: bool = mirror_down_left_walk and moving and DIRECTIONS[sector] == "down_left"
+	var mirror_up_left: bool = mirror_up_left_walk and moving and DIRECTIONS[sector] == "up_left"
+	var mirror_sprint_left: bool = action == "sprint" and DIRECTIONS[sector] == "left"
+	var direction_name: String = DIRECTIONS[sector]
+	if mirror_down_left:
+		direction_name = "down_right"
+	elif mirror_up_left:
+		direction_name = "up_right"
+	elif mirror_sprint_left:
+		direction_name = "right"
+	var animation_name: StringName = StringName(action + "_" + direction_name)
 	var visual_y: float = idle_sprite_y if action == "idle" else walk_sprite_y
-	sprite.position = Vector2(sprite.position.x, visual_y)
-	sprite.scale = idle_sprite_scale * (walk_scale_multiplier if action == "walk" else 1.0)
+	if moving and sector % 2 == 1:
+		visual_y += diagonal_walk_y_offset
+	elif action == "sprint":
+		visual_y += sprint_cardinal_y_offset
+	sprite.flip_h = mirror_down_left or mirror_up_left or mirror_sprint_left
+	var visual_scale: float = walk_scale_multiplier if moving else 1.0
+	if moving and sector % 2 == 1:
+		visual_scale *= diagonal_walk_scale
+		var direction_scale: float = down_diagonal_walk_scale if sector == 1 or sector == 3 else up_diagonal_walk_scale
+		visual_scale *= direction_scale
+	elif action == "sprint":
+		visual_scale *= sprint_cardinal_scale
+	sprite.scale = idle_sprite_scale * visual_scale
+	var lean: float = 0.0
+	if moving and (sector == 5 or sector == 7):
+		var lean_degrees: float = up_diagonal_lean_degrees + (3.0 if action == "sprint" else 0.0)
+		lean = deg_to_rad(lean_degrees) * (-1.0 if sector == 5 else 1.0)
+	sprite.rotation = lean
+	# Compensate for center-based rotation so the feet stay at the same world position.
+	sprite.position = Vector2(sin(lean) * sprite.scale.y * 150.0, visual_y)
 	if sprite.animation != animation_name or not sprite.is_playing():
-		var keep_step: bool = action == "walk" and String(sprite.animation).begins_with("walk_")
+		var previous_motion: bool = String(sprite.animation).begins_with("walk_") or String(sprite.animation).begins_with("sprint_")
+		var keep_step: bool = moving and previous_motion
 		var step_frame: int = sprite.frame
 		var step_progress: float = sprite.frame_progress
 		sprite.play(animation_name)

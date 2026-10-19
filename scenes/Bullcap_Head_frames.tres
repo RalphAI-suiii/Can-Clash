@@ -1,6 +1,5 @@
-[gd_scene format=3 uid="uid://4f3sftrmowo4"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://c55a42t6vgt0n"]
 
-[ext_resource type="Script" uid="uid://cskntynwg7s23" path="res://Script/bullcap_head.gd" id="1_6qyxl"]
 [ext_resource type="Texture2D" uid="uid://crsxi5l3de0ug" path="res://assets/characters/sprites/characters/Character_Main/heavyweight_idle_walk_inbetween_8dir_24x8_280x273.png" id="2_6qyxl"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6qyxl"]
@@ -679,7 +678,7 @@ region = Rect2(6160, 1092, 280, 273)
 atlas = ExtResource("2_6qyxl")
 region = Rect2(6440, 1092, 280, 273)
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_kinv7"]
+[resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
@@ -1258,19 +1257,3 @@ animations = [{
 "name": &"walk_up",
 "speed": 5.0
 }]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ibp63"]
-size = Vector2(103, 178.5)
-
-[node name="CharacterBody2D" type="CharacterBody2D" unique_id=36242701]
-script = ExtResource("1_6qyxl")
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1423082882]
-position = Vector2(365.99997, 260)
-scale = Vector2(1.0071429, 1.1108059)
-sprite_frames = SubResource("SpriteFrames_kinv7")
-animation = &"diagonal_walk_down_right"
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1902203441]
-position = Vector2(373, 290)
-shape = SubResource("RectangleShape2D_ibp63")

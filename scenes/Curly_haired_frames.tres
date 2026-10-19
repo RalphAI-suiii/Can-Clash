@@ -1,6 +1,5 @@
-[gd_scene format=3 uid="uid://dthgsqijaagvn"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://bltqave02c7n5"]
 
-[ext_resource type="Script" uid="uid://c687u63bl77dr" path="res://Script/Curly_haired.gd" id="1_d1lv1"]
 [ext_resource type="Texture2D" uid="uid://olcc6m57cetf" path="res://assets/characters/sprites/characters/Character_Main/curly_thrower_holding_idle_diagonal.png" id="2_ow1i3"]
 [ext_resource type="Texture2D" uid="uid://ujkx5le8wev6" path="res://assets/characters/sprites/characters/Character_Main/curly_thrower_throw_release_diagonal.png" id="3_a871j"]
 [ext_resource type="Texture2D" uid="uid://d273pvstni83c" path="res://assets/characters/sprites/characters/Character_Main/curly_thrower_aiming_walk_diagonal.png" id="4_gfoh0"]
@@ -350,7 +349,7 @@ region = Rect2(560, 546, 280, 273)
 atlas = SubResource("CompressedTexture2D_d1lv1")
 region = Rect2(840, 546, 280, 273)
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_kinv7"]
+[resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
@@ -709,45 +708,3 @@ animations = [{
 "name": &"walk_throw_up",
 "speed": 5.0
 }]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gfoh0"]
-bg_color = Color(0, 0.5773528, 0.14488548, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a871j"]
-bg_color = Color(0.6, 0, 0, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_kinv7"]
-size = Vector2(103, 178.5)
-
-[node name="CharacterBody2D" type="CharacterBody2D" unique_id=1655025507]
-script = ExtResource("1_d1lv1")
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=962167718]
-position = Vector2(387, 248)
-sprite_frames = SubResource("SpriteFrames_kinv7")
-animation = &"diagonal_walk_throw_down_right"
-
-[node name="ChargeBar" type="ProgressBar" parent="." unique_id=936275506]
-offset_left = 254.0
-offset_top = 59.0
-offset_right = 507.0
-offset_bottom = 98.0
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
-theme_override_colors/font_outline_color = Color(1, 0, 0, 1)
-theme_override_styles/background = SubResource("StyleBoxFlat_gfoh0")
-theme_override_styles/fill = SubResource("StyleBoxFlat_a871j")
-max_value = 0.1
-step = 1.0
-show_percentage = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=96173865]
-position = Vector2(368.5, 275.75)
-shape = SubResource("RectangleShape2D_kinv7")
