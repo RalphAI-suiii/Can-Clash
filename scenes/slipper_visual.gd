@@ -1,19 +1,151 @@
 extends Node2D
 
-var direction: Vector2 = Vector2.RIGHT
-var speed: float = 250.0
-var lifetime: float = 0.65
+## The node position is the slipper's ground track; height is its small visual arc.
+signal picked_up
+
+const GRAVITY: float = 700.0
+const AIR_DRAG: float = 0.18
+const GROUND_FRICTION: float = 330.0
+const FLOOR_BOUNCE: float = 0.34
+const WALL_BOUNCE: float = 0.55
+const CAN_HIT_RADIUS: float = 35.0
+
+@export var pickup_radius: float = 72.0
+
+var throw_owner: Node2D
+var charge_ratio: float = 0.0
+var velocity: Vector2 = Vector2.ZERO
+var height: float = 0.0
+var vertical_speed: float = 0.0
+var spin_angle: float = 0.0
+var angular_speed: float = 0.0
+var age: float = 0.0
+var floor_bounces: int = 0
+var resting: bool = false
 
 
-func _process(delta: float) -> void:
-	position += direction * speed * delta
-	rotation += TAU * 2.0 * delta
-	lifetime -= delta
-	if lifetime <= 0.0:
-		queue_free()
+func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float) -> void:
+	throw_owner = thrower
+	global_position = release_point
+	charge_ratio = clampf(charge, 0.0, 1.0)
+	velocity = aim.normalized() * lerpf(260.0, 540.0, charge_ratio)
+	vertical_speed = lerpf(190.0, 305.0, charge_ratio)
+	angular_speed = lerpf(TAU * 1.7, TAU * 3.0, charge_ratio)
+	queue_redraw()
+
+
+func is_resting() -> bool:
+	return resting
+
+
+func can_pick_up(actor: Node2D) -> bool:
+	return resting and actor == throw_owner and actor.global_position.distance_to(global_position) <= pickup_radius
+
+
+func pick_up(actor: Node2D) -> bool:
+	if not can_pick_up(actor):
+		return false
+	picked_up.emit()
+	queue_free()
+	return true
+
+
+func _physics_process(delta: float) -> void:
+	if resting:
+		return
+	age += delta
+	var previous_position: Vector2 = global_position
+	var next_position: Vector2 = previous_position + velocity * delta
+	if velocity.length_squared() > 1.0:
+		var ray := PhysicsRayQueryParameters2D.create(previous_position, next_position, 1)
+		var wall: Dictionary = get_world_2d().direct_space_state.intersect_ray(ray)
+		if not wall.is_empty():
+			next_position = wall.position + wall.normal * 3.0
+			velocity = velocity.bounce(wall.normal) * WALL_BOUNCE
+			angular_speed *= -0.7
+			vertical_speed = maxf(vertical_speed, 75.0)
+
+	var hit_can
+	var hit_point: Vector2
+	var nearest: float = INF
+	for candidate in get_tree().get_nodes_in_group("can_targets"):
+		if not candidate.is_standing():
+			continue
+		var center: Vector2 = candidate.get_hit_center()
+		var point: Vector2 = Geometry2D.get_closest_point_to_segment(center, previous_position, next_position)
+		if point.distance_squared_to(center) > CAN_HIT_RADIUS * CAN_HIT_RADIUS:
+			continue
+		var distance: float = previous_position.distance_squared_to(point)
+		if distance < nearest:
+			nearest = distance
+			hit_can = candidate
+			hit_point = point
+
+	if hit_can != null and velocity.length() >= 55.0 and hit_can.receive_slipper_hit(velocity, charge_ratio, hit_point):
+		var normal: Vector2 = (hit_point - hit_can.get_hit_center()).normalized()
+		if normal.is_zero_approx():
+			normal = -velocity.normalized()
+		global_position = hit_point + normal * 6.0
+		velocity = velocity.bounce(normal) * 0.38
+		vertical_speed = maxf(vertical_speed, 115.0)
+		angular_speed *= -0.65
+	else:
+		global_position = next_position
+
+	height += vertical_speed * delta - 0.5 * GRAVITY * delta * delta
+	vertical_speed -= GRAVITY * delta
+	if height <= 0.0:
+		height = 0.0
+		if vertical_speed < -80.0 and floor_bounces < 3:
+			vertical_speed = -vertical_speed * FLOOR_BOUNCE
+			velocity *= 0.72
+			angular_speed *= 0.58
+			floor_bounces += 1
+		else:
+			vertical_speed = 0.0
+			velocity = velocity.move_toward(Vector2.ZERO, GROUND_FRICTION * delta)
+			angular_speed *= exp(-8.0 * delta)
+			spin_angle = lerp_angle(spin_angle, 0.0, minf(delta * 9.0, 1.0))
+			if velocity.length() < 14.0 and absf(angular_speed) < 0.2:
+				velocity = Vector2.ZERO
+				angular_speed = 0.0
+				resting = true
+	else:
+		velocity *= exp(-AIR_DRAG * delta)
+	spin_angle = wrapf(spin_angle + angular_speed * delta, -PI, PI)
+	queue_redraw()
 
 
 func _draw() -> void:
+	var power: float = charge_ratio
+	var shadow_alpha: float = 0.23 / (1.0 + height * 0.02)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.4))
+	draw_circle(Vector2.ZERO, 25.0, Color(0.18, 0.12, 0.08, shadow_alpha))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if not resting and velocity.length() > 55.0 and height > 2.0:
+		var trail: Vector2 = -velocity.normalized()
+		var side: Vector2 = Vector2(-trail.y, trail.x)
+		var origin: Vector2 = Vector2(0, -height * 0.55)
+		draw_colored_polygon(PackedVector2Array([
+			origin + trail * 20.0 + side * 12.0,
+			origin + trail * (76.0 + power * 44.0),
+			origin + trail * 20.0 - side * 12.0,
+		]), Color(1.0, 0.56, 0.16, 0.12 + power * 0.18))
+		draw_line(origin + trail * 27.0, origin + trail * (72.0 + power * 42.0), Color(1.0, 0.79, 0.34, 0.31 + power * 0.34), 8.0, true)
+		draw_line(origin + trail * 32.0, origin + trail * (64.0 + power * 34.0), Color(1.0, 0.97, 0.72, 0.34 + power * 0.38), 3.0, true)
+		for index in range(3):
+			var offset: float = (index - 1) * 13.0
+			var start: Vector2 = origin + trail * (34.0 + index * 7.0) + side * offset
+			var finish: Vector2 = origin + trail * (53.0 + power * 35.0 + index * 10.0) + side * offset * 1.4
+			draw_line(start, finish, Color(1.0, 0.89, 0.52, 0.21 + power * 0.25), 3.0, true)
+	var flash: float = 1.0 - minf(age / 0.15, 1.0)
+	if flash > 0.0:
+		for index in range(8):
+			var ray: Vector2 = Vector2.RIGHT.rotated(index * TAU / 8.0)
+			draw_line(ray * 27.0, ray * (36.0 + power * 10.0), Color(1.0, 0.92, 0.58, flash * 0.6), 2.0, true)
+
+	# Keep the original slipper silhouette at one size in every motion state.
+	draw_set_transform(Vector2(0, -height * 0.55), spin_angle, Vector2.ONE)
 	var outline: PackedVector2Array = PackedVector2Array([
 		Vector2(-29, -14), Vector2(-17, -20), Vector2(12, -19),
 		Vector2(28, -12), Vector2(32, -1), Vector2(27, 11),

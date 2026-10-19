@@ -1,0 +1,48 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/slipper_can_demo.gd" id="1_demo_script"]
+[ext_resource type="PackedScene" path="res://scenes/Thrower Hat Thrower.tscn" id="2_thrower"]
+[ext_resource type="PackedScene" path="res://scenes/Taya can.tscn" id="3_can"]
+
+[node name="Slipper can demo" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_demo_script")
+
+[node name="CanBase" type="Node2D" parent="."]
+position = Vector2(960, 610)
+
+[node name="Can" parent="." instance=ExtResource("3_can")]
+position = Vector2(960, 610)
+starts_toppled = false
+
+[node name="Thrower" parent="." instance=ExtResource("2_thrower")]
+position = Vector2(470, 610)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Title" type="Label" parent="HUD"]
+offset_left = 54.0
+offset_top = 38.0
+offset_right = 1210.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(0.16, 0.11, 0.07, 1)
+theme_override_font_sizes/font_size = 38
+text = "THROWER  •  SLIPPER / CAN PREVIEW"
+
+[node name="Status" type="Label" parent="HUD"]
+offset_left = 56.0
+offset_top = 105.0
+offset_right = 1830.0
+offset_bottom = 150.0
+theme_override_colors/font_color = Color(0.23, 0.16, 0.09, 1)
+theme_override_font_sizes/font_size = 25
+text = "CAN READY  •  Aim at the can and hold M1 to charge"
+
+[node name="Controls" type="Label" parent="HUD"]
+offset_left = 56.0
+offset_top = 160.0
+offset_right = 1690.0
+offset_bottom = 205.0
+theme_override_colors/font_color = Color(0.29, 0.22, 0.14, 1)
+theme_override_font_sizes/font_size = 20
+text = "WASD move    •    Hold M1 / release to throw    •    E retrieve your slipper    •    R reset can (preview only)"

@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/character_roles_preview.gd" id="1_preview"]
+[ext_resource type="PackedScene" path="res://scenes/Taya can.tscn" id="2_can"]
+
+[node name="Character roles preview" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_preview")
+
+[node name="CanBase" type="Node2D" parent="."]
+position = Vector2(1000, 640)
+
+[node name="Can" parent="." instance=ExtResource("2_can")]
+position = Vector2(1000, 640)
+starts_toppled = false
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Title" type="Label" parent="HUD"]
+offset_left = 120.0
+offset_top = 24.0
+offset_right = 1830.0
+offset_bottom = 69.0
+theme_override_colors/font_color = Color(0.17, 0.11, 0.06, 1)
+theme_override_font_sizes/font_size = 32
+text = "CHARACTER ROLE PREVIEW"
+
+[node name="Controls" type="Label" parent="HUD"]
+offset_left = 122.0
+offset_top = 79.0
+offset_right = 1880.0
+offset_bottom = 120.0
+theme_override_colors/font_color = Color(0.24, 0.16, 0.08, 1)
+theme_override_font_sizes/font_size = 21
+text = "1–5 character  •  Tab Thrower/Taya  •  WASD move  •  Shift sprint  •  M1 charge/release  •  E retrieve or carry/reset  •  Space lunge"
+
+[node name="Status" type="Label" parent="HUD"]
+offset_left = 122.0
+offset_top = 125.0
+offset_right = 1880.0
+offset_bottom = 174.0
+theme_override_colors/font_color = Color(0.17, 0.11, 0.06, 1)
+theme_override_font_sizes/font_size = 25
+text = ""
