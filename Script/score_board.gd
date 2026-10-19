@@ -1,11 +1,12 @@
 
 extends Control
 
-@export var row_height: float = 52.0
-@export var icon_size: float = 36.0
-@export var panel_width: float = 300.0
+@export var row_height: float = 44.0
+@export var icon_size: float = 32.0
+@export var panel_width: float = 280.0
 
 @onready var player_list: VBoxContainer = $PanelContainer/VBoxContainer
+@onready var title_label: Label = $PanelContainer/VBoxContainer/TitleLabel
 
 var players: Array[Dictionary] = []
 var player_rows: Dictionary = {}
@@ -20,9 +21,15 @@ var row_colors: Array[Color] = [
 
 
 func _ready() -> void:
+	# Ensure the title is the first child of the VBoxContainer.
+	player_list.move_child(title_label, 0)
 	player_list.add_theme_constant_override("separation", 5)
+
 	$PanelContainer.custom_minimum_size.x = panel_width
 
+	title_label.text = "SCOREBOARD"
+
+	# Initialize five players with zero points.
 	var starting_players: Array = []
 
 	for i in range(5):
@@ -42,11 +49,13 @@ func update_scoreboard(new_players: Array) -> void:
 	for player in new_players:
 		players.append(player.duplicate())
 
+	# Sort highest score first.
 	players.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
 			return int(a.get("score", 0)) > int(b.get("score", 0))
 	)
 
+	# Remove rows for players no longer present.
 	var active_ids: Array = []
 
 	for player in players:
@@ -57,6 +66,7 @@ func update_scoreboard(new_players: Array) -> void:
 			player_rows[old_id].queue_free()
 			player_rows.erase(old_id)
 
+	# Create rows for new players.
 	for player in players:
 		var player_id = player.get("id")
 
@@ -65,12 +75,13 @@ func update_scoreboard(new_players: Array) -> void:
 			player_rows[player_id] = row
 			player_list.add_child(row)
 
+	# Update and order the rows underneath the title.
 	for index in range(players.size()):
 		var player: Dictionary = players[index]
 		var player_id = player.get("id")
 		var row: PanelContainer = player_rows[player_id]
 
-		player_list.move_child(row, index)
+		player_list.move_child(row, index + 1)
 		update_player_row(row, player, index)
 
 
@@ -82,11 +93,11 @@ func create_player_row() -> PanelContainer:
 
 	var row_style := StyleBoxFlat.new()
 	row_style.bg_color = Color("#fff5dc")
-	row_style.set_corner_radius_all(12)
+	row_style.set_corner_radius_all(10)
 	row_style.set_content_margin(SIDE_LEFT, 8)
 	row_style.set_content_margin(SIDE_RIGHT, 10)
-	row_style.set_content_margin(SIDE_TOP, 5)
-	row_style.set_content_margin(SIDE_BOTTOM, 5)
+	row_style.set_content_margin(SIDE_TOP, 4)
+	row_style.set_content_margin(SIDE_BOTTOM, 4)
 	row.add_theme_stylebox_override("panel", row_style)
 
 	var contents := HBoxContainer.new()
@@ -95,12 +106,13 @@ func create_player_row() -> PanelContainer:
 	contents.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(contents)
 
+	# Rank number.
 	var rank := Label.new()
 	rank.name = "Rank"
-	rank.custom_minimum_size = Vector2(32, 32)
+	rank.custom_minimum_size = Vector2(30, 30)
 	rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rank.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	rank.add_theme_font_size_override("font_size", 17)
+	rank.add_theme_font_size_override("font_size", 16)
 	rank.add_theme_color_override("font_color", Color("#28231c"))
 
 	var rank_style := StyleBoxFlat.new()
@@ -109,8 +121,10 @@ func create_player_row() -> PanelContainer:
 	rank_style.set_border_width_all(2)
 	rank_style.border_color = Color("#514333")
 	rank.add_theme_stylebox_override("normal", rank_style)
+
 	contents.add_child(rank)
 
+	# Character icon.
 	var icon := TextureRect.new()
 	icon.name = "CharacterIcon"
 	icon.custom_minimum_size = Vector2(icon_size, icon_size)
@@ -118,20 +132,22 @@ func create_player_row() -> PanelContainer:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	contents.add_child(icon)
 
+	# Player name.
 	var player_name := Label.new()
 	player_name.name = "PlayerName"
 	player_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	player_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	player_name.add_theme_font_size_override("font_size", 13)
+	player_name.add_theme_font_size_override("font_size", 12)
 	player_name.add_theme_color_override("font_color", Color("#302a22"))
 	contents.add_child(player_name)
 
+	# Player score.
 	var score := Label.new()
 	score.name = "Score"
-	score.custom_minimum_size.x = 35
+	score.custom_minimum_size.x = 30
 	score.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	score.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	score.add_theme_font_size_override("font_size", 18)
+	score.add_theme_font_size_override("font_size", 16)
 	score.add_theme_color_override("font_color", Color("#302a22"))
 	contents.add_child(score)
 
@@ -150,7 +166,9 @@ func update_player_row(
 	var score: Label = contents.get_node("Score")
 
 	rank.text = str(index + 1)
-	player_name.text = str(player.get("name", "Player %d" % (index + 1)))
+	player_name.text = str(
+		player.get("name", "Player %d" % (index + 1))
+	)
 	score.text = str(player.get("score", 0))
 
 	var player_icon = player.get("icon", null)
@@ -205,9 +223,13 @@ func add_player(
 	if player_name.is_empty():
 		player_name = "Player %d" % player_id
 
-	update_scoreboard(players + [{
+	var updated_players: Array = players.duplicate()
+
+	updated_players.append({
 		"id": player_id,
 		"name": player_name,
 		"score": starting_score,
 		"icon": player_icon
-	}])
+	})
+
+	update_scoreboard(updated_players)

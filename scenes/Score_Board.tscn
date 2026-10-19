@@ -37,6 +37,6 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_puokm")
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="TitileLabel" type="Label" parent="ScoreBoard/PanelContainer/VBoxContainer" unique_id=1908667129]
+[node name="TitleLabel" type="Label" parent="ScoreBoard/PanelContainer/VBoxContainer" unique_id=1000954161]
 layout_mode = 2
 text = "SCOREBOARD"
