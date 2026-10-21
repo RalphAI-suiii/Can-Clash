@@ -3,7 +3,6 @@ extends Control
 const UI = preload("res://ui/game_ui.gd")
 var name_input: LineEdit
 
-@onready var quick_play: Button = $QuckPlay
 @onready var play_local: Button = $PlayLocal
 @onready var popup: Control = $LocalPlayPopup
 @onready var backdrop: ColorRect = $LocalPlayPopup/Backdrop
@@ -16,7 +15,7 @@ var popup_tween: Tween
 
 func _ready() -> void:
 	_build_profile_controls()
-	quick_play.pressed.connect(_open_character_select)
+	_color_menu_buttons()
 	play_local.pressed.connect(_show_local_popup)
 	host.pressed.connect(_open_host)
 	join.pressed.connect(_open_join)
@@ -83,14 +82,20 @@ func _open_character_select() -> void:
 
 func _build_profile_controls() -> void:
 	var profile_title := UI.label("YOUR NAME", 24)
-	profile_title.position = Vector2(100, 211)
-	profile_title.size = Vector2(350, 34)
+	profile_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	profile_title.offset_left = -195
+	profile_title.offset_right = 195
+	profile_title.offset_top = -140
+	profile_title.offset_bottom = -106
 	profile_title.theme = UI.theme()
 	add_child(profile_title)
 	name_input = LineEdit.new()
 	name_input.name = "PlayerName"
-	name_input.position = Vector2(100, 253)
-	name_input.size = Vector2(350, 62)
+	name_input.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	name_input.offset_left = -195
+	name_input.offset_right = 195
+	name_input.offset_top = -98
+	name_input.offset_bottom = -36
 	name_input.theme = UI.theme()
 	name_input.max_length = 20
 	name_input.placeholder_text = "Enter your name"
@@ -99,6 +104,7 @@ func _build_profile_controls() -> void:
 	name_input.focus_exited.connect(_save_name)
 	add_child(name_input)
 	var practice_shadow := $ButtonShadow_PlayLocal.duplicate()
+	practice_shadow.name = "ButtonShadow_Practice"
 	practice_shadow.position.y += 128
 	add_child(practice_shadow)
 	var practice: Button = $PlayLocal.duplicate()
@@ -108,6 +114,7 @@ func _build_profile_controls() -> void:
 	practice.pressed.connect(_open_practice)
 	add_child(practice)
 	var statistics_shadow := $ButtonShadow_Friends.duplicate()
+	statistics_shadow.name = "ButtonShadow_Statistics"
 	statistics_shadow.position.y += 128
 	add_child(statistics_shadow)
 	var statistics_button: Button = $Friends.duplicate()
@@ -116,6 +123,29 @@ func _build_profile_controls() -> void:
 	statistics_button.text = "Statistics"
 	statistics_button.pressed.connect(_show_statistics)
 	add_child(statistics_button)
+
+
+func _color_menu_buttons() -> void:
+	var colors := {
+		"PlayOnline": Color("4d91e8"), "PlayLocal": Color("57b948"),
+		"Practice": Color("33b8b2"), "Avatar": Color("a575e0"),
+		"Friends": Color("e96eb4"), "Statistics": Color("f5d34c"),
+		"Messages": Color("f26c60"), "Settings": Color("e6c79b"),
+	}
+	for button_name in colors:
+		var button: Button = get_node(NodePath(button_name))
+		var color: Color = colors[button_name]
+		for state in ["normal", "hover", "pressed"]:
+			var style: StyleBoxFlat = button.get_theme_stylebox(state).duplicate()
+			style.bg_color = color.lightened(0.12) if state == "hover" else color.darkened(0.12) if state == "pressed" else color
+			if state != "pressed" and button_name not in ["Messages", "Settings"]:
+				style.border_color = color.darkened(0.32)
+			button.add_theme_stylebox_override(state, style)
+		var shadow: Panel = get_node_or_null(NodePath("ButtonShadow_" + button_name))
+		if shadow != null:
+			var style: StyleBoxFlat = shadow.get_theme_stylebox("panel").duplicate()
+			style.bg_color = color.darkened(0.32)
+			shadow.add_theme_stylebox_override("panel", style)
 
 
 func _save_name() -> void:
