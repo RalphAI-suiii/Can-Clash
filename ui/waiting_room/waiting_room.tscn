@@ -144,11 +144,35 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
+[sub_resource type="Gradient" id="WarmLightFalloff"]
+interpolation_mode = 2
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="WarmLightTexture"]
+gradient = SubResource("WarmLightFalloff")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
 [node name="WaitingRoom" type="Node2D" unique_id=763032022]
 y_sort_enabled = true
 script = ExtResource("1_script")
 
 [node name="Background" parent="." unique_id=1649187958 instance=ExtResource("2_background")]
+
+[node name="RoomAmbient" type="CanvasModulate" parent="."]
+color = Color(0.88, 0.86, 0.82, 1)
+
+[node name="TopLeftLight" type="PointLight2D" parent="."]
+position = Vector2(160, 120)
+color = Color(1, 0.92, 0.76, 1)
+energy = 0.22
+range_layer_min = 0
+range_layer_max = 0
+texture = SubResource("WarmLightTexture")
+texture_scale = 5.859375
 
 [node name="Walls" type="StaticBody2D" parent="." unique_id=1214803022]
 collision_mask = 6

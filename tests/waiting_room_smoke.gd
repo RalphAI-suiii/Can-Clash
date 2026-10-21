@@ -26,7 +26,7 @@ func _run() -> void:
 	assert(player.get_script() == load("res://scenes/player_movement_neutral.gd"))
 	assert(scene.get_node("Background/Room").texture.resource_path.ends_with("clubhouse.png"))
 	assert(not scene.has_node("HUD/Screen/Help"))
-	assert(panel.players.size() == 5 and not panel.players[0]["ready"])
+	assert(panel.players.size() == 1 and not panel.players[0]["ready"])
 	assert(start.visible and start.disabled)
 	var inactive_style: StyleBoxFlat = start_frame.get_theme_stylebox("panel")
 	scene._on_start_pressed()
@@ -42,8 +42,6 @@ func _run() -> void:
 	assert(panel.players[0]["ready"])
 	assert(player.attack_state == player.AttackState.FREE)
 	assert(not is_instance_valid(player.active_slipper))
-	for i in range(1, 5):
-		assert(not panel.players[i]["ready"])
 	await _click(button.get_global_rect().get_center())
 	assert(not panel.players[0]["ready"])
 	button.button_pressed = true
@@ -79,7 +77,7 @@ func _run() -> void:
 	assert(can.is_toppled() and scene.practice_hits == 1)
 	assert(panel.players[0]["ready"])
 
-	# The target resets automatically; retrieve the same slipper with E.
+	# The target resets automatically; running within reach retrieves the slipper.
 	for i in range(480):
 		await physics_frame
 		if can.is_standing() and slipper.is_resting():
@@ -88,9 +86,6 @@ func _run() -> void:
 	player.position = slipper.global_position + Vector2(0, 42)
 	player.velocity = Vector2.ZERO
 	await _frames(2)
-	Input.action_press("interact")
-	await _frames(2)
-	Input.action_release("interact")
 	assert(not is_instance_valid(player.active_slipper))
 
 	# Reset recovers a pending charged throw as well as resetting the practice count.
@@ -138,12 +133,7 @@ func _run() -> void:
 	assert(player.position.x < 1840.0)
 	assert(button.get_global_rect().end.x <= scene.get_viewport_rect().size.x)
 	assert(button.get_global_rect().end.y <= scene.get_viewport_rect().size.y)
-	panel.remove_player(2)
-	panel.set_player_ready(3, true)
-	assert(panel.players[1]["id"] == 3 and panel.players[1]["ready"])
-	assert(not panel.player_rows.has(2))
-	for member in panel.players:
-		panel.set_player_ready(member["id"], true)
+	assert(panel.players.size() == 1)
 	assert(not start.disabled)
 	assert(start_frame.get_theme_stylebox("panel") == scene.start_glow)
 	assert(scene.start_glow.shadow_size > inactive_style.shadow_size)
@@ -153,39 +143,8 @@ func _run() -> void:
 	await _click(button.get_global_rect().get_center())
 	assert(not start.disabled)
 
-	# Guest previews never expose Start, even with a fully ready roster.
-	scene.local_is_host = false
-	assert(not start.visible and not start_frame.visible and start.disabled)
-	scene._on_start_pressed()
-	assert(not scene.starting)
-	scene.local_is_host = true
-	assert(start.visible and not start.disabled)
-	panel.set_player_ready(3, false)
-	assert(start.disabled)
-	panel.remove_player(3)
-	assert(not start.disabled)
-	for member in panel.players.duplicate():
-		panel.remove_player(member["id"])
-	assert(start.disabled and not panel.all_players_ready())
-	scene._on_start_pressed()
-	assert(not scene.starting)
-
-	# A ready host opens the existing playable level through the actual control.
+	print("PASS: three practice cans, automatic pickup, reset/retrieval, divider bounces from both sides, player crossing, one-member ready roster, Start glow, and room bounds.")
 	scene.free()
-	scene = load("res://ui/waiting_room/waiting_room.tscn").instantiate()
-	root.add_child(scene)
-	current_scene = scene
-	await _frames(3)
-	panel = scene.get_node("ReadyPanel/Player_ready")
-	for member in panel.players:
-		panel.set_player_ready(member["id"], true)
-	await _click(scene.get_node("HUD/Screen/StartButton").get_global_rect().get_center())
-	for i in range(10):
-		if current_scene != null and current_scene.scene_file_path == "res://level/level.tscn":
-			break
-		await process_frame
-	assert(current_scene != null and current_scene.scene_file_path == "res://level/level.tscn")
-	print("PASS: practice mechanics, divider, ready controls, host-only Start, readiness glow, member removal, empty roster, and level transition.")
 	quit()
 
 

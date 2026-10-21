@@ -16,6 +16,51 @@ The original concept note is the current design reference.
 
 Record each resolved decision here with its date and rationale.
 
+## Adjustments implementation — 2026-10-21
+
+- The requested match duration is three minutes, after a separate 30-second
+  grace period. First-time rules acknowledgments precede the grace timer; all
+  human members must finish reading. The rules remain available during play.
+- The roster contains actual members rather than five placeholders. LAN starts
+  with a host, accepts four clients, and requires at least two ready humans to
+  start. The `developer-mode` Join shortcut starts with one human and fills the
+  match with four computer-controlled opponents. Practice is a separate solo mode.
+- Seven-character room codes encode the host's IPv4 address on UDP port 54652.
+  They remain valid while the address is unchanged. Direct-IP joining is also
+  supported, without a discovery server or internet matchmaking dependency.
+- Slippers collect automatically at first landing when the owner runs within
+  72 pixels. Each member's stable color marks their name, ring, roster badge,
+  and slipper outline. This supersedes E-based retrieval below. Leaving the
+  arena hides the slipper for three seconds, then returns it to the owner's hand.
+- The map roulette chooses one of three variants of the existing 2D level:
+  Courtyard, Eskinita, or Dusty Yard. Their prop layouts and palettes differ;
+  the existing art remains the source. Selection is host-owned and shared.
+- Initial Taya is chosen from the host's match seed; developer mode starts a bot
+  as Taya. This is the provisional match entry for the adjustments, rather than
+  claiming the concept's opening throw-off is implemented.
+- Local statistics persist in `user://profile.cfg`. A successful throw is a
+  projectile's first standing-can hit, which also records one knockdown. Normal
+  LAN results count wins/losses once per match ID; tied leaders share victory.
+  Practice and developer games never change lifetime totals. `CAN_CLASH_SAVE_PATH`
+  isolates automated test profiles from the user's data.
+- The match host owns simulation and scoring. First landing prediction includes
+  existing World/divider ricochets and standing-can deflection. Prediction is a
+  preview rather than a guarantee if another player changes the can mid-flight.
+- Safe-return points require leaving the strip, physically collecting the owned
+  slipper, and re-entering the strip. Out-of-bounds respawns do not earn that point.
+
+## Slipper pickup responsiveness — 2026-10-19
+
+- Throwers can press or hold E while walking or sprinting into their own slipper's
+  existing 72-pixel pickup radius. After its first landing, the slipper can be
+  retrieved during its small floor bounce (up to 12 pixels of simulated height),
+  sliding, or spin. Collection preserves movement and clears ownership immediately
+  so another throw can begin; there is no pickup animation or cooldown.
+- This supersedes the older settle-before-retrieval rule below. Initial flight
+  remains ineligible, as do slippers owned by another player or outside reach.
+  Taya's can pickup and placement timing stays unchanged.
+- Check with `godot --headless --path . --script res://tests/slipper_pickup_smoke.gd`.
+
 ## Provisional prototype choices — 2026-10-18
 
 - The local 2D Taya prototype displays the lunge in eight directional sectors so the body and feet face the target while steering. Five right/front/back source views and horizontal mirroring cover all eight sectors. This only resolves the prototype's animation coverage; the concept note's 2.5D camera and four-direction movement remain a team design decision.

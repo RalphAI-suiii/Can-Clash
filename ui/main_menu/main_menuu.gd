@@ -1,5 +1,8 @@
 extends Control
 
+const UI = preload("res://ui/game_ui.gd")
+var name_input: LineEdit
+
 @onready var quick_play: Button = $QuckPlay
 @onready var play_local: Button = $PlayLocal
 @onready var popup: Control = $LocalPlayPopup
@@ -12,12 +15,18 @@ var popup_tween: Tween
 
 
 func _ready() -> void:
+	_build_profile_controls()
 	quick_play.pressed.connect(_open_character_select)
 	play_local.pressed.connect(_show_local_popup)
 	host.pressed.connect(_open_host)
 	join.pressed.connect(_open_join)
 	close_button.pressed.connect(_hide_local_popup)
 	backdrop.gui_input.connect(_on_backdrop_input)
+	$Avatar.pressed.connect(_open_character_select)
+	if LanSession.has_meta("notice"):
+		var notice = UI.modal(self, "ROOM CLOSED", str(LanSession.get_meta("notice")))
+		notice.content.add_child(UI.button("Back to menu", notice.layer.queue_free))
+		LanSession.remove_meta("notice")
 
 
 func _show_local_popup() -> void:
@@ -54,12 +63,74 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 func _open_host() -> void:
-	get_tree().change_scene_to_file("res://ui/lobby/lobby.tscn")
+	_save_name()
+	if LanSession.host_room() == OK:
+		get_tree().change_scene_to_file("res://ui/waiting_room/waiting_room.tscn")
+	else:
+		var notice = UI.modal(self, "COULDN'T HOST", "Another room may be open on this PC. Close it and try again.")
+		notice.content.add_child(UI.button("Okay", notice.layer.queue_free))
 
 
 func _open_join() -> void:
+	_save_name()
 	get_tree().change_scene_to_file("res://ui/lobby/join_local.tscn")
 
 
 func _open_character_select() -> void:
+	_save_name()
 	get_tree().change_scene_to_file("res://ui/character_select/character_select.tscn")
+
+
+func _build_profile_controls() -> void:
+	var profile_title := UI.label("YOUR NAME", 24)
+	profile_title.position = Vector2(100, 211)
+	profile_title.size = Vector2(350, 34)
+	profile_title.theme = UI.theme()
+	add_child(profile_title)
+	name_input = LineEdit.new()
+	name_input.name = "PlayerName"
+	name_input.position = Vector2(100, 253)
+	name_input.size = Vector2(350, 62)
+	name_input.theme = UI.theme()
+	name_input.max_length = 20
+	name_input.placeholder_text = "Enter your name"
+	name_input.text = UserSettings.display_name
+	name_input.text_submitted.connect(func(_value: String) -> void: _save_name(); name_input.release_focus())
+	name_input.focus_exited.connect(_save_name)
+	add_child(name_input)
+	var practice_shadow := $ButtonShadow_PlayLocal.duplicate()
+	practice_shadow.position.y += 128
+	add_child(practice_shadow)
+	var practice: Button = $PlayLocal.duplicate()
+	practice.name = "Practice"
+	practice.position.y += 128
+	practice.text = "Practice"
+	practice.pressed.connect(_open_practice)
+	add_child(practice)
+	var statistics_shadow := $ButtonShadow_Friends.duplicate()
+	statistics_shadow.position.y += 128
+	add_child(statistics_shadow)
+	var statistics_button: Button = $Friends.duplicate()
+	statistics_button.name = "Statistics"
+	statistics_button.position.y += 128
+	statistics_button.text = "Statistics"
+	statistics_button.pressed.connect(_show_statistics)
+	add_child(statistics_button)
+
+
+func _save_name() -> void:
+	UserSettings.set_display_name(name_input.text)
+	name_input.text = UserSettings.display_name
+
+
+func _open_practice() -> void:
+	_save_name()
+	LanSession.begin_local("practice")
+	get_tree().change_scene_to_file("res://ui/waiting_room/waiting_room.tscn")
+
+
+func _show_statistics() -> void:
+	var stats: Dictionary = UserSettings.statistics
+	var body := "Wins: %d       Losses: %d\n\nSuccessful throws: %d\nCan knockdowns: %d\n\nSaved on this PC. Practice and developer games do not affect totals." % [stats.wins, stats.losses, stats.successful_throws, stats.can_knockdowns]
+	var view = UI.modal(self, "YOUR STATISTICS", body)
+	view.content.add_child(UI.button("Back", view.layer.queue_free))

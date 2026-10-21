@@ -1,18 +1,43 @@
 # LAN networking plan
 
-Status: proposed architecture; not implemented.
+Status: implemented for the active 2D menu, waiting room, and match flow.
 
 One PC hosts and plays. Four other PCs join, for five players total.
-Use Godot's built-in multiplayer facilities with an ENet peer if Godot is confirmed.
-LanSession owns connection setup, player roster, and scene transitions.
+Godot 4.7.2 ENet uses UDP port 54652, with four remote peers plus the host.
+LanSession owns connection setup, real member roster, readiness, room codes,
+map selection, tutorial acknowledgments, shared transitions, and results.
 
 The host validates input requests and owns movement outcomes, can state,
-slipper outcomes, tags, scores, power-up progress, match phase, and timer.
+slipper outcomes, tags, scores, match phase, and timer.
 Clients display replicated state. A client must not award itself points or
 declare a tag, can hit, safe return, or role transfer.
 
 Validate the sending peer, player ownership, phase, role, legal action,
 cooldowns, and request values before applying requests.
 
-Port, state replication frequency, prediction/interpolation, and disconnect
-handling remain implementation decisions. Start with direct LAN IP joining.
+Clients send input at 30 Hz on an unreliable ordered channel. Host snapshots are
+sent at 20 Hz on another channel, using bounded Zstandard-compressed Godot Variant
+data to avoid oversized uncompressed state packets. Clients do not simulate
+collisions, hits, tags, or scores. Registration, readiness, map selection,
+tutorial acknowledgments, events, and results use reliable RPCs.
+
+Only the host accepts registered peer input. Movement is limited to unit length,
+aim must be finite and bounded, action keys are explicitly selected, and stale
+input is cleared after 0.5 seconds. A player may change only their own readiness.
+Starting checks host authority, lobby phase, actual member count, and all-ready
+state. Joining during an in-progress match does not register a new player.
+
+A seven-character room code reversibly encodes the host's LAN IPv4 address; the
+Join field also accepts the IP itself. Codes are LAN addresses, not passwords or
+internet matchmaking. The host-address tooltip is available for PCs with multiple
+network adapters. A failed connection times out after ten seconds.
+
+Departing clients leave the roster and active world. Host loss returns clients
+to the menu with a notice. If Taya leaves during active play, a remaining member
+takes over and the can resets at its base, including when it was being carried.
+There is no host migration, late match joining, or
+internet relay. Snapshot interpolation/prediction and the concept's powered throw
+and opening throw-off remain future work; these are not required by Adjustments.
+
+Verified using five separate processes on one PC. A physical five-PC LAN test,
+including Windows firewall configuration and adapter selection, remains manual.

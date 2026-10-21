@@ -28,6 +28,7 @@ func _ready() -> void:
 		cards[index].pressed.connect(_select.bind(index))
 	back_button.pressed.connect(_back_to_menu)
 	confirm_button.pressed.connect(_confirm)
+	status.text = "Choose your character, then confirm."
 
 
 func _select(index: int) -> void:
@@ -37,7 +38,8 @@ func _select(index: int) -> void:
 
 func _confirm() -> void:
 	UserSettings.selected_character_scene = CHARACTER_SCENES[selected_index]
-	status.text = CHARACTER_NAMES[selected_index] + " saved. Match setup comes later."
+	UserSettings.save_profile()
+	_back_to_menu()
 
 
 func _back_to_menu() -> void:
