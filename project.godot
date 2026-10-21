@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Can Clash"
-run/main_scene="res://ui/waiting_room/waiting_room.tscn"
+run/main_scene="uid://xey3ev0qejcb"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="uid://ujbpknkqu037"
 
