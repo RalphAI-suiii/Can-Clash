@@ -2,6 +2,8 @@ extends Node2D
 
 ## The node position is the slipper's ground track; height is its small visual arc.
 signal picked_up
+signal can_hit(target: Node2D)
+signal returned_after_penalty
 
 const GRAVITY: float = 700.0
 const AIR_DRAG: float = 0.18
@@ -24,6 +26,10 @@ var age: float = 0.0
 var floor_bounces: int = 0
 var resting: bool = false
 var launch_origin: Vector2
+var arena_bounds: Rect2
+var outline_color := Color("329dff")
+var lost_remaining := 0.0
+var hit_registered := false
 
 
 func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float, origin: Vector2) -> void:
@@ -42,7 +48,9 @@ func is_resting() -> bool:
 
 
 func can_pick_up(actor: Node2D) -> bool:
-	return resting and actor == throw_owner and actor.global_position.distance_to(global_position) <= pickup_radius
+	# Retrieve on landing, including the small floor bounce; don't wait for spin/friction.
+	var near_ground := resting or (floor_bounces > 0 and height <= 12.0)
+	return lost_remaining <= 0.0 and not is_queued_for_deletion() and near_ground and actor == throw_owner and actor.global_position.distance_to(global_position) <= pickup_radius
 
 
 func pick_up(actor: Node2D) -> bool:
@@ -54,6 +62,16 @@ func pick_up(actor: Node2D) -> bool:
 
 
 func _physics_process(delta: float) -> void:
+	if is_queued_for_deletion():
+		return
+	if lost_remaining > 0.0:
+		lost_remaining = maxf(0.0, lost_remaining - delta)
+		if lost_remaining == 0.0:
+			if is_instance_valid(throw_owner) and throw_owner.get("active_slipper") == self:
+				throw_owner.active_slipper = null
+			returned_after_penalty.emit()
+			queue_free()
+		return
 	if resting:
 		return
 	# Sweep the hand-to-release gap too, so close throws cannot spawn past a wall.
@@ -86,6 +104,9 @@ func _physics_process(delta: float) -> void:
 			hit_point = point
 
 	if hit_can != null and velocity.length() >= 55.0 and hit_can.receive_slipper_hit(velocity, charge_ratio, hit_point):
+		if not hit_registered:
+			hit_registered = true
+			can_hit.emit(hit_can)
 		var normal: Vector2 = (hit_point - hit_can.get_hit_center()).normalized()
 		if normal.is_zero_approx():
 			normal = -velocity.normalized()
@@ -95,6 +116,11 @@ func _physics_process(delta: float) -> void:
 		angular_speed *= -0.65
 	else:
 		global_position = next_position
+	if arena_bounds.has_area() and not arena_bounds.has_point(global_position):
+		lost_remaining = 3.0
+		visible = false
+		velocity = Vector2.ZERO
+		return
 
 	height += vertical_speed * delta - 0.5 * GRAVITY * delta * delta
 	vertical_speed -= GRAVITY * delta
@@ -166,8 +192,61 @@ func _draw() -> void:
 		Vector2(-10, -15), Vector2(2, -18), Vector2(12, -14),
 		Vector2(14, 11), Vector2(3, 14), Vector2(-8, 12),
 	])
+	var colored_outline := outline.duplicate()
+	colored_outline.append(outline[0])
+	draw_polyline(colored_outline, outline_color, 8.0, true)
 	draw_colored_polygon(outline, Color("20130f"))
 	draw_colored_polygon(footbed, Color("9b653d"))
 	draw_colored_polygon(strap, Color("63391f"))
 	draw_line(Vector2(-15, -11), Vector2(8, -12), Color("d1a16d"), 2.0, true)
 	draw_line(Vector2(-20, 10), Vector2(13, 10), Color("4e2c1b"), 2.0, true)
+
+
+static func predict_path(world: World2D, origin: Vector2, release: Vector2, aim: Vector2, charge: float, targets: Array) -> PackedVector2Array:
+	var path := PackedVector2Array([release])
+	var point := release
+	var speed := aim.normalized() * lerpf(260.0, 540.0, charge)
+	var rise := lerpf(190.0, 305.0, charge)
+	var elevation := 0.0
+	const STEP := 1.0 / 60.0
+	for tick in range(120):
+		var before := origin if tick == 0 else point
+		var next := point + speed * STEP
+		var ray := PhysicsRayQueryParameters2D.create(before, next, WALL_COLLISION_MASK)
+		var wall := world.direct_space_state.intersect_ray(ray)
+		if not wall.is_empty():
+			next = wall.position + wall.normal * 3.0
+			speed = speed.bounce(wall.normal) * WALL_BOUNCE
+			rise = maxf(rise, 75.0)
+		var target_hit: Node2D
+		var hit_point := Vector2.ZERO
+		var nearest := INF
+		for target in targets:
+			if not target.is_standing():
+				continue
+			var center: Vector2 = target.get_hit_center()
+			var contact := Geometry2D.get_closest_point_to_segment(center, before, next)
+			var distance := before.distance_squared_to(contact)
+			if contact.distance_squared_to(center) <= CAN_HIT_RADIUS * CAN_HIT_RADIUS and distance < nearest:
+				nearest = distance
+				target_hit = target
+				hit_point = contact
+		if target_hit != null and speed.length() >= 55.0:
+			var normal: Vector2 = (hit_point - target_hit.get_hit_center()).normalized()
+			if normal.is_zero_approx():
+				normal = -speed.normalized()
+			next = hit_point + normal * 6.0
+			speed = speed.bounce(normal) * 0.38
+			rise = maxf(rise, 115.0)
+			# A toppled target does not block subsequent steps in the real throw.
+			targets = targets.filter(func(candidate: Node2D) -> bool: return candidate != target_hit)
+		point = next
+		elevation += rise * STEP - 0.5 * GRAVITY * STEP * STEP
+		rise -= GRAVITY * STEP
+		if elevation <= 0.0:
+			path.append(point)
+			break
+		speed *= exp(-AIR_DRAG * STEP)
+		if tick % 5 == 0:
+			path.append(point)
+	return path

@@ -11,6 +11,8 @@ signal tag_requested(thrower: Node2D)
 @export var lunge_lock_radius: float = 260.0
 @export var lunge_cooldown_seconds: float = 10.0
 @export var safe_strip_rect: Rect2
+@export var arena_bounds: Rect2
+@export var player_color := Color("329dff")
 
 const SLIPPER_VISUAL = preload("res://scenes/slipper_visual.gd")
 const SPRINT_DUST = preload("res://scenes/sprint_dust.gd")
@@ -53,6 +55,9 @@ var lunge_launched: bool = false
 var lunge_landed: bool = false
 var next_lunge_time: float = 0.0
 var last_tagged_target: Node2D
+var throw_status: Label
+var predicted_path := PackedVector2Array()
+var hit_flash_remaining := 0.0
 
 
 func _ready() -> void:
@@ -69,9 +74,22 @@ func _ready() -> void:
 	if not is_taya:
 		add_to_group("throwers")
 	_update_taya_prompt()
+	throw_status = Label.new()
+	throw_status.position = Vector2(-110, -265)
+	throw_status.size = Vector2(220, 26)
+	throw_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	throw_status.add_theme_font_override("font", preload("res://assets/fonts/TitanOne-Regular.ttf"))
+	throw_status.add_theme_font_size_override("font_size", 17)
+	throw_status.add_theme_color_override("font_outline_color", Color("20130f"))
+	throw_status.add_theme_constant_override("outline_size", 5)
+	throw_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(throw_status)
 
 
 func _physics_process(delta: float) -> void:
+	hit_flash_remaining = maxf(0.0, hit_flash_remaining - delta)
+	modulate = Color(1.8, 1.35, 0.9) if hit_flash_remaining > 0.0 else Color.WHITE
+	_update_throw_status()
 	if not accept_local_input:
 		velocity = Vector2.ZERO
 		return
@@ -79,7 +97,7 @@ func _physics_process(delta: float) -> void:
 		_taya_physics_process(delta)
 		return
 	if attack_state == AttackState.FREE:
-		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not is_instance_valid(active_slipper) and get_viewport().gui_get_hovered_control() == null:
+		if _throw_pressed() and not is_instance_valid(active_slipper):
 			_start_charge()
 		else:
 			super._physics_process(delta)
@@ -90,7 +108,8 @@ func _physics_process(delta: float) -> void:
 		charge_elapsed = minf(charge_elapsed + delta, charge_duration)
 		charge_bar.value = charge_elapsed / maxf(charge_duration, 0.01)
 		charge_bar.modulate = Color.WHITE.lerp(Color(1.0, 0.92, 0.57), charge_bar.value)
-		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_update_trajectory()
+		if not _throw_pressed():
 			_start_throw()
 
 
@@ -101,10 +120,10 @@ func _taya_physics_process(delta: float) -> void:
 	if taya_action != &"":
 		velocity = Vector2.ZERO
 		return
-	if Input.is_action_just_pressed("lunge") and can_lunge():
+	if _action_just_pressed("lunge") and can_lunge():
 		_start_lunge()
 		return
-	if can_node != null and Input.is_action_just_pressed("interact"):
+	if can_node != null and _action_just_pressed("interact"):
 		if carrying_can and can_node.can_reset(self):
 			_start_taya_action(&"place")
 			return
@@ -150,7 +169,7 @@ func _start_lunge() -> void:
 	if lunge_target != null and lunge_target.global_position.distance_to(global_position) <= TAG_DISTANCE:
 		_try_tag()
 		return
-	var aim: Vector2 = get_global_mouse_position() - global_position
+	var aim: Vector2 = _aim_position() - global_position
 	if lunge_target != null:
 		aim = lunge_target.global_position - global_position
 	lunge_direction = aim.normalized() if aim.length_squared() > 400.0 else facing.normalized()
@@ -364,6 +383,8 @@ func _start_charge() -> void:
 
 
 func _start_throw() -> void:
+	predicted_path.clear()
+	queue_redraw()
 	charge_ratio = charge_bar.value
 	charge_bar.hide()
 	attack_state = AttackState.THROWING
@@ -381,7 +402,7 @@ func _attack_sector() -> int:
 
 
 func _update_cursor_aim() -> void:
-	var aim: Vector2 = get_global_mouse_position() - (global_position + THROW_ORIGIN)
+	var aim: Vector2 = _aim_position() - get_throw_origin()
 	if aim.length_squared() <= 0.01:
 		return
 	var previous_sector: int = _attack_sector()
@@ -410,7 +431,7 @@ func _on_attack_frame_changed() -> void:
 	if attack_state != AttackState.THROWING or attack_sprite.frame < 2 or slipper_spawned:
 		return
 	slipper_spawned = true
-	var release_point: Vector2 = global_position + THROW_ORIGIN + attack_direction * minf(48.0, aim_distance * 0.5)
+	var release_point: Vector2 = get_throw_origin() + attack_direction * minf(48.0, aim_distance * 0.5)
 	var burst = THROW_BURST.new()
 	get_parent().add_child(burst)
 	burst.global_position = release_point
@@ -418,23 +439,27 @@ func _on_attack_frame_changed() -> void:
 	burst.charge_ratio = charge_ratio
 	var slipper = SLIPPER_VISUAL.new()
 	get_parent().add_child(slipper)
-	slipper.launch(self, release_point, attack_direction, charge_ratio, global_position + THROW_ORIGIN)
+	slipper.launch(self, release_point, attack_direction, charge_ratio, get_throw_origin())
+	slipper.arena_bounds = arena_bounds
+	slipper.outline_color = player_color
 	active_slipper = slipper
+
+
+func get_throw_origin() -> Vector2:
+	return to_global(THROW_ORIGIN)
 
 
 func _update_slipper_pickup() -> void:
 	interact_prompt.hide()
 	if not is_instance_valid(active_slipper) or not active_slipper.can_pick_up(self):
 		return
-	interact_prompt.text = "E  Pick up your slipper"
-	interact_prompt.show()
-	if Input.is_action_just_pressed("interact") and active_slipper.pick_up(self):
+	if active_slipper.pick_up(self):
 		active_slipper = null
 		interact_prompt.hide()
 
 
 func _update_sprint_dust(delta: float) -> void:
-	if not Input.is_action_pressed("sprint") or velocity.length() < walk_speed * 0.85:
+	if not _action_pressed("sprint") or velocity.length() < walk_speed * 0.85:
 		dust_cooldown = 0.0
 		return
 	dust_cooldown -= delta
@@ -458,3 +483,40 @@ func _on_attack_finished() -> void:
 	sprite.show()
 	sprite.speed_scale = 1.0
 	_play("idle", facing)
+
+
+func flash_hit() -> void:
+	hit_flash_remaining = 0.18
+
+
+func _update_throw_status() -> void:
+	if throw_status == null:
+		return
+	throw_status.add_theme_color_override("font_color", player_color.lightened(0.4))
+	if is_taya:
+		throw_status.text = "TAYA • LUNGE READY" if can_lunge() else "TAYA • GUARD THE CAN"
+	elif attack_state == AttackState.CHARGING:
+		throw_status.text = "CHARGE %d%%" % (charge_bar.value * 100.0)
+	elif is_instance_valid(active_slipper):
+		throw_status.text = "RETURNS IN %.1fs" % active_slipper.lost_remaining if active_slipper.lost_remaining > 0.0 else "RUN OVER YOUR SLIPPER" if active_slipper.can_pick_up(self) else "SLIPPER IN PLAY"
+	else:
+		throw_status.text = "READY TO THROW"
+
+
+func _update_trajectory() -> void:
+	var origin := get_throw_origin()
+	var release := origin + attack_direction * minf(48.0, aim_distance * 0.5)
+	predicted_path = SLIPPER_VISUAL.predict_path(get_world_2d(), origin, release, attack_direction, charge_bar.value, get_tree().get_nodes_in_group("can_targets"))
+	queue_redraw()
+
+
+func _draw() -> void:
+	draw_arc(Vector2(0, 5), 43.0, 0, TAU, 32, Color(player_color, 0.8), 4.0, true)
+	if attack_state != AttackState.CHARGING or predicted_path.is_empty():
+		return
+	for point in predicted_path:
+		draw_circle(to_local(point), 3.5, Color(player_color.lightened(0.3), 0.8))
+	var landing := to_local(predicted_path[-1])
+	draw_arc(landing, 20.0, 0, TAU, 32, player_color.lightened(0.3), 3.0, true)
+	draw_line(landing - Vector2(9, 0), landing + Vector2(9, 0), player_color, 2.0, true)
+	draw_line(landing - Vector2(0, 9), landing + Vector2(0, 9), player_color, 2.0, true)

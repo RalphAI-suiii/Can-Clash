@@ -27,6 +27,38 @@ const DIRECTIONS: Array[String] = [
 @onready var idle_sprite_scale: Vector2 = sprite.scale
 
 var facing: Vector2 = Vector2.DOWN
+var network_controlled := false
+var network_input: Dictionary = {}
+var network_edges: Dictionary = {}
+
+
+func apply_network_input(packet: Dictionary) -> void:
+	for action in ["interact", "lunge"]:
+		if packet.get(action, false) and not network_input.get(action, false):
+			network_edges[action] = true
+	network_input = packet
+
+
+func _action_pressed(action: String) -> bool:
+	return bool(network_input.get(action, false)) if network_controlled else Input.is_action_pressed(action)
+
+
+func _action_just_pressed(action: String) -> bool:
+	if network_controlled:
+		return network_edges.erase(action)
+	return Input.is_action_just_pressed(action)
+
+
+func _movement_input() -> Vector2:
+	return network_input.get("move", Vector2.ZERO) if network_controlled else Input.get_vector("left", "right", "up", "down")
+
+
+func _throw_pressed() -> bool:
+	return bool(network_input.get("throw", false)) if network_controlled else Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null
+
+
+func _aim_position() -> Vector2:
+	return network_input.get("aim", global_position + facing * 300.0) if network_controlled else get_global_mouse_position()
 
 
 func _ready() -> void:
@@ -37,8 +69,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var input_direction: Vector2 = Input.get_vector("left", "right", "up", "down")
-	var speed: float = sprint_speed if Input.is_action_pressed("sprint") else walk_speed
+	var input_direction: Vector2 = _movement_input()
+	var speed: float = sprint_speed if _action_pressed("sprint") else walk_speed
 	var target_velocity: Vector2 = input_direction * speed
 	var change_rate: float = acceleration if input_direction != Vector2.ZERO else stopping_friction
 
@@ -49,7 +81,7 @@ func _physics_process(delta: float) -> void:
 		facing = input_direction
 
 	if velocity.length_squared() > 12.0 * 12.0:
-		var sprint_animation: bool = Input.is_action_pressed("sprint") and sprite.sprite_frames.has_animation("sprint_down")
+		var sprint_animation: bool = _action_pressed("sprint") and sprite.sprite_frames.has_animation("sprint_down")
 		_play("sprint" if sprint_animation else "walk", facing)
 		sprite.speed_scale = clampf(velocity.length() / 150.0, 0.45, 1.35)
 	else:

@@ -8,12 +8,15 @@ enum State { STANDING, TOPPLED, CARRIED }
 const GRAVITY: float = 760.0
 const GROUND_FRICTION: float = 190.0
 const WALL_BOUNCE: float = 0.42
-const FLOOR_BOUNCE: float = 0.32
+const FLOOR_BOUNCE: float = 0.42
 
 @export var starts_toppled: bool = true
 @export var pickup_radius: float = 60.0
 @export var reset_radius: float = 62.0
 @export var base_path: NodePath
+@export var auto_stand_up := true
+@export var show_target_ring := false
+@export_range(0.0, 5.0, 0.1) var stand_up_delay := 2.0
 
 @onready var can_sprite: Sprite2D = $CanSprite
 @onready var body_shape: CollisionShape2D = $CollisionShape2D
@@ -28,6 +31,9 @@ var target_tilt: float = -PI / 2.0
 var angular_speed: float = 0.0
 var squash: float = 0.0
 var settled: bool = true
+var hit_flash_remaining := 0.0
+var auto_stand_pending := false
+var rest_elapsed := 0.0
 
 
 func _ready() -> void:
@@ -40,12 +46,20 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if state != State.TOPPLED or settled:
+	hit_flash_remaining = maxf(0.0, hit_flash_remaining - delta)
+	can_sprite.modulate = Color(2.0, 1.8, 1.1) if hit_flash_remaining > 0.0 else Color.WHITE
+	if state != State.TOPPLED:
+		return
+	if settled:
+		if auto_stand_pending:
+			rest_elapsed += delta
+			if rest_elapsed >= stand_up_delay:
+				stand_up_here()
 		return
 	var collision: KinematicCollision2D = move_and_collide(velocity * delta)
 	if collision != null:
 		velocity = velocity.bounce(collision.get_normal()) * WALL_BOUNCE
-		angular_speed += collision.get_normal().x * 2.0
+		angular_speed = -angular_speed * 0.72
 		squash = 0.16
 	if height > 0.0 or vertical_speed > 0.0:
 		height += vertical_speed * delta - 0.5 * GRAVITY * delta * delta
@@ -55,19 +69,25 @@ func _physics_process(delta: float) -> void:
 			squash = 0.18
 			if vertical_speed < -75.0:
 				vertical_speed = -vertical_speed * FLOOR_BOUNCE
-				velocity *= 0.72
+				velocity *= 0.78
+				angular_speed *= 0.82
 			else:
 				vertical_speed = 0.0
 	if height <= 0.0:
 		velocity = velocity.move_toward(Vector2.ZERO, GROUND_FRICTION * delta)
 	else:
 		velocity *= exp(-0.55 * delta)
-	var error: float = wrapf(target_tilt - tilt_angle, -PI, PI)
-	angular_speed += error * 34.0 * delta
-	angular_speed *= exp(-7.5 * delta)
+	var grounded := height == 0.0 and vertical_speed == 0.0
+	var error := 0.0
+	if grounded:
+		# Finish on the nearest side after freely tumbling through the air.
+		target_tilt = roundf((tilt_angle - PI / 2.0) / PI) * PI + PI / 2.0
+		error = target_tilt - tilt_angle
+		angular_speed += error * 34.0 * delta
+	angular_speed *= exp((-7.5 if grounded else -0.6) * delta)
 	tilt_angle += angular_speed * delta
 	squash = move_toward(squash, 0.0, delta * 1.5)
-	if height == 0.0 and vertical_speed == 0.0 and velocity.length() < 5.0 and absf(error) < 0.025 and absf(angular_speed) < 0.08:
+	if grounded and velocity.length() < 5.0 and absf(error) < 0.025 and absf(angular_speed) < 0.08:
 		velocity = Vector2.ZERO
 		tilt_angle = target_tilt
 		angular_speed = 0.0
@@ -98,7 +118,7 @@ func is_settled() -> bool:
 
 
 func can_pick_up(actor: Node2D) -> bool:
-	return state == State.TOPPLED and settled and actor.global_position.distance_to(global_position) <= pickup_radius
+	return state == State.TOPPLED and settled and not auto_stand_pending and actor.global_position.distance_to(global_position) <= pickup_radius
 
 
 func pick_up(actor: Node2D) -> bool:
@@ -131,7 +151,7 @@ func reset_at_base(actor: Node2D) -> bool:
 
 
 func reset_for_preview(at: Vector2) -> void:
-	# Only the isolated throw preview calls this; match play uses Taya's reset.
+	# Explicit reset for scene previews, practice Reset, and match setup.
 	global_position = at
 	carrier = null
 	state = State.STANDING
@@ -140,6 +160,14 @@ func reset_for_preview(at: Vector2) -> void:
 	target_tilt = 0.0
 	_refresh_visual()
 	state_changed.emit(state)
+
+
+func stand_up_here() -> void:
+	if state != State.TOPPLED or not settled:
+		return
+	if base != null:
+		base.global_position = global_position
+	reset_for_preview(global_position)
 
 
 func drop(actor: Node2D) -> void:
@@ -163,7 +191,10 @@ func receive_slipper_hit(incoming_velocity: Vector2, charge: float, impact_point
 	if state != State.STANDING:
 		return false
 	state = State.TOPPLED
+	hit_flash_remaining = 0.18
 	settled = false
+	auto_stand_pending = auto_stand_up
+	rest_elapsed = 0.0
 	var power: float = clampf(charge, 0.0, 1.0)
 	if incoming_velocity.length() > 1.0:
 		velocity = incoming_velocity * lerpf(0.32, 0.58, power)
@@ -172,7 +203,7 @@ func receive_slipper_hit(incoming_velocity: Vector2, charge: float, impact_point
 		if side == 0.0:
 			side = -1.0
 		target_tilt = side * PI / 2.0
-		angular_speed = side * lerpf(5.0, 8.0, power) + clampf((impact_point.x - global_position.x) * 0.04, -1.5, 1.5)
+		angular_speed = side * lerpf(12.0, 22.0, power) + clampf((impact_point.x - global_position.x) * 0.04, -1.5, 1.5)
 	else:
 		velocity = Vector2.ZERO
 		vertical_speed = 0.0
@@ -190,6 +221,8 @@ func _clear_motion() -> void:
 	angular_speed = 0.0
 	squash = 0.0
 	settled = true
+	auto_stand_pending = false
+	rest_elapsed = 0.0
 	queue_redraw()
 
 
@@ -199,13 +232,15 @@ func _refresh_visual() -> void:
 	var half_height: float = 28.0 * absf(cos(tilt_angle)) + 21.0 * absf(sin(tilt_angle))
 	can_sprite.position = Vector2(0, -half_height - height * 0.75)
 	can_sprite.rotation = tilt_angle
-	can_sprite.scale = Vector2.ONE * (0.085 * (1.0 + squash * 0.05))
+	can_sprite.scale = Vector2(0.085 * (1.0 + squash * 0.35), 0.085 * (1.0 - squash * 0.28))
 	queue_redraw()
 
 
 func _draw() -> void:
 	if state == State.CARRIED:
 		return
+	if show_target_ring:
+		draw_arc(can_sprite.position, 48.0, 0, TAU, 40, Color("ffdb77"), 4.0, true)
 	var alpha: float = 0.24 / (1.0 + height * 0.025)
 	draw_set_transform(Vector2(7, 6), 0.0, Vector2(1.0, 0.38))
 	for ring in range(6, 0, -1):
