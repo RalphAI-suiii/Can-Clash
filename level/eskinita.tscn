@@ -10,7 +10,9 @@
 [ext_resource type="Texture2D" uid="uid://cyic1ii1ln2t6" path="res://level/level assets/ground_concrete_subtle.png" id="9_ijibh"]
 [ext_resource type="Texture2D" uid="uid://b4n2b5ifx438b" path="res://level/level assets/background/house-green-roof.png" id="10_4d7l4"]
 [ext_resource type="Texture2D" uid="uid://r18ws03qhlkn" path="res://level/level assets/ground_toon.png" id="10_ru5bs"]
+[ext_resource type="Texture2D" uid="uid://e4idtg6vkxln" path="res://level/level assets/background/house_blueview_yellow.png" id="11_4d7l4"]
 [ext_resource type="PackedScene" uid="uid://b4et2uv53vlby" path="res://level/Crate3.tscn" id="11_tbbkv"]
+[ext_resource type="PackedScene" uid="uid://mphtarypkopp" path="res://level/tire_2.tscn" id="12_1mcu4"]
 [ext_resource type="Script" uid="uid://ckmgcysooimme" path="res://level/camera_2d.gd" id="12_memns"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fnrcy"]
@@ -3072,6 +3074,7 @@ sources/1 = SubResource("TileSetAtlasSource_wtvkt")
 
 [node name="Eskinita" type="Node2D" unique_id=1634818931]
 position = Vector2(938, 563)
+metadata/_edit_vertical_guides_ = [-724.0]
 
 [node name="Ground" type="Node2D" parent="." unique_id=819097012]
 
@@ -3095,37 +3098,45 @@ position = Vector2(-17, -2)
 y_sort_enabled = true
 
 [node name="House 2" type="Sprite2D" parent="World/Buildings" unique_id=792052722]
-position = Vector2(-1264, -23.000002)
-scale = Vector2(0.967152, 0.6998707)
+position = Vector2(-1154.6563, 45.750015)
+scale = Vector2(0.7071194, 0.52199227)
 texture = ExtResource("5_2fwga")
 
 [node name="House1" type="Sprite2D" parent="World/Buildings" unique_id=611969433]
-position = Vector2(-1102, 405)
-scale = Vector2(0.523913, 0.51088274)
+position = Vector2(-1020, 369.99997)
+scale = Vector2(0.34565216, 0.37273288)
 texture = ExtResource("4_1a7n2")
 
 [node name="HouseRedRoofSquareRightSide" type="Sprite2D" parent="World/Buildings" unique_id=1561333566]
-position = Vector2(1252, 252)
-scale = Vector2(0.94128555, 0.83015007)
+position = Vector2(1147.125, 355.125)
+scale = Vector2(0.6820149, 0.5487722)
 texture = ExtResource("7_fnrcy")
 
 [node name="HouseGreenLeft" type="Sprite2D" parent="World/Buildings" unique_id=442220403]
 
 [node name="HouseGreenRoofSquareRightSide" type="Sprite2D" parent="World/Buildings" unique_id=95950696]
-position = Vector2(1298, -345)
+position = Vector2(1217.75, -36.75)
+scale = Vector2(0.83055884, 0.5957309)
 texture = ExtResource("8_tbbkv")
 
 [node name="HouseBlueRoof3qTopdown" type="Sprite2D" parent="World/Buildings" unique_id=1964676341]
-position = Vector2(-140, -818)
-scale = Vector2(0.5019885, 0.6052631)
+position = Vector2(305, -716)
+scale = Vector2(0.28854847, 0.40225562)
 texture = ExtResource("9_1mcu4")
 
 [node name="HouseGreenRoof" type="Sprite2D" parent="World/Buildings" unique_id=2135116679]
-position = Vector2(425, -975)
-scale = Vector2(0.8074236, 0.7459971)
+position = Vector2(630, -818)
+scale = Vector2(0.44388643, 0.45669574)
 texture = ExtResource("10_4d7l4")
 
+[node name="Sprite2D" type="Sprite2D" parent="World/Buildings" unique_id=1816207233]
+position = Vector2(-1070.5, -271.125)
+scale = Vector2(0.46413046, 0.40840387)
+texture = ExtResource("11_4d7l4")
+
 [node name="Crate" parent="World" unique_id=622352679 instance=ExtResource("11_tbbkv")]
+
+[node name="Tire 1" parent="World" unique_id=931360182 instance=ExtResource("12_1mcu4")]
 
 [node name="Spawn Points" type="Node2D" parent="." unique_id=65989194]
 
