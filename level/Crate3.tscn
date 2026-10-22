@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://ba3fo4dc3fhvy" path="res://level/level assets/crate_plain_toon_34.png" id="1_xw5px"]
 
 [sub_resource type="Gradient" id="Gradient_ctigv"]
-offsets = PackedFloat32Array(0, 0.77163464)
+offsets = PackedFloat32Array(0, 0.70913464)
 colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_2aqsa"]

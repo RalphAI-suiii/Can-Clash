@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://bxssj3f8u6bn6" path="res://level/level assets/tire_sprite.png" id="1_85lpm"]
 
 [sub_resource type="Gradient" id="Gradient_c0ij6"]
+offsets = PackedFloat32Array(0.10817308, 0.7043269)
 colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_2aqsa"]
