@@ -1,0 +1,203 @@
+{
+  "sheet": "filipino_eskinita_obstacles_sheet.png",
+  "cell_size": [
+    544,
+    384
+  ],
+  "columns": 4,
+  "rows": 3,
+  "sprites": [
+    {
+      "name": "tire_single",
+      "file": "tire_single.png",
+      "cell": [
+        0,
+        0,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        151,
+        187,
+        242,
+        181
+      ]
+    },
+    {
+      "name": "tires_stacked",
+      "file": "tires_stacked.png",
+      "cell": [
+        544,
+        0,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        706,
+        65,
+        220,
+        303
+      ]
+    },
+    {
+      "name": "crate_single",
+      "file": "crate_single.png",
+      "cell": [
+        1088,
+        0,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        1245,
+        119,
+        229,
+        249
+      ]
+    },
+    {
+      "name": "crates_pair",
+      "file": "crates_pair.png",
+      "cell": [
+        1632,
+        0,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        1719,
+        134,
+        370,
+        234
+      ]
+    },
+    {
+      "name": "crates_triple",
+      "file": "crates_triple.png",
+      "cell": [
+        0,
+        384,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        39,
+        572,
+        465,
+        180
+      ]
+    },
+    {
+      "name": "barrel_blue",
+      "file": "barrel_blue.png",
+      "cell": [
+        544,
+        384,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        726,
+        454,
+        180,
+        298
+      ]
+    },
+    {
+      "name": "barrel_navy",
+      "file": "barrel_navy.png",
+      "cell": [
+        1088,
+        384,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        1270,
+        465,
+        180,
+        287
+      ]
+    },
+    {
+      "name": "drum_rust",
+      "file": "drum_rust.png",
+      "cell": [
+        1632,
+        384,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        1831,
+        543,
+        146,
+        209
+      ]
+    },
+    {
+      "name": "barrier_green",
+      "file": "barrier_green.png",
+      "cell": [
+        0,
+        768,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        75,
+        918,
+        393,
+        218
+      ]
+    },
+    {
+      "name": "barrier_concrete",
+      "file": "barrier_concrete.png",
+      "cell": [
+        544,
+        768,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        675,
+        922,
+        282,
+        214
+      ]
+    },
+    {
+      "name": "cone_orange",
+      "file": "cone_orange.png",
+      "cell": [
+        1088,
+        768,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        1267,
+        919,
+        185,
+        217
+      ]
+    },
+    {
+      "name": "bench_wood",
+      "file": "bench_wood.png",
+      "cell": [
+        1632,
+        768,
+        544,
+        384
+      ],
+      "bounds_in_sheet": [
+        1722,
+        922,
+        363,
+        214
+      ]
+    }
+  ]
+}
