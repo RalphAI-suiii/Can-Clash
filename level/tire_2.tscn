@@ -21,15 +21,14 @@ height = 74.0
 [node name="Tire 1" type="StaticBody2D" unique_id=931360182]
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=688904835]
-position = Vector2(482, 372.5)
-scale = Vector2(0.890625, 1.0234376)
+y_sort_enabled = true
+position = Vector2(14.999994, 12.749994)
+scale = Vector2(1.1249999, 1.2226563)
 texture = SubResource("GradientTexture2D_2aqsa")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1834491386]
-position = Vector2(457.25, 359.74997)
 scale = Vector2(0.5533704, 0.610215)
 texture = ExtResource("1_85lpm")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=328565117]
-position = Vector2(450, 381)
 shape = SubResource("CapsuleShape2D_ja20v")
