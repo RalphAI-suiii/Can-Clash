@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://kimxby23xgwc" path="res://level/level assets/house-blue-roof-square-left-side.png" id="4_1a7n2"]
 [ext_resource type="Texture2D" uid="uid://dovagvjpyxmvv" path="res://level/level assets/house-green-roof-square-left-side.png" id="5_2fwga"]
 [ext_resource type="Script" uid="uid://d1o2imfqxn6st" path="res://level/court_edge.gd" id="5_vd67t"]
+[ext_resource type="Texture2D" uid="uid://c3e24jyv57b0m" path="res://level/level assets/chalk_can_circle.png" id="6_ijibh"]
 [ext_resource type="Texture2D" uid="uid://crb7lh4i2sbt6" path="res://level/level assets/house-red-roof-square-right-side.png" id="7_fnrcy"]
 [ext_resource type="Texture2D" uid="uid://bbpple8ccux0b" path="res://level/level assets/house-green-roof-square-right-side.png" id="8_tbbkv"]
 [ext_resource type="Texture2D" uid="uid://dr86eh8e6w6ie" path="res://level/level assets/background/house-blue-roof_3q_topdown.png" id="9_1mcu4"]
@@ -3077,6 +3078,18 @@ texture = ExtResource("9_ijibh")
 sources/0 = SubResource("TileSetAtlasSource_3h160")
 sources/1 = SubResource("TileSetAtlasSource_wtvkt")
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2aqsa"]
+size = Vector2(1689.5, 553)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ja20v"]
+size = Vector2(709, 1461)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_c0ij6"]
+size = Vector2(1730, 398)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_chpoi"]
+size = Vector2(838.5, 1115.5)
+
 [node name="Eskinita" type="Node2D" unique_id=1634818931]
 position = Vector2(938, 563)
 metadata/_edit_vertical_guides_ = [-724.0]
@@ -3105,6 +3118,11 @@ script = ExtResource("5_vd67t")
 rect = Rect2(-832, -561, 1664, 1073)
 
 [node name="Decals" type="Node2D" parent="." unique_id=721945550]
+
+[node name="Chalk Circle" type="Sprite2D" parent="Decals" unique_id=1374718728]
+texture = ExtResource("6_ijibh")
+
+[node name="Chalk Line" type="Sprite2D" parent="Decals" unique_id=14060950]
 
 [node name="World" type="Node2D" parent="." unique_id=715399497]
 y_sort_enabled = true
@@ -3192,7 +3210,26 @@ texture = ExtResource("11_4d7l4")
 
 [node name="Overhead" type="Node2D" parent="World" unique_id=859128867]
 
+[node name="World Border" type="StaticBody2D" parent="World" unique_id=1616705607]
+
+[node name="Bottom Border" type="CollisionShape2D" parent="World/World Border" unique_id=2063311679]
+position = Vector2(13, 761)
+shape = SubResource("RectangleShape2D_2aqsa")
+
+[node name="Left" type="CollisionShape2D" parent="World/World Border" unique_id=1472104806]
+position = Vector2(-1157.5, -216)
+shape = SubResource("RectangleShape2D_ja20v")
+
+[node name="Top" type="CollisionShape2D" parent="World/World Border" unique_id=1808757654]
+position = Vector2(42, -742)
+shape = SubResource("RectangleShape2D_c0ij6")
+
+[node name="Right" type="CollisionShape2D" parent="World/World Border" unique_id=1021179472]
+position = Vector2(1252.75, -54.25)
+shape = SubResource("RectangleShape2D_chpoi")
+
 [node name="Spawn Points" type="Node2D" parent="." unique_id=65989194]
+position = Vector2(-4, 25)
 
 [node name="Team A" type="Node2D" parent="Spawn Points" unique_id=280744283]
 position = Vector2(4, 480)
