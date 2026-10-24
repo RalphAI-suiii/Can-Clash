@@ -36,6 +36,10 @@ func _run() -> void:
 	for character in ["Hat Thrower", "Head Band", "Glasses Thrower", "Curly Haired", "Bullcap Head"]:
 		var actor: CharacterBody2D = load("res://scenes/Thrower %s.tscn" % character).instantiate()
 		arena.add_child(actor)
+		actor.name_label = Label.new()
+		actor.add_child(actor.name_label)
+		actor.update_name_color()
+		assert(actor.name_label.get_theme_color("font_color") == actor.THROWER_NAME_COLOR)
 		actor.network_controlled = true
 		actor.apply_network_input({"move": Vector2.RIGHT, "aim": Vector2(800, 400), "throw": true})
 		actor._start_charge()
@@ -47,26 +51,31 @@ func _run() -> void:
 		actor._start_throw(center * 1.25)
 		assert(actor.charge_ratio == 1 and actor.release_spread == 0)
 		actor.set_taya_role(true)
+		assert(actor.name_label.get_theme_color("font_color") == actor.TAYA_NAME_COLOR)
 		assert(actor.attack_state == actor.AttackState.FREE and actor.taya_action == &"")
 		assert(not actor.charge_bar.visible and not actor.attack_sprite.visible and actor.sprite.visible)
 		var before := actor.position
 		actor._physics_process(1.0 / 60.0)
 		assert(actor.position.x > before.x, "New Taya must move on the next frame")
 		actor.set_taya_role(false)
+		assert(actor.name_label.get_theme_color("font_color") == actor.THROWER_NAME_COLOR)
 		actor.taya_action = &"lunge"
 		actor.taya_visual.action = &"lunge"
 		actor.network_edges["lunge"] = true
 		actor.set_taya_role(true)
+		assert(actor.name_label.get_theme_color("font_color") == actor.TAYA_NAME_COLOR)
 		assert(actor.taya_action == &"" and actor.taya_visual.action == &"" and actor.network_edges.is_empty())
 		before = actor.position
 		actor._physics_process(1.0 / 60.0)
 		assert(actor.position.x > before.x)
 		actor.set_taya_role(false)
+		assert(actor.name_label.get_theme_color("font_color") == actor.THROWER_NAME_COLOR)
 		actor._start_charge()
 		assert(not actor.release_network_throw(actor.charge_id - 1, actor.charge_started, Vector2.RIGHT))
 		assert(not actor.release_network_throw(actor.charge_id, actor.charge_started - 1, Vector2.RIGHT))
 		assert(not actor.release_network_throw(actor.charge_id, actor.charge_started + 1, Vector2.RIGHT))
 		actor.set_taya_role(false)
+		assert(actor.name_label.get_theme_color("font_color") == actor.THROWER_NAME_COLOR)
 		# Exercise the real match handler with overlapping bodies and a charging victim.
 		actor.position = Vector2(800, 450)
 		actor.set_meta("peer_id", 1)

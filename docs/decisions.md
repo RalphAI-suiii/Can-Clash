@@ -1,5 +1,13 @@
 # Design decisions
 
+## Character size and role names — 2026-10-24
+
+- Reduce live match/waiting-room characters by another 20%, from scale 0.72 to
+  0.576. Shared root scaling keeps sprites, colliders and throw origins aligned.
+- Overhead names are green for throwers and red for Taya, refreshed immediately
+  by the shared role setter on hosts and replicas. Keep name text readable.
+
+
 ## Gameplay adjustments — 2026-10-24
 
 These decisions supersede earlier grace-period, initial-Taya, can recovery and

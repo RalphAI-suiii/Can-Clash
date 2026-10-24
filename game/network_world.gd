@@ -2,7 +2,7 @@ extends Node2D
 
 const PLAYER_FONT = preload("res://assets/fonts/TitanOne-Regular.ttf")
 const SLIPPER = preload("res://scenes/slipper_visual.gd")
-@export_range(0.5, 1.0, 0.01) var player_scale := 0.72
+@export_range(0.5, 1.0, 0.001) var player_scale := 0.576
 var actors: Dictionary = {}
 var world_tick := 0.0
 var send_tick := 0.0
@@ -64,7 +64,7 @@ func _sync_actors() -> void:
 		actor.throw_status.scale = Vector2.ONE / player_scale
 		actor.throw_status.position.x /= player_scale
 		var name_label := Label.new()
-		name_label.position = Vector2(-90 / player_scale, -235)
+		name_label.position = Vector2(-90 / player_scale, -250)
 		name_label.scale = Vector2.ONE / player_scale
 		name_label.size = Vector2(180, 28)
 		name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -72,10 +72,11 @@ func _sync_actors() -> void:
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.add_theme_font_override("font", PLAYER_FONT)
 		name_label.add_theme_font_size_override("font_size", 20)
-		name_label.add_theme_color_override("font_color", entry.color.lightened(0.4))
 		name_label.add_theme_color_override("font_outline_color", Color("20130f"))
 		name_label.add_theme_constant_override("outline_size", 6)
 		actor.add_child(name_label)
+		actor.name_label = name_label
+		actor.update_name_color()
 		actors[entry.id] = actor
 		_actor_added(actor)
 

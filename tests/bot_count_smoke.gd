@@ -45,10 +45,10 @@ func _run() -> void:
 		assert(game.scene_file_path == "res://game/match/match.tscn")
 		assert(game.actors.size() == count + 1)
 		for actor in game.actors.values():
-			assert(actor.scale.is_equal_approx(Vector2(0.72, 0.72)))
-			assert(is_equal_approx(actor.get_node("CollisionShape2D").global_scale.x, 0.72))
+			assert(actor.scale.is_equal_approx(Vector2(0.576, 0.576)))
+			assert(is_equal_approx(actor.get_node("CollisionShape2D").global_scale.x, 0.576))
 			assert(actor.throw_status.get_global_transform().get_scale().is_equal_approx(Vector2.ONE))
-			assert(actor.get_throw_origin().is_equal_approx(actor.global_position + actor.THROW_ORIGIN * 0.72))
+			assert(actor.get_throw_origin().is_equal_approx(actor.global_position + actor.THROW_ORIGIN * 0.576))
 		game._start_scoring()
 		assert(game.actors.has(game.taya_id) and game.actors[game.taya_id].is_taya)
 		var player: CharacterBody2D = game.actors[1]

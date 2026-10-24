@@ -66,6 +66,9 @@ var lunge_launched: bool = false
 var lunge_landed: bool = false
 var next_lunge_time: float = 0.0
 var last_tagged_target: Node2D
+var name_label: Label
+const THROWER_NAME_COLOR := Color("65e37b")
+const TAYA_NAME_COLOR := Color("ff6b65")
 var throw_status: Label
 var predicted_path := PackedVector2Array()
 var hit_flash_remaining := 0.0
@@ -399,6 +402,7 @@ func set_taya_role(enabled: bool) -> void:
 		can_node.drop(self)
 		carrying_can = false
 	is_taya = enabled
+	update_name_color()
 	movement_min_x = taya_min_x if enabled else -INF
 	global_position.x = maxf(global_position.x, movement_min_x)
 	velocity = Vector2.ZERO
@@ -425,6 +429,11 @@ func set_taya_role(enabled: bool) -> void:
 	taya_visual.hide()
 	sprite.show()
 	_update_taya_prompt()
+
+
+func update_name_color() -> void:
+	if is_instance_valid(name_label):
+		name_label.add_theme_color_override("font_color", TAYA_NAME_COLOR if is_taya else THROWER_NAME_COLOR)
 
 
 func can_throw_here() -> bool:

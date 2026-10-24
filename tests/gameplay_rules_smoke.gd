@@ -98,7 +98,7 @@ func _run() -> void:
 		assert(game.can.is_standing() and game.can.position == game.CAN_START and not guard.carrying_can)
 		for actor in game.actors.values():
 			actor.network_input = {}
-			assert(actor.scale == Vector2.ONE * 0.72)
+			assert(actor.scale == Vector2.ONE * 0.576)
 		var world := game.get_child(0).get_node("World")
 		assert(world.has_node("BarrelTrio") and world.has_node("ConeBox"), "Cleanup must retain the original props")
 		for prop_name in ["Crate", "Crate1_2", "Barrel", "Barrel2"]:
