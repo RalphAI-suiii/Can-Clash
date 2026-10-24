@@ -298,7 +298,7 @@ grow_horizontal = 2
 texture = ExtResource("2_kulvf")
 expand_mode = 1
 
-[node name="ButtonShadow_QuickPlay" type="Panel" parent="." unique_id=1096358592]
+[node name="ButtonShadow_PlayOnline" type="Panel" parent="." unique_id=1022785153]
 layout_mode = 1
 anchors_preset = -1
 offset_left = 98.0
@@ -308,23 +308,13 @@ offset_bottom = 424.0
 theme = SubResource("Theme_kinv7")
 theme_override_styles/panel = SubResource("StyleBoxFlat_kinv7")
 
-[node name="ButtonShadow_PlayOnline" type="Panel" parent="." unique_id=1022785153]
+[node name="ButtonShadow_PlayLocal" type="Panel" parent="." unique_id=112272695]
 layout_mode = 1
 anchors_preset = -1
 offset_left = 98.0
 offset_top = 468.0
 offset_right = 452.0
 offset_bottom = 552.0
-theme = SubResource("Theme_kinv7")
-theme_override_styles/panel = SubResource("StyleBoxFlat_kinv7")
-
-[node name="ButtonShadow_PlayLocal" type="Panel" parent="." unique_id=112272695]
-layout_mode = 1
-anchors_preset = -1
-offset_left = 98.0
-offset_top = 596.0
-offset_right = 452.0
-offset_bottom = 680.0
 theme = SubResource("Theme_kinv7")
 theme_override_styles/panel = SubResource("StyleBoxFlat_kinv7")
 
@@ -352,7 +342,7 @@ offset_bottom = 552.0
 theme = SubResource("Theme_kinv7")
 theme_override_styles/panel = SubResource("StyleBoxFlat_kinv7")
 
-[node name="QuckPlay" type="Button" parent="." unique_id=1705036628]
+[node name="PlayOnline" type="Button" parent="." unique_id=198719669]
 layout_mode = 1
 anchors_preset = -1
 offset_left = 100.0
@@ -366,31 +356,15 @@ theme_override_font_sizes/font_size = 43
 theme_override_styles/normal = SubResource("StyleBoxFlat_uad2a")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_a3kwp")
 theme_override_styles/hover = SubResource("StyleBoxFlat_my348")
-text = "Quick Play"
-
-[node name="PlayOnline" type="Button" parent="." unique_id=198719669]
-layout_mode = 1
-anchors_preset = -1
-offset_left = 100.0
-offset_top = 470.0
-offset_right = 450.0
-offset_bottom = 548.0
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 14
-theme_override_fonts/font = ExtResource("2_m02w7")
-theme_override_font_sizes/font_size = 43
-theme_override_styles/normal = SubResource("StyleBoxFlat_uad2a")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_a3kwp")
-theme_override_styles/hover = SubResource("StyleBoxFlat_my348")
 text = "Play Online"
 
 [node name="PlayLocal" type="Button" parent="." unique_id=295889895]
 layout_mode = 1
 anchors_preset = -1
 offset_left = 100.0
-offset_top = 598.0
+offset_top = 470.0
 offset_right = 450.0
-offset_bottom = 676.0
+offset_bottom = 548.0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 14
 theme_override_fonts/font = ExtResource("2_m02w7")

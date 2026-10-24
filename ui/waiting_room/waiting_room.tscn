@@ -1,138 +1,266 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene format=3 uid="uid://if4ls0gfeq44"]
 
-[ext_resource type="Script" path="res://ui/waiting_room/waiting_room.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://2sos3d1stgxa" path="res://ui/waiting_room/waiting_room.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://ui/waiting_room/waiting_room_background.tscn" id="2_background"]
 [ext_resource type="PackedScene" path="res://scenes/Thrower Hat Thrower.tscn" id="3_player"]
-[ext_resource type="Script" path="res://ui/waiting_room/waiting_room_player.gd" id="4_movement"]
-[ext_resource type="PackedScene" path="res://scenes/Player_ready.tscn" id="5_ready"]
-[ext_resource type="FontFile" path="res://assets/fonts/TitanOne-Regular.ttf" id="6_font"]
+[ext_resource type="PackedScene" uid="uid://clo4ko5c6hyg" path="res://scenes/Player_ready.tscn" id="4_ready"]
+[ext_resource type="FontFile" uid="uid://bbnkru5pda2fg" path="res://assets/fonts/TitanOne-Regular.ttf" id="5_font"]
+[ext_resource type="PackedScene" path="res://scenes/Taya can.tscn" id="6_can"]
+[ext_resource type="Script" uid="uid://ukqt7vl6l5p" path="res://ui/waiting_room/ground_shadow.gd" id="7_shadow"]
 
-[sub_resource type="StyleBoxFlat" id="ButtonNormal"]
-bg_color = Color(0, 0.18, 0.8, 1)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.1, 0.07, 0.18, 1)
+[sub_resource type="RectangleShape2D" id="HorizontalWall"]
+size = Vector2(1840, 30)
+
+[sub_resource type="RectangleShape2D" id="VerticalWall"]
+size = Vector2(30, 940)
+
+[sub_resource type="SegmentShape2D" id="SlipperDividerShape"]
+a = Vector2(0, -600)
+b = Vector2(0, 600)
+
+[sub_resource type="Theme" id="RosterTheme"]
+default_font = ExtResource("5_font")
+default_font_size = 22
+Label/colors/font_color = Color(1, 0.969, 0.867, 1)
+Label/colors/font_shadow_color = Color(0.12, 0.05, 0.02, 0.25)
+Label/constants/shadow_offset_x = 1
+Label/constants/shadow_offset_y = 2
+
+[sub_resource type="StyleBoxFlat" id="RosterFrame"]
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.77647, 0.32549, 0.03922, 1)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0, 0, 0, 1)
 corner_radius_top_left = 16
 corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
-shadow_color = Color(0.06, 0.04, 0.02, 0.35)
-shadow_size = 8
-shadow_offset = Vector2(0, 6)
+shadow_color = Color(0.18, 0.07, 0.02, 0.35)
+shadow_size = 12
+shadow_offset = Vector2(4, 8)
 
-[sub_resource type="StyleBoxFlat" id="ButtonHover"]
-bg_color = Color(0.04, 0.28, 0.98, 1)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.1, 0.07, 0.18, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="ButtonPressed"]
-bg_color = Color(0.12, 0.36, 0.2, 1)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.06, 0.19, 0.1, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="ButtonFocus"]
+[sub_resource type="StyleBoxFlat" id="MenuFocus"]
 bg_color = Color(0, 0, 0, 0)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(1, 0.83, 0.25, 1)
-expand_margin_left = 6.0
-expand_margin_top = 6.0
-expand_margin_right = 6.0
-expand_margin_bottom = 6.0
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
+border_color = Color(1, 0.96, 0.78, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
 
-[sub_resource type="Theme" id="HUDTheme"]
-default_font = ExtResource("6_font")
-default_font_size = 24
-Label/colors/font_color = Color(1, 0.96, 0.85, 1)
-Label/colors/font_outline_color = Color(0.14, 0.07, 0.04, 1)
-Label/constants/outline_size = 6
-Button/colors/font_color = Color(1, 0.96, 0.85, 1)
-Button/colors/font_hover_color = Color(1, 0.96, 0.85, 1)
-Button/colors/font_pressed_color = Color(1, 0.96, 0.85, 1)
-Button/styles/normal = SubResource("ButtonNormal")
-Button/styles/hover = SubResource("ButtonHover")
-Button/styles/pressed = SubResource("ButtonPressed")
-Button/styles/hover_pressed = SubResource("ButtonPressed")
-Button/styles/focus = SubResource("ButtonFocus")
+[sub_resource type="StyleBoxFlat" id="MenuGreenHover"]
+bg_color = Color(0.05, 0.47, 0.04, 1)
+border_width_bottom = 6
+border_color = Color(0, 0.23042, 0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
-[sub_resource type="Theme" id="RosterTheme"]
-default_font = ExtResource("6_font")
-default_font_size = 20
-Label/colors/font_color = Color(1, 0.96, 0.85, 1)
+[sub_resource type="StyleBoxFlat" id="MenuGold"]
+bg_color = Color(0.98983, 0.64296, 0, 1)
+border_width_bottom = 6
+border_color = Color(0.77647, 0.32549, 0.03922, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
-[sub_resource type="StyleBoxFlat" id="HelpPanel"]
-bg_color = Color(0.12, 0.16, 0.3, 0.96)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-content_margin_left = 24.0
-content_margin_top = 18.0
-content_margin_right = 24.0
-content_margin_bottom = 18.0
+[sub_resource type="StyleBoxFlat" id="MenuGreen"]
+bg_color = Color(0, 0.39216, 0, 1)
+border_width_bottom = 6
+border_color = Color(0, 0.23042, 0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
-[sub_resource type="Theme" id="HelpTheme"]
-default_font = ExtResource("6_font")
-default_font_size = 22
-Label/colors/font_color = Color(1, 0.96, 0.85, 1)
+[sub_resource type="Theme" id="MenuTheme"]
+default_font = ExtResource("5_font")
+default_font_size = 28
+Button/colors/font_color = Color(1, 0.969, 0.867, 1)
+Button/colors/font_hover_color = Color(1, 0.969, 0.867, 1)
+Button/colors/font_outline_color = Color(0, 0, 0, 1)
+Button/colors/font_pressed_color = Color(1, 0.969, 0.867, 1)
+Button/colors/font_shadow_color = Color(0.12, 0.05, 0.02, 0.4)
+Button/constants/outline_size = 10
+Button/constants/shadow_offset_x = 2
+Button/constants/shadow_offset_y = 3
+Button/styles/focus = SubResource("MenuFocus")
+Button/styles/hover = SubResource("MenuGreenHover")
+Button/styles/hover_pressed = SubResource("MenuGold")
+Button/styles/normal = SubResource("MenuGreen")
+Button/styles/pressed = SubResource("MenuGold")
+Label/colors/font_color = Color(1, 0.969, 0.867, 1)
+Label/colors/font_outline_color = Color(0, 0, 0, 1)
+Label/colors/font_shadow_color = Color(0.12, 0.05, 0.02, 0.4)
+Label/constants/outline_size = 8
+Label/constants/shadow_offset_x = 2
+Label/constants/shadow_offset_y = 3
 
-[node name="WaitingRoom" type="Node2D"]
+[sub_resource type="StyleBoxFlat" id="MenuFrame"]
+bg_color = Color(0.77647, 0.32549, 0.03922, 1)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.18, 0.07, 0.02, 0.35)
+shadow_size = 12
+shadow_offset = Vector2(4, 8)
+
+[sub_resource type="StyleBoxFlat" id="MenuBlue"]
+bg_color = Color(0, 0, 1, 1)
+border_width_bottom = 6
+border_color = Color(0, 0.1054, 0.6141, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StartDisabled"]
+bg_color = Color(0.36, 0.23, 0.13, 1)
+border_width_bottom = 6
+border_color = Color(0.25, 0.14, 0.07, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="Gradient" id="WarmLightFalloff"]
+interpolation_mode = 2
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="WarmLightTexture"]
+gradient = SubResource("WarmLightFalloff")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="WaitingRoom" type="Node2D" unique_id=763032022]
+y_sort_enabled = true
 script = ExtResource("1_script")
 
-[node name="GrassFill" type="Polygon2D" parent="."]
-color = Color(0.36, 0.61, 0.22, 1)
-polygon = PackedVector2Array(-2000, -1200, 2000, -1200, 2000, 1200, -2000, 1200)
+[node name="Background" parent="." unique_id=1649187958 instance=ExtResource("2_background")]
 
-[node name="Background" parent="." instance=ExtResource("2_background")]
+[node name="RoomAmbient" type="CanvasModulate" parent="."]
+color = Color(0.88, 0.86, 0.82, 1)
 
-[node name="Player" parent="." instance=ExtResource("3_player")]
-position = Vector2(0, 100)
-scale = Vector2(0.65, 0.65)
-script = ExtResource("4_movement")
+[node name="TopLeftLight" type="PointLight2D" parent="."]
+position = Vector2(160, 120)
+color = Color(1, 0.92, 0.76, 1)
+energy = 0.22
+range_layer_min = 0
+range_layer_max = 0
+texture = SubResource("WarmLightTexture")
+texture_scale = 5.859375
+
+[node name="Walls" type="StaticBody2D" parent="." unique_id=1214803022]
+collision_mask = 6
+
+[node name="Back" type="CollisionShape2D" parent="Walls" unique_id=383588501]
+position = Vector2(960, 120)
+shape = SubResource("HorizontalWall")
+
+[node name="Front" type="CollisionShape2D" parent="Walls" unique_id=894752122]
+position = Vector2(960, 1040)
+shape = SubResource("HorizontalWall")
+
+[node name="Left" type="CollisionShape2D" parent="Walls" unique_id=884595842]
+position = Vector2(55, 580)
+shape = SubResource("VerticalWall")
+
+[node name="Right" type="CollisionShape2D" parent="Walls" unique_id=1732758194]
+position = Vector2(1865, 580)
+shape = SubResource("VerticalWall")
+
+[node name="SlipperDivider" type="StaticBody2D" parent="." unique_id=1931620654]
+position = Vector2(1068, 540)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SlipperDivider" unique_id=2085636077]
+shape = SubResource("SlipperDividerShape")
+
+[node name="CanBase" type="Node2D" parent="." unique_id=1088116403]
+position = Vector2(240, 580)
+
+[node name="CanBase2" type="Node2D" parent="." unique_id=1369182932]
+position = Vector2(240, 290)
+
+[node name="CanBase3" type="Node2D" parent="." unique_id=1248028472]
+position = Vector2(240, 835)
+
+[node name="PracticeCan" parent="." unique_id=697779287 instance=ExtResource("6_can")]
+position = Vector2(240, 580)
+starts_toppled = false
+
+[node name="PracticeCan2" parent="." unique_id=1422095255 instance=ExtResource("6_can")]
+position = Vector2(240, 290)
+starts_toppled = false
+base_path = NodePath("../CanBase2")
+
+[node name="PracticeCan3" parent="." unique_id=1902331363 instance=ExtResource("6_can")]
+position = Vector2(240, 835)
+starts_toppled = false
+base_path = NodePath("../CanBase3")
+
+[node name="Player" parent="." unique_id=1931734706 instance=ExtResource("3_player")]
+position = Vector2(1210, 820)
 walk_speed = 240.0
 sprint_speed = 340.0
 
-[node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(0, -40)
-zoom = Vector2(0.8, 0.8)
+[node name="GroundShadow" type="Node2D" parent="Player" unique_id=1426043850]
+show_behind_parent = true
+script = ExtResource("7_shadow")
 
-[node name="ReadyPanel" parent="." instance=ExtResource("5_ready")]
+[node name="ReadyPanel" parent="." unique_id=1450926613 instance=ExtResource("4_ready")]
 
-[node name="Player_ready" parent="ReadyPanel" index="0"]
-offset_left = 40.0
-offset_top = 40.0
-offset_right = 440.0
-offset_bottom = 80.0
+[node name="Player_ready" parent="ReadyPanel" index="0" unique_id=875638306]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -470.0
+offset_top = 158.0
+offset_right = -70.0
+offset_bottom = 198.0
+grow_horizontal = 0
 theme = SubResource("RosterTheme")
-row_height = 56.0
+row_height = 58.0
 panel_width = 400.0
 
-[node name="HUD" type="CanvasLayer" parent="."]
+[node name="PanelContainer" parent="ReadyPanel/Player_ready" index="0" unique_id=724308810]
+theme_override_styles/panel = SubResource("RosterFrame")
+
+[node name="title_label" parent="ReadyPanel/Player_ready/PanelContainer/VBoxContainer" parent_id_path=PackedInt32Array(1450926613, 1165374327) index="0" unique_id=334087049]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=755980132]
 layer = 2
 
-[node name="Screen" type="Control" parent="HUD"]
+[node name="Screen" type="Control" parent="HUD" unique_id=789620628]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -140,84 +268,167 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme = SubResource("HUDTheme")
+theme = SubResource("MenuTheme")
 
-[node name="Title" type="Label" parent="HUD/Screen"]
+[node name="Title" type="Label" parent="HUD/Screen" unique_id=666582906]
 layout_mode = 1
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -300.0
-offset_top = 40.0
-offset_right = 300.0
-offset_bottom = 120.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -850.0
+offset_top = 46.0
+offset_right = -280.0
+offset_bottom = 122.0
+grow_horizontal = 0
 theme_override_font_sizes/font_size = 48
 text = "WAITING ROOM"
 horizontal_alignment = 1
 vertical_alignment = 1
-mouse_filter = 2
 
-[node name="LeaveButton" type="Button" parent="HUD/Screen"]
+[node name="PracticeTitle" type="Label" parent="HUD/Screen" unique_id=1818381734]
 layout_mode = 1
+offset_left = 56.0
+offset_top = 42.0
+offset_right = 470.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 48
+text = "PRACTICE"
+
+[node name="PracticeHits" type="Label" parent="HUD/Screen" unique_id=750861991]
+layout_mode = 1
+offset_left = 60.0
+offset_top = 116.0
+offset_right = 400.0
+offset_bottom = 166.0
+text = "0 HITS"
+
+[node name="ResetFrame" type="Panel" parent="HUD/Screen" unique_id=942440537]
+layout_mode = 1
+offset_left = 530.0
+offset_top = 46.0
+offset_right = 752.0
+offset_bottom = 132.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("MenuFrame")
+
+[node name="ResetPractice" type="Button" parent="HUD/Screen" unique_id=2037442299]
+layout_mode = 1
+offset_left = 538.0
+offset_top = 54.0
+offset_right = 744.0
+offset_bottom = 124.0
+tooltip_text = "Reset the practice can and recover your slipper."
+theme_override_styles/normal = SubResource("MenuGold")
+theme_override_styles/hover = SubResource("MenuGold")
+text = "Reset"
+
+[node name="LeaveFrame" type="Panel" parent="HUD/Screen" unique_id=1262601614]
+layout_mode = 1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -220.0
-offset_top = 40.0
-offset_right = -40.0
-offset_bottom = 104.0
+offset_left = -248.0
+offset_top = 46.0
+offset_right = -48.0
+offset_bottom = 132.0
 grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("MenuFrame")
+
+[node name="LeaveButton" type="Button" parent="HUD/Screen" unique_id=564216354]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -240.0
+offset_top = 54.0
+offset_right = -56.0
+offset_bottom = 124.0
+grow_horizontal = 0
+theme_override_styles/normal = SubResource("MenuBlue")
+theme_override_styles/hover = SubResource("MenuBlue")
 text = "Leave"
 
-[node name="Help" type="PanelContainer" parent="HUD/Screen"]
+[node name="ReadyStatus" type="Label" parent="HUD/Screen" unique_id=503699728]
 layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
 anchor_top = 1.0
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 40.0
-offset_top = -146.0
-offset_right = 620.0
-offset_bottom = -40.0
+offset_left = -500.0
+offset_top = -207.0
+offset_right = -64.0
+offset_bottom = -155.0
+grow_horizontal = 0
 grow_vertical = 0
-mouse_filter = 2
-theme = SubResource("HelpTheme")
-theme_override_styles/panel = SubResource("HelpPanel")
+theme_override_font_sizes/font_size = 26
+text = "YOU ARE NOT READY"
+horizontal_alignment = 2
+vertical_alignment = 1
 
-[node name="Text" type="Label" parent="HUD/Screen/Help"]
-layout_mode = 2
-text = "WASD / Arrow keys to move\nShift to sprint. Explore while you wait!"
-mouse_filter = 2
-
-[node name="ReadyStatus" type="Label" parent="HUD/Screen"]
+[node name="ReadyFrame" type="Panel" parent="HUD/Screen" unique_id=1571050977]
 layout_mode = 1
+anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -440.0
-offset_top = -194.0
-offset_right = -40.0
-offset_bottom = -144.0
+offset_top = -150.0
+offset_right = -48.0
+offset_bottom = -48.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_font_sizes/font_size = 24
-text = "YOU ARE NOT READY"
-horizontal_alignment = 2
-vertical_alignment = 1
 mouse_filter = 2
+theme_override_styles/panel = SubResource("MenuFrame")
 
-[node name="ReadyButton" type="Button" parent="HUD/Screen"]
+[node name="ReadyButton" type="Button" parent="HUD/Screen" unique_id=1179323128]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -432.0
+offset_top = -142.0
+offset_right = -56.0
+offset_bottom = -56.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 42
+toggle_mode = true
+text = "Ready"
+
+[node name="StartFrame" type="Panel" parent="HUD/Screen"]
 layout_mode = 1
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -360.0
-offset_top = -134.0
-offset_right = -40.0
-offset_bottom = -40.0
-grow_horizontal = 0
-grow_vertical = 0
+offset_left = -292.0
+offset_top = -150.0
+offset_right = -48.0
+offset_bottom = -48.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("MenuFrame")
+
+[node name="StartButton" type="Button" parent="HUD/Screen"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -284.0
+offset_top = -142.0
+offset_right = -56.0
+offset_bottom = -56.0
+theme_override_colors/font_disabled_color = Color(0.9, 0.83, 0.64, 1)
 theme_override_font_sizes/font_size = 36
-toggle_mode = true
-text = "Ready"
-tooltip_text = "Toggle your ready status. You can keep moving after readying up."
+theme_override_styles/normal = SubResource("MenuGold")
+theme_override_styles/hover = SubResource("MenuGold")
+theme_override_styles/disabled = SubResource("StartDisabled")
+disabled = true
+text = "Start"
 
 [editable path="ReadyPanel"]

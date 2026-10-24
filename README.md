@@ -1,33 +1,50 @@
 # Can Clash
 
-A planned 2.5D five-player LAN arena game inspired by Tumbang Preso.
+A Godot 4.7.2 arena game inspired by Tumbang Preso, with a playable menu,
+waiting room, bots, host-authoritative matches and podium results.
 
-## Current status
+## Run and play
 
-This repository contains a Godot 4 project scaffold. Gameplay and networking
-are not implemented. The initial menu displays a scaffold status message.
-Godot 4 is the proposed engine from the concept note; confirm the engine and
-specific version with the team before implementation.
+Import `project.godot` in Godot and run the main scene.
 
-## Open the project
+- **Play Local:** up to five players on the same LAN, using ENet UDP 54652.
+- **Play Online:** up to four players using GD-Sync Free room codes. Configure
+  the developer's game keys using [the setup guide](docs/online_setup.md).
+- **Practice:** solo waiting-room practice; no keys or network required.
+- Enter `developer-mode` in Play Local's Join field for a solo bot match.
+  Set 0–4 bots in that waiting room before pressing Ready and Start.
 
-1. Install Godot 4 using its official distribution.
-2. Import `project.godot` in the Godot Project Manager.
-3. Open the project and run the main scene.
+LAN, Practice and developer mode work without GD-Sync credentials.
 
-## Layout
+## Match rules
 
-- `autoload/`: LAN session and saved user settings.
-- `game/`: match, player, slipper, can, and arena scenes with adjacent scripts.
-- `ui/`: menu, lobby, HUD, results, pause menu, settings, and shared theme.
-- `assets/`: character, prop, environment, UI, effect, audio, font, and shader assets.
-- `docs/`: original concept note, decisions, networking plan, playtest checklist, and credits.
-- `builds/`: local exports; generated build contents are excluded from Git.
+After everyone acknowledges the rules, a random participant becomes Taya.
+Throwers remain frozen for seven seconds while Taya prepares, then a ten-minute
+match begins. Taya has no slipper and cannot enter the full-height blue area.
 
-## Implementation order
+Throw only from blue: aim with the mouse, hold left-click and release the bouncing
+marker in the narrow green window for full power and accuracy. Orange gives
+intermediate power; red adds substantial aim error. Retrieve your own colored
+slipper by running over it, then return to blue for a safe-return point.
 
-LAN lobby, movement, throwing and can, retrieval and safe returns, tagging,
-scoring and results. The host must validate gameplay outcomes.
+The can starts on the far right. When it falls, Taya waits for it to settle,
+presses E to pick it up, carries it to its original marked spot, and presses E
+to place it. Tagging works only outside blue while the can stands. Space lunges;
+Shift sprints. Tagged players recover control immediately with one second of
+protection against re-tagging.
 
-Proposed controls are WASD movement, mouse aim and charged throwing, an
-Interact key, and a lunge key. Bindings, match duration, and tie rules remain TBD.
+Can hits, safe returns, Taya tags and opponents' missed throws award points under
+the host's authority. Highest score wins; tied leaders share victory. The top
+three appear on gold, silver and bronze podiums. Developer games do not affect
+saved statistics.
+
+## Verification
+
+Headless checks live in `tests/`, including `gameplay_rules_smoke.gd`,
+`far_right_can_smoke.gd`, `lan_session_smoke.gd` and `online_session_smoke.gd`.
+Set `CAN_CLASH_SAVE_PATH` to isolate test profiles from your saved statistics.
+
+LAN has been checked with five separate processes on one PC. GD-Sync's local
+transport has been checked with four players, a rejected fifth peer, simulated
+latency and packet loss. Physical LAN and cross-network internet playtests remain
+manual. See [networking details](docs/networking.md).

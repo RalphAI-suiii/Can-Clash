@@ -1,5 +1,56 @@
 # Design decisions
 
+## Character size and role names — 2026-10-24
+
+- Reduce live match/waiting-room characters by another 20%, from scale 0.72 to
+  0.576. Shared root scaling keeps sprites, colliders and throw origins aligned.
+- Overhead names are green for throwers and red for Taya, refreshed immediately
+  by the shared role setter on hosts and replicas. Keep name text readable.
+
+
+## Gameplay adjustments — 2026-10-24
+
+These decisions supersede earlier grace-period, initial-Taya, can recovery and
+throw-meter tuning below, following Gameplay adjustments.docx and user corrections.
+
+- The protected blue area covers the visible left floor to the fence and curb,
+  ending at x=530. Only throwers inside it can begin/release a throw. Taya cannot
+  cross that boundary, including lunges. Validation is host-owned.
+- After rules acknowledgments, choose Taya randomly from all participants,
+  including the human in developer mode. Freeze throwers for seven seconds while
+  Taya can move, show the selected name and countdown, then start 600 seconds of
+  scoring. A solo developer player is Taya and also resets the can manually.
+- The can's original and reset position is (1450,610), near the far-right end.
+  Taya starts 180 pixels to its left. Match cans stay toppled until Taya uses E
+  to pick up, carries to the original circle, and uses E to place. Practice keeps
+  automatic recovery. Existing power-dependent tumbling remains.
+- Green covers 4% of the meter, orange 23% on either side, red the remaining 50%.
+  Sweep timing, randomized targets and power/error ranges remain. Base horizontal
+  launch speeds increase 20%; match-specific 1.45 speed scaling keeps the far-right
+  can reachable from blue. Actual physics and preview use the same values.
+- A bottom foreground fence reuses the upper fence tiles and joins the lower
+  curb on every map. The existing bottom world border remains the collider.
+- Keep all 17 original prop nodes and their collisions. Arrange benches, hoops,
+  barrels, crates, tires and cones with clear spacing and an open throwing lane;
+  do not interpret cleanup as deleting the scenery. Account for the authored
+  level root offset when positioning props.
+- Keep characters at 0.72 scale and use the existing shared Taya/thrower artwork
+  and role actions. Each bot gets its own throwing position inside blue.
+- A local Camera2D follows the player/can midpoint with 0.9 baseline zoom and
+  widens when needed to keep both visible. HUD uses its existing CanvasLayer.
+- Results retain character identity and show silver/gold/bronze left/center/right,
+  remaining ranks below, empty unused places, stable tie ordering and shared wins.
+- Network compatibility is canclash-rules-3. Match phase deadlines use synchronized
+  host time with bounds to avoid displaying more than 7 seconds or 10 minutes.
+
+Acceptance: all-map geometry, throw eligibility, Taya boundary/lunge, seven-second
+preparation, manual E recovery, power-dependent tumbling, far-right throw reach,
+0–4 bots, movement/pickup/waiting-room checks, five-process LAN, and GD-Sync local
+transport under latency/loss. Viewports inspected at 1920×1080 and 1280×720.
+Headless tests still emit the existing tree-shader dummy-renderer diagnostic;
+real OpenGL captures do not. Real cloud connectivity remains unverified.
+
+
 The original concept note is the current design reference.
 
 ## Open decisions
@@ -15,6 +66,51 @@ The original concept note is the current design reference.
 - Miss scoring when the can is already toppled.
 
 Record each resolved decision here with its date and rationale.
+
+## Adjustments implementation — 2026-10-21
+
+- The requested match duration is three minutes, after a separate 30-second
+  grace period. First-time rules acknowledgments precede the grace timer; all
+  human members must finish reading. The rules remain available during play.
+- The roster contains actual members rather than five placeholders. LAN starts
+  with a host, accepts four clients, and requires at least two ready humans to
+  start. The `developer-mode` Join shortcut starts with one human and fills the
+  match with four computer-controlled opponents. Practice is a separate solo mode.
+- Seven-character room codes encode the host's IPv4 address on UDP port 54652.
+  They remain valid while the address is unchanged. Direct-IP joining is also
+  supported, without a discovery server or internet matchmaking dependency.
+- Slippers collect automatically at first landing when the owner runs within
+  72 pixels. Each member's stable color marks their name, ring, roster badge,
+  and slipper outline. This supersedes E-based retrieval below. Leaving the
+  arena hides the slipper for three seconds, then returns it to the owner's hand.
+- The map roulette chooses one of three variants of the existing 2D level:
+  Courtyard, Eskinita, or Dusty Yard. Their prop layouts and palettes differ;
+  the existing art remains the source. Selection is host-owned and shared.
+- Initial Taya is chosen from the host's match seed; developer mode starts a bot
+  as Taya. This is the provisional match entry for the adjustments, rather than
+  claiming the concept's opening throw-off is implemented.
+- Local statistics persist in `user://profile.cfg`. A successful throw is a
+  projectile's first standing-can hit, which also records one knockdown. Normal
+  LAN results count wins/losses once per match ID; tied leaders share victory.
+  Practice and developer games never change lifetime totals. `CAN_CLASH_SAVE_PATH`
+  isolates automated test profiles from the user's data.
+- The match host owns simulation and scoring. First landing prediction includes
+  existing World/divider ricochets and standing-can deflection. Prediction is a
+  preview rather than a guarantee if another player changes the can mid-flight.
+- Safe-return points require leaving the strip, physically collecting the owned
+  slipper, and re-entering the strip. Out-of-bounds respawns do not earn that point.
+
+## Slipper pickup responsiveness — 2026-10-19
+
+- Throwers can press or hold E while walking or sprinting into their own slipper's
+  existing 72-pixel pickup radius. After its first landing, the slipper can be
+  retrieved during its small floor bounce (up to 12 pixels of simulated height),
+  sliding, or spin. Collection preserves movement and clears ownership immediately
+  so another throw can begin; there is no pickup animation or cooldown.
+- This supersedes the older settle-before-retrieval rule below. Initial flight
+  remains ineligible, as do slippers owned by another player or outside reach.
+  Taya's can pickup and placement timing stays unchanged.
+- Check with `godot --headless --path . --script res://tests/slipper_pickup_smoke.gd`.
 
 ## Provisional prototype choices — 2026-10-18
 

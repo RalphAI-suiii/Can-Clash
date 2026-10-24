@@ -2,5 +2,6 @@
 
 [ext_resource type="Script" uid="uid://f6snfea332jt" path="res://game/match/match.gd" id="1"]
 
-[node name="Match" type="Node3D" unique_id=1023382389]
+[node name="Match" type="Node2D" unique_id=1023382389]
+y_sort_enabled = true
 script = ExtResource("1")
