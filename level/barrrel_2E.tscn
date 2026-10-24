@@ -14,22 +14,21 @@ fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2aqsa"]
-radius = 38.0
-height = 82.0
+radius = 27.0
+height = 58.0
 
 [node name="Barrrel 2" type="StaticBody2D" unique_id=1298249102]
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=58059405]
-position = Vector2(17, -20.4375)
-scale = Vector2(0.8828127, 1.0234375)
+position = Vector2(4, 5.265625)
+scale = Vector2(0.6523438, 0.80102533)
 texture = SubResource("GradientTexture2D_vd67t")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=392285299]
 y_sort_enabled = true
-position = Vector2(8, -40.4375)
-scale = Vector2(0.6086956, 0.7023482)
+scale = Vector2(0.4627329, 0.4810083)
 texture = ExtResource("1_esoyl")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=556007470]
-position = Vector2(0, -22.4375)
+position = Vector2(-6, 13)
 shape = SubResource("CapsuleShape2D_2aqsa")
