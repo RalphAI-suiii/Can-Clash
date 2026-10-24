@@ -9,7 +9,7 @@ signal throw_input_received(peer_id: int, pressed: bool, charge: int, at_time: f
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
-const PROTOCOL := "canclash-skill-2"
+const PROTOCOL := "canclash-rules-3"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5

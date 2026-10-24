@@ -2,12 +2,20 @@ extends "res://game/network_world.gd"
 
 const UI = preload("res://ui/game_ui.gd")
 const CATALOG = preload("res://game/maps/map_catalog.gd")
-const RULES := "Move: WASD / arrow keys. Hold Shift to sprint.\nAim with the mouse, hold left-click and release the bouncing marker in GREEN for full power.\nYellow is weaker; red is inaccurate. The green window changes each throw.\nThe dots predict first landing. Run over YOUR colored slipper to retrieve it.\nAn out-of-bounds slipper returns to your hand after 3 seconds.\n\nThrowers: knock down the can, retrieve your slipper, and return to the blue safe strip.\nThe can bounces and rolls, then stands where it settles after a short pause.\nTaya: tag throwers outside the safe strip while the can stands. Space lunges (10s cooldown).\n\nEarn +1 for a can hit, safe return, Taya tag, or a thrower's miss while you are Taya.\nAfter a 30-second grace period, score for 3 minutes. Highest score wins; ties share victory."
+const RULES := "Move: WASD / arrows. Shift sprints.\nThrow ONLY from the blue area. Hold left-click, then release in the tiny GREEN window for full power.\nOrange is weaker; red is inaccurate. Retrieve YOUR colored slipper and return to blue for a point.\n\nOne random player becomes Taya. Throwers wait 7 seconds while Taya prepares.\nTaya cannot enter blue or tag protected throwers. Tags work ONLY while the can stands. Space lunges (10s cooldown).\nWhen the can falls, Taya uses E to pick it up, carries it to its original circle, then uses E to place it.\n\nEarn +1 for a can hit, safe return, Taya tag, or a thrower's miss while you are Taya.\nPlay for 10 minutes. Highest score wins; ties share victory."
 const ARENA := Rect2(253, 220, 1350, 785)
-const SAFE := Rect2(295, 320, 235, 620)
+# Cover the visible floor to the fence/curb, not only the inset movement bounds.
+const SAFE := Rect2(140, 0, 390, 1040)
+const PREPARATION_SECONDS := 7.0
+const MATCH_SECONDS := 600.0
+const CAN_START := Vector2(1450, 610)
+const TAYA_START := CAN_START + Vector2(-180, 0)
 
 var stage := "tutorial"
-var remaining := 30.0
+var remaining := 7.0
+var phase_deadline := 0.0
+var opening_label: Label
+var match_camera: Camera2D
 var scores: Dictionary = {}
 var taya_id := 0
 var tag_immunity := 0.0
@@ -40,12 +48,13 @@ func _ready() -> void:
 	add_child(level)
 	var base := Node2D.new()
 	base.name = "CanBase"
-	base.position = Vector2(1040, 610)
+	base.position = CAN_START
 	add_child(base)
 	can = load("res://scenes/Taya can.tscn").instantiate()
 	can.name = "Can"
 	can.position = base.position
 	can.starts_toppled = false
+	can.auto_stand_up = false
 	can.show_target_ring = true
 	can.base_path = NodePath("../CanBase")
 	can.collision_mask = 1 | 16
@@ -53,6 +62,7 @@ func _ready() -> void:
 	setup_network_world()
 	LanSession.match_event_received.connect(_match_event)
 	_build_hud()
+	_build_camera()
 	if not UserSettings.tutorial_seen:
 		_show_rules(true)
 	else:
@@ -64,13 +74,14 @@ func _spawn_point(slot: int) -> Vector2:
 
 func _sync_actors() -> void:
 	super._sync_actors()
-	if LanSession.is_host() and stage == "active" and taya_id != 0 and not actors.has(taya_id) and not actors.is_empty():
+	if LanSession.is_host() and stage in ["preparation", "active"] and taya_id != 0 and not actors.has(taya_id) and not actors.is_empty():
 		taya_id = int(LanSession.players[0].id)
 		var replacement: CharacterBody2D = actors[taya_id]
 		if is_instance_valid(replacement.active_slipper):
 			replacement.active_slipper.queue_free()
 		replacement.active_slipper = null
 		replacement.set_meta("returning", false)
+		replacement.position = TAYA_START
 		replacement.set_taya_role(true)
 		can.reset_for_preview(can.base.position)
 		tag_immunity = 1.0
@@ -80,12 +91,18 @@ func _sync_actors() -> void:
 func _actor_added(actor: CharacterBody2D) -> void:
 	actor.can_node = can
 	actor.safe_strip_rect = SAFE
+	actor.allowed_throw_rect = SAFE
+	actor.throw_speed_multiplier = 1.45
+	actor.taya_min_x = SAFE.end.x + 1.0
 	actor.arena_bounds = ARENA
 	actor.tag_requested.connect(_tag_requested.bind(actor))
 	scores[actor.get_meta("peer_id")] = 0
 
 func _world_inputs_enabled() -> bool:
-	return stage in ["grace", "active"]
+	return stage in ["preparation", "active"]
+
+func _actor_inputs_enabled(actor: CharacterBody2D) -> bool:
+	return stage == "active" or (stage == "preparation" and actor.is_taya)
 
 func _local_inputs_enabled() -> bool:
 	return _world_inputs_enabled() and not tutorial_open
@@ -101,13 +118,14 @@ func _physics_process(delta: float) -> void:
 			if acknowledgment_clock >= 1.0:
 				acknowledgment_clock = 0.0
 				LanSession.acknowledge_tutorial()
+		if stage in ["preparation", "active"]:
+			remaining = clampf(phase_deadline - LanSession.clock_time(), 0.0, PREPARATION_SECONDS if stage == "preparation" else MATCH_SECONDS)
 		_update_hud()
 		return
 	tag_immunity = maxf(0.0, tag_immunity - delta)
 	if stage == "tutorial" and LanSession.humans_ready_for_match():
-		stage = "grace"
-		remaining = 30.0
-	elif stage == "grace":
+		_start_preparation()
+	elif stage == "preparation":
 		remaining = maxf(0.0, remaining - delta)
 		if remaining <= 0.0:
 			_start_scoring()
@@ -129,24 +147,29 @@ func _physics_process(delta: float) -> void:
 			_finish()
 	_update_hud()
 
-func _start_scoring() -> void:
-	stage = "active"
-	remaining = 180.0
+func _start_preparation() -> void:
+	stage = "preparation"
+	remaining = PREPARATION_SECONDS
+	phase_deadline = LanSession.clock_time() + remaining
 	can.reset_for_preview(can.base.position)
-	if LanSession.mode == "developer":
-		taya_id = -1 if actors.has(-1) else 0
-	else:
-		taya_id = LanSession.players[LanSession.selection_seed % LanSession.players.size()].id
+	taya_id = int(LanSession.players.pick_random().id)
 	for id in actors:
 		var actor: CharacterBody2D = actors[id]
-		if is_instance_valid(actor.active_slipper):
-			actor.active_slipper.queue_free()
+		if is_instance_valid(actor.active_slipper): actor.active_slipper.queue_free()
 		actor.active_slipper = null
+		actor.position = TAYA_START if id == taya_id else _spawn_point(LanSession.member(id).slot)
 		actor.set_taya_role(id == taya_id)
 		actor.set_meta("returning", false)
-		actor.position = Vector2(1250, 610) if id == taya_id else _spawn_point(LanSession.member(id).slot)
-		actor.velocity = Vector2.ZERO
-	_notice("GO! THE MATCH HAS STARTED")
+		actor.network_input = {}
+		actor.network_edges.clear()
+		actor.accept_local_input = id == taya_id
+
+func _start_scoring() -> void:
+	if taya_id == 0: _start_preparation()
+	stage = "active"
+	remaining = MATCH_SECONDS
+	phase_deadline = LanSession.clock_time() + remaining
+	_notice("THROW!")
 
 func _slipper_spawned(actor: CharacterBody2D, slipper: Node2D) -> void:
 	if stage == "active":
@@ -217,7 +240,7 @@ func _finish() -> void:
 	stage = "finished"
 	var rankings: Array = []
 	for member in LanSession.players:
-		rankings.append({"id": member.id, "name": member.name, "score": scores.get(member.id, 0), "color": member.color})
+		rankings.append({"id": member.id, "name": member.name, "score": scores.get(member.id, 0), "color": member.color, "character": member.character})
 	rankings.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.score > b.score if a.score != b.score else a.id < b.id)
 	LanSession.finish_match(rankings)
 
@@ -248,6 +271,11 @@ func _build_hud() -> void:
 	notice_label.position = Vector2(-700, -65)
 	notice_label.size = Vector2(1400, 50)
 	screen.add_child(notice_label)
+	opening_label = UI.label("", 48)
+	opening_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	opening_label.position = Vector2(-700, -100)
+	opening_label.size = Vector2(1400, 200)
+	screen.add_child(opening_label)
 	var rules_button := UI.button("Rules", func() -> void: _show_rules(false))
 	rules_button.position = Vector2(1675, 28)
 	screen.add_child(rules_button)
@@ -271,7 +299,9 @@ func _update_hud() -> void:
 	if phase_label == null:
 		return
 	var time_text := "%d:%02d" % [int(ceil(remaining)) / 60, int(ceil(remaining)) % 60]
-	phase_label.text = "WAITING FOR PLAYERS TO READ THE RULES" if stage == "tutorial" else "GRACE PERIOD  " + time_text if stage == "grace" else "MATCH  " + time_text
+	phase_label.text = "WAITING FOR PLAYERS TO READ THE RULES" if stage == "tutorial" else "TAYA PREPARATION  " + time_text if stage == "preparation" else "MATCH  " + time_text
+	if opening_label != null:
+		opening_label.text = "%s IS TAYA\n%d" % [LanSession.member(taya_id).get("name", "Player"), ceili(remaining)] if stage == "preparation" else "THROW!" if stage == "active" and remaining > MATCH_SECONDS - 2.0 else ""
 	var text: String = CATALOG.MAPS[LanSession.selected_map].name + "\n\n"
 	for member in LanSession.players:
 		text += "%s  %d%s\n\n" % [str(member.name).left(12), scores.get(member.id, 0), "  TAYA" if member.id == taya_id else ""]
@@ -284,11 +314,12 @@ func _notice(message: String) -> void:
 	notice_remaining = 2.0
 
 func _extra_snapshot() -> Dictionary:
-	return {"stage": stage, "remaining": remaining, "scores": scores, "taya": taya_id, "notice": notice_label.text if notice_label != null else ""}
+	return {"stage": stage, "remaining": remaining, "deadline": phase_deadline, "scores": scores, "taya": taya_id, "notice": notice_label.text if notice_label != null else ""}
 
 func _apply_extra_snapshot(data: Dictionary) -> void:
 	stage = data.get("stage", stage)
-	remaining = data.get("remaining", remaining)
+	phase_deadline = float(data.get("deadline", phase_deadline))
+	remaining = clampf(phase_deadline - LanSession.clock_time(), 0.0, PREPARATION_SECONDS if stage == "preparation" else MATCH_SECONDS) if stage in ["preparation", "active"] else float(data.get("remaining", remaining))
 	scores = data.get("scores", scores)
 	taya_id = data.get("taya", taya_id)
 	if notice_label != null:
@@ -299,5 +330,33 @@ func _leave_match() -> void:
 	get_tree().change_scene_to_file("res://ui/main_menu/main_menuu.tscn")
 
 func _draw() -> void:
+	if is_instance_valid(can) and can.base != null:
+		draw_arc(can.base.position + Vector2(0, -27), 48.0, 0, TAU, 48, Color("fff5dc"), 3.0, true)
 	draw_rect(SAFE, Color(0.1, 0.48, 0.9, 0.14))
 	draw_line(Vector2(SAFE.end.x, SAFE.position.y), Vector2(SAFE.end.x, SAFE.end.y), Color("80c9ff"), 5.0)
+
+
+func _build_camera() -> void:
+	match_camera = Camera2D.new()
+	match_camera.zoom = Vector2.ONE * 0.9
+	match_camera.position = ARENA.get_center()
+	add_child(match_camera)
+	_update_camera(1.0)
+	match_camera.reset_smoothing()
+
+func _process(delta: float) -> void:
+	_update_camera(delta)
+
+func _update_camera(delta: float) -> void:
+	if match_camera == null or can == null: return
+	var actor: Node2D = actors.get(LanSession.local_id())
+	if actor == null: return
+	var focus := (actor.global_position + can.global_position) * 0.5
+	var span := (actor.global_position - can.global_position).abs() + Vector2(320, 480)
+	var viewport_size := get_viewport_rect().size
+	var target_zoom := minf(0.9, minf(viewport_size.x / span.x, viewport_size.y / span.y))
+	var weight := 1.0 - exp(-delta / 0.15)
+	match_camera.position = match_camera.position.lerp(focus - Vector2(0, 65), weight)
+	# Widen immediately to keep both subjects visible, ease the return to baseline.
+	var zoom_value := minf(target_zoom, lerpf(match_camera.zoom.x, target_zoom, weight))
+	match_camera.zoom = Vector2.ONE * zoom_value

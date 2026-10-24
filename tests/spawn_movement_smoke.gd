@@ -25,7 +25,8 @@ func _run() -> void:
 		current_scene = game
 		for actor in game.actors.values():
 			actor.set_meta("bot", false)
-		for phase in ["grace", "active"]:
+		game._start_preparation()
+		for phase in ["preparation", "active"]:
 			if phase == "active":
 				game._start_scoring()
 			var positions: Dictionary = {}
@@ -50,11 +51,11 @@ func _run() -> void:
 					Input.parse_input_event(key)
 				else:
 					actor.apply_network_input({"move": Vector2.ZERO})
-				assert(actor.position.x - positions[id].x > 60.0, "Map %d %s player %s cannot leave spawn" % [map_index, phase, id])
+				assert((actor.position.distance_to(positions[id]) < 2.0) if phase == "preparation" and not actor.is_taya else (actor.position.x - positions[id].x > 60.0), "Map %d %s player %s cannot leave spawn" % [map_index, phase, id])
 				actor.position = positions[id]
 				actor.velocity = Vector2.ZERO
 				await _frames(2)
-		print("PASS: map %d, all five spawns in grace and active play; keyboard and remote movement." % map_index)
+		print("PASS: map %d, all five spawns in preparation (throwers frozen) and active play; keyboard and remote movement." % map_index)
 		game.free()
 		session.close_room()
 		await _frames(2)

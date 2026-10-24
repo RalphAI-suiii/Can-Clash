@@ -62,20 +62,21 @@ func _run() -> void:
 	assert(game.scene_file_path == "res://game/match/match.tscn")
 	assert(game.actors.size() == 5 and game.stage == "tutorial" and game.tutorial_open)
 	await _frames(10)
-	assert(game.remaining == 30.0)
+	assert(game.remaining == 7.0)
 	for button in game.find_children("*", "Button", true, false):
 		if button.text.begins_with("Got it"):
 			button.pressed.emit()
 	await _frames(4)
-	assert(profile.tutorial_seen and game.stage == "grace")
-	assert(game.remaining > 29.0 and game.remaining <= 30.0)
+	assert(profile.tutorial_seen and game.stage == "preparation")
+	assert(game.remaining > 6.0 and game.remaining <= 7.0)
 	game.remaining = 0.01
 	await _frames(4)
-	assert(game.stage == "active" and game.remaining > 179.0)
-	assert(game.taya_id == -1 and game.actors[-1].is_taya)
-	var original_bot: Vector2 = game.actors[-2].position
+	assert(game.stage == "active" and game.remaining > 599.0)
+	assert(game.actors.has(game.taya_id) and game.actors[game.taya_id].is_taya)
+	var moving_bot: Node2D = game.actors.values().filter(func(actor: Node2D) -> bool: return actor.get_meta("bot", false) and not actor.is_taya)[0]
+	var original_bot: Vector2 = moving_bot.position
 	await _frames(240)
-	assert(game.actors[-2].position.distance_to(original_bot) > 30.0, "Bots must move")
+	assert(moving_bot.position.distance_to(original_bot) > 30.0, "Bots must move")
 	assert(not game.observed_slippers.is_empty(), "Bots must throw")
 	for actor in game.actors.values():
 		actor.set_meta("bot", false)
@@ -87,9 +88,13 @@ func _run() -> void:
 		if is_instance_valid(actor.active_slipper):
 			actor.active_slipper.free()
 		actor.active_slipper = null
+	game.taya_id = -1
+	game.actors[-1].set_taya_role(true)
 	game.can.reset_for_preview(game.can.base.position)
 	game.tag_immunity = 10.0
 	var player: CharacterBody2D = game.actors[1]
+	player.set_taya_role(false)
+	player.accept_local_input = true
 	player.position = Vector2(700, 700)
 	var before_score: int = game.scores[1]
 	var slipper: Node2D = load("res://scenes/slipper_visual.gd").new()
@@ -156,6 +161,6 @@ func _run() -> void:
 	assert(profile.statistics.successful_throws == old_hits + 1)
 	assert(profile.statistics.wins == old_wins + 1)
 	assert(profile.tutorial_seen and profile.display_name == "Test Player")
-	print("PASS: names, Practice, developer entry, one-member roster, ready Start, roulette, all three-minute match phases, four active bots, hit feedback/scoring, trajectory, out-of-bounds return, results, and persistent/idempotent statistics.")
+	print("PASS: names, Practice, developer entry, one-member roster, ready Start, roulette, seven-second preparation and ten-minute match phases, four active bots, hit feedback/scoring, trajectory, out-of-bounds return, results, and persistent/idempotent statistics.")
 	session.close_room()
 	quit()

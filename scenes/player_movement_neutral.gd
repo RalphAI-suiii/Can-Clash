@@ -12,6 +12,10 @@ const THROW_METER = preload("res://scenes/throw_meter.gd")
 @export var lunge_lock_radius: float = 260.0
 @export var lunge_cooldown_seconds: float = 10.0
 @export var safe_strip_rect: Rect2
+@export var allowed_throw_rect: Rect2
+@export var throw_speed_multiplier := 1.0
+@export var show_player_ring := true
+var taya_min_x := -INF
 @export var arena_bounds: Rect2
 @export var player_color := Color("329dff")
 
@@ -142,7 +146,7 @@ func throw_quality() -> Dictionary:
 	return THROW_METER.quality_at(charge_bar.value, sweet_spot)
 
 func release_network_throw(id: int, at_time: float, aim: Vector2) -> bool:
-	if attack_state != AttackState.CHARGING or charge_id != id or is_taya:
+	if attack_state != AttackState.CHARGING or charge_id != id or not can_throw_here():
 		return false
 	var now := LanSession.clock_time()
 	if not is_finite(at_time) or at_time < now - 0.25 or at_time > now + 0.03 or at_time < charge_started:
@@ -265,7 +269,7 @@ func _advance_lunge(delta: float) -> void:
 		step = minf(step, maxf(target_distance - TAG_DISTANCE + 2.0, 0.0))
 	var before: Vector2 = global_position
 	velocity = lunge_direction * step / maxf(delta, 0.001)
-	move_and_slide()
+	_move_character()
 	var moved: float = global_position.distance_to(before)
 	lunge_travelled += moved
 	_try_tag()
@@ -395,6 +399,8 @@ func set_taya_role(enabled: bool) -> void:
 		can_node.drop(self)
 		carrying_can = false
 	is_taya = enabled
+	movement_min_x = taya_min_x if enabled else -INF
+	global_position.x = maxf(global_position.x, movement_min_x)
 	velocity = Vector2.ZERO
 	attack_sprite.stop()
 	charge_elapsed = 0.0
@@ -421,8 +427,12 @@ func set_taya_role(enabled: bool) -> void:
 	_update_taya_prompt()
 
 
+func can_throw_here() -> bool:
+	return not is_taya and accept_local_input and (not allowed_throw_rect.has_area() or allowed_throw_rect.has_point(global_position))
+
+
 func _start_charge() -> void:
-	if is_instance_valid(active_slipper):
+	if not can_throw_here() or is_instance_valid(active_slipper):
 		return
 	attack_state = AttackState.CHARGING
 	velocity = Vector2.ZERO
@@ -432,7 +442,7 @@ func _start_charge() -> void:
 	charge_started = LanSession.clock_time()
 	sweet_spot = randf_range(0.25, 0.75)
 	charge_bar.target_center = sweet_spot
-	set_meta("bot_release_at", sweet_spot + randf_range(-0.12, 0.12))
+	set_meta("bot_release_at", sweet_spot + randf_range(-0.025, 0.025))
 	charge_bar.value = 0.0
 	charge_bar.show()
 	interact_prompt.hide()
@@ -443,6 +453,9 @@ func _start_charge() -> void:
 
 
 func _start_throw(release_elapsed: float = -1.0) -> void:
+	if not can_throw_here():
+		set_taya_role(is_taya)
+		return
 	predicted_path.clear()
 	queue_redraw()
 	if release_elapsed >= 0.0:
@@ -497,6 +510,9 @@ func _set_attack_visual(sector: int, releasing: bool) -> void:
 func _on_attack_frame_changed() -> void:
 	if attack_state != AttackState.THROWING or attack_sprite.frame < 2 or slipper_spawned:
 		return
+	if not can_throw_here():
+		set_taya_role(is_taya)
+		return
 	slipper_spawned = true
 	var release_point: Vector2 = get_throw_origin() + attack_direction * minf(48.0, aim_distance * 0.5)
 	var burst = THROW_BURST.new()
@@ -506,7 +522,7 @@ func _on_attack_frame_changed() -> void:
 	burst.charge_ratio = charge_ratio
 	var slipper = SLIPPER_VISUAL.new()
 	get_parent().add_child(slipper)
-	slipper.launch(self, release_point, attack_direction, charge_ratio, get_throw_origin())
+	slipper.launch(self, release_point, attack_direction, charge_ratio, get_throw_origin(), throw_speed_multiplier)
 	slipper.arena_bounds = arena_bounds
 	slipper.outline_color = player_color
 	active_slipper = slipper
@@ -577,12 +593,13 @@ func _update_throw_status() -> void:
 func _update_trajectory() -> void:
 	var origin := get_throw_origin()
 	var release := origin + attack_direction * minf(48.0, aim_distance * 0.5)
-	predicted_path = SLIPPER_VISUAL.predict_path(get_world_2d(), origin, release, attack_direction, float(throw_quality().power), get_tree().get_nodes_in_group("can_targets"))
+	predicted_path = SLIPPER_VISUAL.predict_path(get_world_2d(), origin, release, attack_direction, float(throw_quality().power), get_tree().get_nodes_in_group("can_targets"), throw_speed_multiplier)
 	queue_redraw()
 
 
 func _draw() -> void:
-	draw_arc(Vector2(0, 5), 43.0, 0, TAU, 32, Color(player_color, 0.8), 4.0, true)
+	if show_player_ring:
+		draw_arc(Vector2(0, 5), 43.0, 0, TAU, 32, Color(player_color, 0.8), 4.0, true)
 	if attack_state != AttackState.CHARGING or predicted_path.is_empty():
 		return
 	var spread: float = throw_quality().spread

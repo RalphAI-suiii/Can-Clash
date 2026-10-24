@@ -13,7 +13,7 @@ func _run() -> void:
 	assert(is_equal_approx(METER.marker_at(3.125), 0.5))
 	for center in [0.25, 0.5, 0.75]:
 		assert(METER.quality_at(center, center).power == 1.0)
-		assert(METER.quality_at(center + 0.1, center).spread == 0.0)
+		assert(METER.quality_at(center + 0.02, center).spread == 0.0)
 		var yellow: Dictionary = METER.quality_at(center + 0.2, center)
 		assert(yellow.band == "GOOD" and yellow.power >= 0.65 and yellow.power <= 0.95 and yellow.spread <= 5)
 		var red: Dictionary = METER.quality_at(0 if center >= 0.5 else 1, center)

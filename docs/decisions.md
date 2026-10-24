@@ -1,5 +1,48 @@
 # Design decisions
 
+## Gameplay adjustments — 2026-10-24
+
+These decisions supersede earlier grace-period, initial-Taya, can recovery and
+throw-meter tuning below, following Gameplay adjustments.docx and user corrections.
+
+- The protected blue area covers the visible left floor to the fence and curb,
+  ending at x=530. Only throwers inside it can begin/release a throw. Taya cannot
+  cross that boundary, including lunges. Validation is host-owned.
+- After rules acknowledgments, choose Taya randomly from all participants,
+  including the human in developer mode. Freeze throwers for seven seconds while
+  Taya can move, show the selected name and countdown, then start 600 seconds of
+  scoring. A solo developer player is Taya and also resets the can manually.
+- The can's original and reset position is (1450,610), near the far-right end.
+  Taya starts 180 pixels to its left. Match cans stay toppled until Taya uses E
+  to pick up, carries to the original circle, and uses E to place. Practice keeps
+  automatic recovery. Existing power-dependent tumbling remains.
+- Green covers 4% of the meter, orange 23% on either side, red the remaining 50%.
+  Sweep timing, randomized targets and power/error ranges remain. Base horizontal
+  launch speeds increase 20%; match-specific 1.45 speed scaling keeps the far-right
+  can reachable from blue. Actual physics and preview use the same values.
+- A bottom foreground fence reuses the upper fence tiles and joins the lower
+  curb on every map. The existing bottom world border remains the collider.
+- Keep all 17 original prop nodes and their collisions. Arrange benches, hoops,
+  barrels, crates, tires and cones with clear spacing and an open throwing lane;
+  do not interpret cleanup as deleting the scenery. Account for the authored
+  level root offset when positioning props.
+- Keep characters at 0.72 scale and use the existing shared Taya/thrower artwork
+  and role actions. Each bot gets its own throwing position inside blue.
+- A local Camera2D follows the player/can midpoint with 0.9 baseline zoom and
+  widens when needed to keep both visible. HUD uses its existing CanvasLayer.
+- Results retain character identity and show silver/gold/bronze left/center/right,
+  remaining ranks below, empty unused places, stable tie ordering and shared wins.
+- Network compatibility is canclash-rules-3. Match phase deadlines use synchronized
+  host time with bounds to avoid displaying more than 7 seconds or 10 minutes.
+
+Acceptance: all-map geometry, throw eligibility, Taya boundary/lunge, seven-second
+preparation, manual E recovery, power-dependent tumbling, far-right throw reach,
+0–4 bots, movement/pickup/waiting-room checks, five-process LAN, and GD-Sync local
+transport under latency/loss. Viewports inspected at 1920×1080 and 1280×720.
+Headless tests still emit the existing tree-shader dummy-renderer diagnostic;
+real OpenGL captures do not. Real cloud connectivity remains unverified.
+
+
 The original concept note is the current design reference.
 
 ## Open decisions

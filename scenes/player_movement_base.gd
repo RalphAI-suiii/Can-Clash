@@ -30,6 +30,7 @@ var facing: Vector2 = Vector2.DOWN
 var network_controlled := false
 var network_input: Dictionary = {}
 var network_edges: Dictionary = {}
+var movement_min_x := -INF
 
 
 func apply_network_input(packet: Dictionary) -> void:
@@ -75,7 +76,7 @@ func _physics_process(delta: float) -> void:
 	var change_rate: float = acceleration if input_direction != Vector2.ZERO else stopping_friction
 
 	velocity = velocity.move_toward(target_velocity, change_rate * delta)
-	move_and_slide()
+	_move_character()
 
 	if input_direction != Vector2.ZERO:
 		facing = input_direction
@@ -132,3 +133,11 @@ func _play(action: String, direction: Vector2) -> void:
 		sprite.play(animation_name)
 		if keep_step:
 			sprite.set_frame_and_progress(step_frame, step_progress)
+
+
+func _move_character() -> void:
+	if is_finite(movement_min_x):
+		var step := maxf(get_physics_process_delta_time(), 0.001)
+		velocity.x = maxf(velocity.x, (movement_min_x - global_position.x) / step)
+	move_and_slide()
+	global_position.x = maxf(global_position.x, movement_min_x)

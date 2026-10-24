@@ -10,7 +10,9 @@ var art: Control
 		if is_instance_valid(art): art.queue_redraw()
 
 const GREEN := Color("64ce66")
-const YELLOW := Color("f5cc4b")
+const ORANGE := Color("f5a23c")
+const GREEN_HALF_WIDTH := 0.02
+const GOOD_HALF_WIDTH := 0.25
 const RED := Color("e86b55")
 
 static func marker_at(elapsed: float, sweep: float = 1.25) -> float:
@@ -18,11 +20,11 @@ static func marker_at(elapsed: float, sweep: float = 1.25) -> float:
 
 static func quality_at(marker: float, center: float) -> Dictionary:
 	var distance := absf(clampf(marker, 0.0, 1.0) - center)
-	if distance <= 0.100001:
+	if distance <= GREEN_HALF_WIDTH + 0.000001:
 		return {"band": "PERFECT", "power": 1.0, "spread": 0.0, "color": GREEN}
 	if distance <= 0.250001:
-		var error := clampf((distance - 0.1) / 0.15, 0.0, 1.0)
-		return {"band": "GOOD", "power": lerpf(0.95, 0.65, error), "spread": 5.0 * error, "color": YELLOW}
+		var error := clampf((distance - GREEN_HALF_WIDTH) / (GOOD_HALF_WIDTH - GREEN_HALF_WIDTH), 0.0, 1.0)
+		return {"band": "GOOD", "power": lerpf(0.95, 0.65, error), "spread": 5.0 * error, "color": ORANGE}
 	var error := clampf((distance - 0.25) / maxf(0.01, maxf(center, 1.0 - center) - 0.25), 0.0, 1.0)
 	return {"band": "RISKY", "power": lerpf(0.60, 0.25, error), "spread": 20.0, "color": RED}
 
@@ -46,8 +48,8 @@ func _draw_meter() -> void:
 	art.draw_rect(track.grow(4.0), Color("20130f"))
 	art.draw_rect(track, RED)
 	var yellow_left := target_center - 0.25
-	art.draw_rect(Rect2(Vector2(size.x * yellow_left, 0), Vector2(size.x * 0.5, size.y)), YELLOW)
-	art.draw_rect(Rect2(Vector2(size.x * (target_center - 0.1), 0), Vector2(size.x * 0.2, size.y)), GREEN)
+	art.draw_rect(Rect2(Vector2(size.x * yellow_left, 0), Vector2(size.x * 0.5, size.y)), ORANGE)
+	art.draw_rect(Rect2(Vector2(size.x * (target_center - GREEN_HALF_WIDTH), 0), Vector2(size.x * GREEN_HALF_WIDTH * 2.0, size.y)), GREEN)
 	var marker_x := size.x * value
 	art.draw_line(Vector2(marker_x, -6), Vector2(marker_x, size.y + 6), Color("20130f"), 9.0)
 	art.draw_line(Vector2(marker_x, -5), Vector2(marker_x, size.y + 5), Color("fff5dc"), 4.0)

@@ -5,6 +5,8 @@ signal picked_up
 signal can_hit(target: Node2D)
 signal returned_after_penalty
 
+const MIN_LAUNCH_SPEED := 312.0
+const MAX_LAUNCH_SPEED := 648.0
 const GRAVITY: float = 700.0
 const AIR_DRAG: float = 0.18
 const GROUND_FRICTION: float = 330.0
@@ -32,12 +34,12 @@ var lost_remaining := 0.0
 var hit_registered := false
 
 
-func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float, origin: Vector2) -> void:
+func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float, origin: Vector2, speed_multiplier: float = 1.0) -> void:
 	throw_owner = thrower
 	global_position = release_point
 	launch_origin = origin
 	charge_ratio = clampf(charge, 0.0, 1.0)
-	velocity = aim.normalized() * lerpf(260.0, 540.0, charge_ratio)
+	velocity = aim.normalized() * lerpf(MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED, charge_ratio) * speed_multiplier
 	vertical_speed = lerpf(190.0, 305.0, charge_ratio)
 	angular_speed = lerpf(TAU * 1.7, TAU * 3.0, charge_ratio)
 	queue_redraw()
@@ -202,10 +204,10 @@ func _draw() -> void:
 	draw_line(Vector2(-20, 10), Vector2(13, 10), Color("4e2c1b"), 2.0, true)
 
 
-static func predict_path(world: World2D, origin: Vector2, release: Vector2, aim: Vector2, charge: float, targets: Array) -> PackedVector2Array:
+static func predict_path(world: World2D, origin: Vector2, release: Vector2, aim: Vector2, charge: float, targets: Array, speed_multiplier: float = 1.0) -> PackedVector2Array:
 	var path := PackedVector2Array([release])
 	var point := release
-	var speed := aim.normalized() * lerpf(260.0, 540.0, charge)
+	var speed := aim.normalized() * lerpf(MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED, charge) * speed_multiplier
 	var rise := lerpf(190.0, 305.0, charge)
 	var elevation := 0.0
 	const STEP := 1.0 / 60.0

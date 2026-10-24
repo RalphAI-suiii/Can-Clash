@@ -33,7 +33,7 @@ internet matchmaking. The host-address tooltip is available for PCs with multipl
 network adapters. A failed connection times out after ten seconds.
 
 Departing clients leave the roster and active world. Host loss returns clients
-to the menu with a notice. If Taya leaves during active play, a remaining member
+to the menu with a notice. If Taya leaves during preparation or active play, a remaining member
 takes over and the can resets at its base, including when it was being carried.
 There is no host migration or late match joining. Play Online now uses a
 GD-Sync relay adapter with four-player rooms; see [online setup](online_setup.md). Snapshot interpolation/prediction and the concept's powered throw
@@ -65,3 +65,20 @@ a rejected fifth peer, real GD-Sync local transport, artificial per-direction
 latency (40 ms host / 80 ms clients) and 10% dropped unreliable sends. These are
 local integration checks; real cloud keys and a physical cross-network playtest
 are still required before internet connectivity can be marked verified.
+
+## Gameplay rules protocol 3
+
+The host chooses initial Taya from every registered participant after tutorial
+acknowledgments. Seven seconds of preparation unlock only Taya's movement;
+throwers' movement/action requests are rejected until the 600-second match starts.
+Snapshots include the phase deadline against synchronized host time. Clients
+clamp the displayed timer to its phase duration.
+
+The same host-owned blue rectangle validates charge, release and the actual
+animation-frame spawn. Taya walking/lunging is constrained outside its right edge.
+Tags require a standing can, an unprotected thrower, and expired re-tag immunity.
+Match can recovery is manual and returns to the fixed far-right base. Original
+host disconnect rules and scoring authority are unchanged.
+
+Result entries now include the member's character index for podium art. Builds
+with a different protocol are rejected during registration; all peers must update.

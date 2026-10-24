@@ -65,8 +65,8 @@ func _run() -> void:
 			await process_frame
 		while current_scene.stage == "tutorial":
 			await process_frame
-		assert(current_scene.stage == "grace")
-		assert(current_scene.remaining > 29.0)
+		assert(current_scene.stage == "preparation")
+		assert(current_scene.remaining > 6.0)
 		current_scene.remaining = 0.01
 		while not _all_marked("active"):
 			await process_frame
@@ -87,11 +87,17 @@ func _run() -> void:
 		while not current_scene.can.is_settled():
 			await process_frame
 		var landed: Vector2 = current_scene.can.position
-		while not current_scene.can.is_standing():
-			await process_frame
-		assert(current_scene.can.position.distance_to(landed) < 0.1)
-		assert(current_scene.can.base.position.distance_to(landed) < 0.1)
-		assert(landed.distance_to(Vector2(1040, 610)) > 5.0)
+		assert(not current_scene.can.is_standing(), "Matches require manual can recovery")
+		var guard: CharacterBody2D = current_scene.actors[current_scene.taya_id]
+		guard.position = landed + Vector2(55, 0)
+		assert(current_scene.can.pick_up(guard))
+		guard.carrying_can = true
+		guard.position = current_scene.can.base.position + Vector2(55, 0)
+		assert(current_scene.can.reset_at_base(guard))
+		guard.carrying_can = false
+		assert(current_scene.can.position.distance_to(Vector2(1450, 610)) < 0.1)
+		assert(current_scene.can.base.position.distance_to(Vector2(1450, 610)) < 0.1)
+		assert(landed.distance_to(Vector2(1450, 610)) > 5.0)
 		_mark("can-recovered")
 		while not _all_marked("can-recovered"):
 			await process_frame
@@ -159,7 +165,7 @@ func _run() -> void:
 			await process_frame
 		while current_scene.stage != "active":
 			await process_frame
-		assert(current_scene.remaining > 175.0 and current_scene.remaining <= 180.0)
+		assert(current_scene.remaining > 595.0 and current_scene.remaining <= 600.0, "Replicated match timer: %s" % current_scene.remaining)
 		assert(current_scene.actors.size() == 5)
 		_mark("active")
 		var saw_slipper := false
@@ -182,7 +188,7 @@ func _run() -> void:
 			saw_tumble = saw_tumble or absf(current_scene.can.tilt_angle) > 0.5
 			await process_frame
 		assert(saw_tumble, "Clients must render the can's tumbling rotation")
-		assert(current_scene.can.position.distance_to(Vector2(1040, 610)) > 5.0)
+		assert(current_scene.can.position.distance_to(Vector2(1450, 610)) < 0.1)
 		_mark("can-recovered")
 		if role == "client4":
 			while not FileAccess.file_exists(folder.path_join("host-drop-taya")):

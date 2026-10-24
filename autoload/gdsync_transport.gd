@@ -106,7 +106,7 @@ func _create() -> void:
 	code = ""
 	for index in range(7):
 		code += "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[randi() % 32]
-	gd.lobby_create(code, "", false, CAPACITY, {"game": "CanClash", "protocol": "skill-2"})
+	gd.lobby_create(code, "", false, CAPACITY, {"game": "CanClash", "protocol": "rules-3"})
 
 func _creation_failed(_name: String, error: int) -> void:
 	if not active: return

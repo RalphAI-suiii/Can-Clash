@@ -85,6 +85,9 @@ func _actor_added(_actor: CharacterBody2D) -> void:
 func _world_inputs_enabled() -> bool:
 	return true
 
+func _actor_inputs_enabled(_actor: CharacterBody2D) -> bool:
+	return _world_inputs_enabled()
+
 func _local_inputs_enabled() -> bool:
 	return _world_inputs_enabled()
 
@@ -92,8 +95,8 @@ func _physics_process(delta: float) -> void:
 	if LanSession.is_host():
 		for id in actors:
 			var actor: CharacterBody2D = actors[id]
-			actor.accept_local_input = _local_inputs_enabled() if id == LanSession.local_id() else _world_inputs_enabled()
-			if actor.get_meta("bot", false) and _world_inputs_enabled():
+			actor.accept_local_input = _actor_inputs_enabled(actor) and (_local_inputs_enabled() if id == LanSession.local_id() else true)
+			if actor.get_meta("bot", false) and _actor_inputs_enabled(actor):
 				_update_bot(actor)
 			if is_instance_valid(actor.active_slipper) and observed_slippers.get(id) != actor.active_slipper.get_instance_id():
 				observed_slippers[id] = actor.active_slipper.get_instance_id()
@@ -108,16 +111,21 @@ func _physics_process(delta: float) -> void:
 			send_tick = 0.0
 			var active: Node2D = actors.get(LanSession.local_id())
 			if active != null:
-				var enabled := _local_inputs_enabled()
+				var enabled := _local_inputs_enabled() and _actor_inputs_enabled(active)
 				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled else Vector2.ZERO, "aim": active.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": active.charge_id})
 
 func _receive_input(id: int, packet: Dictionary) -> void:
 	if LanSession.is_host() and actors.has(id):
-		actors[id].apply_network_input(packet)
+		if _actor_inputs_enabled(actors[id]):
+			actors[id].apply_network_input(packet)
+		else:
+			actors[id].network_input = {}
+			actors[id].network_edges.clear()
 
 func _receive_throw(id: int, pressed: bool, charge: int, at_time: float, aim: Vector2) -> void:
 	if not LanSession.is_host() or not actors.has(id) or not _world_inputs_enabled(): return
 	var actor: CharacterBody2D = actors[id]
+	if not _actor_inputs_enabled(actor): return
 	actor.network_input["aim"] = aim
 	actor.network_input["throw"] = pressed
 	if pressed:
@@ -163,8 +171,12 @@ func _update_bot(actor: CharacterBody2D) -> void:
 	elif actor.get_meta("returning", false):
 		destination = Vector2(actor.safe_strip_rect.get_center().x, actor.global_position.y)
 	else:
-		var aim_distance: float = (can.get_hit_center() - actor.get_throw_origin()).length()
-		if aim_distance < 300.0:
+		if actor.allowed_throw_rect.has_area():
+			var slot := int(LanSession.member(int(actor.get_meta("peer_id"))).get("slot", 0))
+			var throwing_y: float = can.global_position.y + (slot - 2) * 125.0
+			destination = Vector2(actor.allowed_throw_rect.end.x - 35.0, clampf(throwing_y, actor.allowed_throw_rect.position.y + 90.0, actor.allowed_throw_rect.end.y - 90.0))
+		var aim_distance: float = (destination - actor.global_position).length()
+		if (actor.allowed_throw_rect.has_area() and aim_distance < 35.0) or (not actor.allowed_throw_rect.has_area() and aim_distance < 300.0):
 			destination = actor.global_position
 			throwing = actor.attack_state != actor.AttackState.CHARGING or actor.charge_bar.value < float(actor.get_meta("bot_release_at", actor.sweet_spot))
 	var toward := destination - actor.global_position

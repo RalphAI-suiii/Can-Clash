@@ -50,7 +50,7 @@ func _run() -> void:
 			assert(actor.throw_status.get_global_transform().get_scale().is_equal_approx(Vector2.ONE))
 			assert(actor.get_throw_origin().is_equal_approx(actor.global_position + actor.THROW_ORIGIN * 0.72))
 		game._start_scoring()
-		assert(game.taya_id == (-1 if count > 0 else 0))
+		assert(game.actors.has(game.taya_id) and game.actors[game.taya_id].is_taya)
 		var player: CharacterBody2D = game.actors[1]
 		var initial := player.position
 		Input.action_press("right")
@@ -60,7 +60,13 @@ func _run() -> void:
 		if count == 0:
 			assert(game.can.topple())
 			await _frames(360)
-			assert(game.can.is_standing(), "Solo games reset the can without a Taya")
+			assert(game.can.is_toppled(), "Solo Taya must also reset the can manually")
+			player.position = game.can.position - Vector2(55, 0)
+			assert(game.can.pick_up(player))
+			player.carrying_can = true
+			player.position = game.can.base.position - Vector2(55, 0)
+			assert(game.can.reset_at_base(player))
+			player.carrying_can = false
 		game.free()
 		session.close_room()
 		await _frames(2)
