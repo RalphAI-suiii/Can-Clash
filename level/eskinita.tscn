@@ -5,7 +5,8 @@
 [ext_resource type="Texture2D" uid="uid://kimxby23xgwc" path="res://level/level assets/house-blue-roof-square-left-side.png" id="4_1a7n2"]
 [ext_resource type="Texture2D" uid="uid://dovagvjpyxmvv" path="res://level/level assets/house-green-roof-square-left-side.png" id="5_2fwga"]
 [ext_resource type="Script" uid="uid://d1o2imfqxn6st" path="res://level/court_edge.gd" id="5_vd67t"]
-[ext_resource type="Texture2D" uid="uid://c3e24jyv57b0m" path="res://level/level assets/chalk_can_circle.png" id="6_ijibh"]
+[ext_resource type="Texture2D" uid="uid://hrx8fuepq5t7" path="res://level/level assets/chalk_can_circle.png" id="6_ijibh"]
+[ext_resource type="Texture2D" uid="uid://dthrf5la6whxq" path="res://level/level assets/chalk_throw_line.png" id="7_ccv7w"]
 [ext_resource type="Texture2D" uid="uid://crb7lh4i2sbt6" path="res://level/level assets/house-red-roof-square-right-side.png" id="7_fnrcy"]
 [ext_resource type="Texture2D" uid="uid://bbpple8ccux0b" path="res://level/level assets/house-green-roof-square-right-side.png" id="8_tbbkv"]
 [ext_resource type="Texture2D" uid="uid://dr86eh8e6w6ie" path="res://level/level assets/background/house-blue-roof_3q_topdown.png" id="9_1mcu4"]
@@ -16,10 +17,22 @@
 [ext_resource type="PackedScene" uid="uid://b4et2uv53vlby" path="res://level/Crate3.tscn" id="11_tbbkv"]
 [ext_resource type="PackedScene" uid="uid://mphtarypkopp" path="res://level/tire_2.tscn" id="12_1mcu4"]
 [ext_resource type="Script" uid="uid://ckmgcysooimme" path="res://level/camera_2d.gd" id="12_memns"]
+[ext_resource type="Shader" uid="uid://dhen7sxdhpow0" path="res://level/outsideshader.gdshader" id="14_6hary"]
 [ext_resource type="PackedScene" uid="uid://cxkrpe71rjrqe" path="res://level/trash_canE.tscn" id="14_i2mkb"]
 [ext_resource type="PackedScene" uid="uid://b3yl1q8854nnj" path="res://level/barrel_1E.tscn" id="15_m7crg"]
 [ext_resource type="PackedScene" uid="uid://cmmi50khdnkuh" path="res://level/barrrel_2E.tscn" id="16_ufsp5"]
 [ext_resource type="PackedScene" uid="uid://xy6pep8pttkn" path="res://scenes/Thrower Bullcap Head.tscn" id="17_ksvqy"]
+[ext_resource type="Texture2D" uid="uid://02h2nife1ccv" path="res://level/level assets/background/side_planters_right.png" id="20_ru5bs"]
+[ext_resource type="Texture2D" uid="uid://3nit4wbvk4yo" path="res://level/level assets/background/side_hedge_left.png" id="21_memns"]
+[ext_resource type="Texture2D" uid="uid://n8soa28deijn" path="res://level/level assets/background/shrub_3q_topdown.png" id="25_a17jr"]
+[ext_resource type="Texture2D" uid="uid://0c6scsc30ggi" path="res://level/level assets/background/potted-plant-house-style.png" id="25_q0lbb"]
+[ext_resource type="Texture2D" uid="uid://dtjj8odldrgm4" path="res://level/level assets/background/house-red-roof.png" id="26_7w8wu"]
+[ext_resource type="Texture2D" uid="uid://dw6ustxfvmgvw" path="res://level/level assets/background/shrub.png" id="27_byxx3"]
+[ext_resource type="Texture2D" uid="uid://bvhki1ytjhvq3" path="res://level/level assets/background/leafy-tree.png" id="28_6hary"]
+[ext_resource type="Texture2D" uid="uid://dunxpbwiqujlk" path="res://level/level assets/background/house_redview_slate.png" id="28_o4npw"]
+[ext_resource type="Texture2D" uid="uid://duj8ha28w1uwp" path="res://level/level assets/background/lamp-post.png" id="30_o4npw"]
+[ext_resource type="Texture2D" uid="uid://dqytnxnvpycxj" path="res://level/level assets/background/house-blue-roof.png" id="31_nv5db"]
+[ext_resource type="Texture2D" uid="uid://dm2nqoeg8iyki" path="res://level/level assets/background/palm-tree.png" id="32_7ca63"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fnrcy"]
 texture = ExtResource("1_1jpee")
@@ -3078,6 +3091,16 @@ texture = ExtResource("9_ijibh")
 sources/0 = SubResource("TileSetAtlasSource_3h160")
 sources/1 = SubResource("TileSetAtlasSource_wtvkt")
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o4npw"]
+shader = ExtResource("14_6hary")
+shader_parameter/saturation = 0.8
+shader_parameter/brightness = 0.802000014345
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7ca63"]
+shader = ExtResource("14_6hary")
+shader_parameter/saturation = 0.8
+shader_parameter/brightness = 0.6700000080749999
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2aqsa"]
 size = Vector2(1689.5, 553)
 
@@ -3118,15 +3141,30 @@ script = ExtResource("5_vd67t")
 rect = Rect2(-832, -561, 1664, 1073)
 
 [node name="Decals" type="Node2D" parent="." unique_id=721945550]
+position = Vector2(313, -14)
 
 [node name="Chalk Circle" type="Sprite2D" parent="Decals" unique_id=1374718728]
+position = Vector2(30, 0)
+scale = Vector2(0.71875, 0.70703125)
 texture = ExtResource("6_ijibh")
 
 [node name="Chalk Line" type="Sprite2D" parent="Decals" unique_id=14060950]
 
+[node name="ChalkThrowLine" type="Sprite2D" parent="Decals" unique_id=1144347108]
+position = Vector2(-638.7623, 14.487511)
+rotation = 1.5707964
+scale = Vector2(1.2478462, 1.1349039)
+texture = ExtResource("7_ccv7w")
+flip_v = true
+
 [node name="World" type="Node2D" parent="." unique_id=715399497]
 y_sort_enabled = true
 position = Vector2(-17, -2)
+
+[node name="Overhead" type="Node2D" parent="World" unique_id=859128867]
+z_index = 50
+
+[node name="Area2D" type="Area2D" parent="World/Overhead" unique_id=220642817]
 
 [node name="Thrower Bullcap Head" parent="World" unique_id=920485240 instance=ExtResource("17_ksvqy")]
 position = Vector2(-131, 10)
@@ -3135,13 +3173,13 @@ position = Vector2(-131, 10)
 position = Vector2(-379, -146)
 
 [node name="Crate4" parent="World" unique_id=1244469928 instance=ExtResource("11_tbbkv")]
-position = Vector2(488, -204)
+position = Vector2(486, -335)
 
 [node name="Crate2" parent="World" unique_id=2138426944 instance=ExtResource("11_tbbkv")]
 position = Vector2(-469, -186)
 
 [node name="Crate3" parent="World" unique_id=1300326513 instance=ExtResource("11_tbbkv")]
-position = Vector2(398, -159)
+position = Vector2(377, -207)
 
 [node name="Tire 1" parent="World" unique_id=931360182 instance=ExtResource("12_1mcu4")]
 position = Vector2(499, 238)
@@ -3167,48 +3205,118 @@ position = Vector2(-320, -293)
 [node name="Barrrel 2" parent="World" unique_id=1298249102 instance=ExtResource("16_ufsp5")]
 position = Vector2(246, -281)
 
-[node name="Buildings" type="Node2D" parent="World" unique_id=786708209]
+[node name="Outside" type="Node2D" parent="World" unique_id=786708209]
 modulate = Color(0.6666667, 0.6509804, 0.6666667, 1)
 y_sort_enabled = true
 
-[node name="House 2" type="Sprite2D" parent="World/Buildings" unique_id=792052722]
+[node name="LeafyTree" type="Sprite2D" parent="World/Outside" unique_id=1266932430]
+y_sort_enabled = true
+position = Vector2(-346, -815)
+scale = Vector2(0.42915735, 0.64066494)
+texture = ExtResource("28_6hary")
+
+[node name="House 2" type="Sprite2D" parent="World/Outside" unique_id=792052722]
+material = SubResource("ShaderMaterial_o4npw")
 position = Vector2(-1160.0001, 59.000015)
 scale = Vector2(0.7071194, 0.52199227)
 texture = ExtResource("5_2fwga")
 
-[node name="House1" type="Sprite2D" parent="World/Buildings" unique_id=611969433]
+[node name="House1" type="Sprite2D" parent="World/Outside" unique_id=611969433]
+material = SubResource("ShaderMaterial_o4npw")
 position = Vector2(-1088, 369.99997)
 scale = Vector2(0.49347824, 0.37273288)
 texture = ExtResource("4_1a7n2")
 
-[node name="HouseRedRoofSquareRightSide" type="Sprite2D" parent="World/Buildings" unique_id=1561333566]
+[node name="HouseRedRoofSquareRightSide" type="Sprite2D" parent="World/Outside" unique_id=1561333566]
+material = SubResource("ShaderMaterial_o4npw")
 position = Vector2(1191.625, 355.125)
 scale = Vector2(0.79202735, 0.5487722)
 texture = ExtResource("7_fnrcy")
 
-[node name="HouseGreenLeft" type="Sprite2D" parent="World/Buildings" unique_id=442220403]
+[node name="HouseGreenLeft" type="Sprite2D" parent="World/Outside" unique_id=442220403]
+material = SubResource("ShaderMaterial_o4npw")
 
-[node name="HouseGreenRoofSquareRightSide" type="Sprite2D" parent="World/Buildings" unique_id=95950696]
+[node name="HouseGreenRoofSquareRightSide" type="Sprite2D" parent="World/Outside" unique_id=95950696]
+material = SubResource("ShaderMaterial_o4npw")
 position = Vector2(1225.25, -36.75)
 scale = Vector2(0.84839475, 0.5957309)
 texture = ExtResource("8_tbbkv")
 
-[node name="HouseBlueRoof3qTopdown" type="Sprite2D" parent="World/Buildings" unique_id=1964676341]
+[node name="HouseBlueRoof3qTopdown" type="Sprite2D" parent="World/Outside" unique_id=1964676341]
+material = SubResource("ShaderMaterial_7ca63")
 position = Vector2(305, -716)
 scale = Vector2(0.28854847, 0.40225562)
 texture = ExtResource("9_1mcu4")
 
-[node name="HouseGreenRoof" type="Sprite2D" parent="World/Buildings" unique_id=2135116679]
+[node name="HouseGreenRoof" type="Sprite2D" parent="World/Outside" unique_id=2135116679]
+material = SubResource("ShaderMaterial_o4npw")
 position = Vector2(630, -818)
 scale = Vector2(0.44388643, 0.45669574)
 texture = ExtResource("10_4d7l4")
 
-[node name="Sprite2D" type="Sprite2D" parent="World/Buildings" unique_id=1816207233]
+[node name="Sprite2D" type="Sprite2D" parent="World/Outside" unique_id=1816207233]
+material = SubResource("ShaderMaterial_o4npw")
 position = Vector2(-1070.5, -271.125)
 scale = Vector2(0.46413046, 0.40840387)
 texture = ExtResource("11_4d7l4")
 
-[node name="Overhead" type="Node2D" parent="World" unique_id=859128867]
+[node name="SidePlant" type="Sprite2D" parent="World/Outside" unique_id=1309723049]
+material = SubResource("ShaderMaterial_o4npw")
+position = Vector2(-857, 436)
+scale = Vector2(0.3, 0.21315789)
+texture = ExtResource("20_ru5bs")
+
+[node name="SideHedge" type="Sprite2D" parent="World/Outside" unique_id=1404226058]
+material = SubResource("ShaderMaterial_o4npw")
+position = Vector2(-826.75, 9.500002)
+scale = Vector2(0.2741379, 0.22948723)
+texture = ExtResource("21_memns")
+
+[node name="Shrub3qTopdown" type="Sprite2D" parent="World/Outside" unique_id=151869421]
+material = SubResource("ShaderMaterial_o4npw")
+position = Vector2(-925.81244, -410.6875)
+scale = Vector2(0.22097063, 0.22826795)
+texture = ExtResource("25_a17jr")
+
+[node name="PottedPlant3qSide" type="Sprite2D" parent="World/Outside" unique_id=533307816]
+material = SubResource("ShaderMaterial_o4npw")
+position = Vector2(-849.3722, -85.903404)
+scale = Vector2(0.056744378, 0.05819318)
+texture = ExtResource("25_q0lbb")
+
+[node name="HouseRedRoof" type="Sprite2D" parent="World/Outside" unique_id=1887222949]
+material = SubResource("ShaderMaterial_7ca63")
+position = Vector2(-94.00003, -705)
+scale = Vector2(0.4051081, 0.3949275)
+texture = ExtResource("26_7w8wu")
+
+[node name="Shrub" type="Sprite2D" parent="World/Outside" unique_id=1026076804]
+material = SubResource("ShaderMaterial_o4npw")
+position = Vector2(-343.00003, -589)
+scale = Vector2(0.114583336, 0.12158198)
+texture = ExtResource("27_byxx3")
+
+[node name="HouseRedviewSlate" type="Sprite2D" parent="World/Outside" unique_id=56754637]
+position = Vector2(1134.25, -351.25)
+scale = Vector2(0.6495674, 0.5204638)
+texture = ExtResource("28_o4npw")
+flip_h = true
+
+[node name="LampPost" type="Sprite2D" parent="World/Outside" unique_id=720530977]
+position = Vector2(872, -707)
+scale = Vector2(0.2397461, 0.28059894)
+texture = ExtResource("30_o4npw")
+
+[node name="HouseBlueRoof" type="Sprite2D" parent="World/Outside" unique_id=1811795872]
+material = SubResource("ShaderMaterial_7ca63")
+position = Vector2(-537, -713)
+scale = Vector2(0.35551828, 0.3723359)
+texture = ExtResource("31_nv5db")
+
+[node name="PalmTree" type="Sprite2D" parent="World/Outside" unique_id=663918431]
+position = Vector2(144, -794.99994)
+scale = Vector2(0.4334452, 0.4835891)
+texture = ExtResource("32_7ca63")
 
 [node name="World Border" type="StaticBody2D" parent="World" unique_id=1616705607]
 
@@ -3217,7 +3325,7 @@ position = Vector2(13, 761)
 shape = SubResource("RectangleShape2D_2aqsa")
 
 [node name="Left" type="CollisionShape2D" parent="World/World Border" unique_id=1472104806]
-position = Vector2(-1157.5, -216)
+position = Vector2(-1155, -222)
 shape = SubResource("RectangleShape2D_ja20v")
 
 [node name="Top" type="CollisionShape2D" parent="World/World Border" unique_id=1808757654]

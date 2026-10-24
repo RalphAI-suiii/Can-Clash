@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://ba3fo4dc3fhvy" path="res://level/level assets/crate_plain_toon_34.png" id="1_xw5px"]
 
 [sub_resource type="Gradient" id="Gradient_xw5px"]
-offsets = PackedFloat32Array(0.12740384, 0.6754808)
+offsets = PackedFloat32Array(0, 0.59375)
 colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_ja20v"]
@@ -15,21 +15,20 @@ fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_g0e5s"]
-size = Vector2(86, 50)
+size = Vector2(68, 50)
 
 [node name="Crate" type="StaticBody2D" unique_id=622352679]
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=268822837]
 y_sort_enabled = true
-position = Vector2(25.749947, -12.124985)
+position = Vector2(26, 14)
 texture = SubResource("GradientTexture2D_ja20v")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1392359332]
 y_sort_enabled = true
-position = Vector2(-1.2500229, -26.125015)
-scale = Vector2(0.15585934, 0.19196948)
+scale = Vector2(0.12382808, 0.15211016)
 texture = ExtResource("1_xw5px")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=162359055]
-position = Vector2(-0.2500534, 2.8749847)
+position = Vector2(0, 14)
 shape = SubResource("RectangleShape2D_g0e5s")

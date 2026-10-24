@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://lkynnamexpci" path="res://level/level assets/red_barrel_sprite.png" id="1_1ttqv"]
 
 [sub_resource type="Gradient" id="Gradient_m7crg"]
-offsets = PackedFloat32Array(0, 0.9831731)
+offsets = PackedFloat32Array(0, 0.7860577)
 colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_ja20v"]
@@ -15,22 +15,21 @@ fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2aqsa"]
-radius = 41.0
-height = 82.0
+radius = 32.0
+height = 64.0
 
 [node name="Barrel1" type="StaticBody2D" unique_id=328741121]
 
 [node name="Shadow" type="Sprite2D" parent="." unique_id=569028343]
-position = Vector2(13.749985, -9.5000305)
+position = Vector2(11, 17)
 scale = Vector2(0.8125003, 0.83593786)
 texture = SubResource("GradientTexture2D_ja20v")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=310743449]
 y_sort_enabled = true
-position = Vector2(7.8750153, -27.62503)
-scale = Vector2(0.6195654, 0.700276)
+scale = Vector2(0.51552796, 0.55662954)
 texture = ExtResource("1_1ttqv")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=875137516]
-position = Vector2(-0.25003052, -4)
+position = Vector2(-5, 14)
 shape = SubResource("CapsuleShape2D_2aqsa")
