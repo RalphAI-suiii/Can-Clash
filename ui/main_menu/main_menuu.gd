@@ -2,6 +2,9 @@ extends Control
 
 const UI = preload("res://ui/game_ui.gd")
 var name_input: LineEdit
+var online_view: Dictionary = {}
+var online_status: Label
+var online_buttons: Array[Button] = []
 
 @onready var play_local: Button = $PlayLocal
 @onready var popup: Control = $LocalPlayPopup
@@ -17,6 +20,9 @@ func _ready() -> void:
 	_build_profile_controls()
 	_color_menu_buttons()
 	play_local.pressed.connect(_show_local_popup)
+	$PlayOnline.pressed.connect(_show_online_popup)
+	LanSession.room_joined.connect(_online_ready)
+	LanSession.connection_status_changed.connect(_online_status_changed)
 	host.pressed.connect(_open_host)
 	join.pressed.connect(_open_join)
 	close_button.pressed.connect(_hide_local_popup)
@@ -164,3 +170,52 @@ func _show_statistics() -> void:
 	var body := "Wins: %d       Losses: %d\n\nSuccessful throws: %d\nCan knockdowns: %d\n\nSaved on this PC. Practice and developer games do not affect totals." % [stats.wins, stats.losses, stats.successful_throws, stats.can_knockdowns]
 	var view = UI.modal(self, "YOUR STATISTICS", body)
 	view.content.add_child(UI.button("Back", view.layer.queue_free))
+
+
+func _show_online_popup() -> void:
+	_save_name()
+	if not online_view.is_empty() and is_instance_valid(online_view.layer): return
+	online_view = UI.modal(self, "PLAY ONLINE", "Create a room or enter a friend's code. Up to 4 players.")
+	var address := LineEdit.new()
+	address.name = "OnlineCode"
+	address.placeholder_text = "7-character room code"
+	address.max_length = 9
+	address.add_theme_color_override("font_placeholder_color", Color("765436"))
+	address.custom_minimum_size = Vector2(0, 64)
+	online_view.content.add_child(address)
+	online_status = UI.label("", 22)
+	online_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	online_view.content.add_child(online_status)
+	online_buttons.clear()
+	var create := UI.button("Create Room", func() -> void: _connect_online(true, ""))
+	create.name = "CreateOnlineRoom"
+	var join_button := UI.button("Join Room", func() -> void: _connect_online(false, address.text))
+	join_button.name = "JoinOnlineRoom"
+	for button in [create, join_button]:
+		online_view.content.add_child(button)
+		online_buttons.append(button)
+	address.text_submitted.connect(func(_text: String) -> void:
+		if not join_button.disabled: _connect_online(false, address.text)
+	)
+	online_view.content.add_child(UI.button("Back", func() -> void:
+		LanSession.close_room()
+		online_view.layer.queue_free()
+		online_view = {}
+	))
+	address.grab_focus()
+
+func _connect_online(create: bool, code: String) -> void:
+	online_status.text = "Creating your online room..." if create else "Joining the online room..."
+	var error := LanSession.host_online() if create else LanSession.join_online(code)
+	for button in online_buttons:
+		button.disabled = error == OK
+
+func _online_ready() -> void:
+	if LanSession.mode == "online" and LanSession.phase == "waiting":
+		get_tree().change_scene_to_file.call_deferred("res://ui/waiting_room/waiting_room.tscn")
+
+func _online_status_changed(message: String) -> void:
+	if online_view.is_empty() or not is_instance_valid(online_view.layer): return
+	online_status.text = message
+	for button in online_buttons:
+		button.disabled = LanSession.phase == "joining"

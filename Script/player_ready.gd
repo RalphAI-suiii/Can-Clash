@@ -112,7 +112,7 @@ func all_players_ready() -> bool:
 
 
 func _update_title() -> void:
-	title_label.text = "ALL PLAYERS READY!" if all_players_ready() else "PLAYERS"
+	title_label.text = "ALL PLAYERS READY!" if all_players_ready() else "PLAYERS  %d / %d" % [players.size(), LanSession.capacity()]
 	var count := 0
 	for player in players:
 		if player["ready"]:

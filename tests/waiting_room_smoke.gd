@@ -59,9 +59,11 @@ func _run() -> void:
 	_move_mouse(can.get_hit_center())
 	await _frames(2)
 	_mouse_button(can.get_hit_center(), true)
-	await _frames(60)
+	await _frames(2)
 	assert(player.attack_state == player.AttackState.CHARGING)
-	assert(player.charge_bar.value > 0.3)
+	while absf(player.charge_bar.value - player.sweet_spot) > 0.02:
+		await physics_frame
+	assert(player.throw_quality().band == "PERFECT")
 	_mouse_button(can.get_hit_center(), false)
 	for i in range(90):
 		await physics_frame

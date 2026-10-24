@@ -5,9 +5,12 @@ signal connection_status_changed(message: String)
 signal room_joined
 signal room_closed(reason: String)
 signal input_received(peer_id: int, packet: Dictionary)
+signal throw_input_received(peer_id: int, pressed: bool, charge: int, at_time: float, aim: Vector2)
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
+const PROTOCOL := "canclash-skill-2"
+const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5
 const CODE_ALPHABET := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -28,24 +31,45 @@ var tutorial_ready: Dictionary = {}
 var last_input_time: Dictionary = {}
 var input_deadline: Dictionary = {}
 var event_sequence := 0
+var online: Node
+var online_sender := 0
+var send_sequence := 0
+var throw_sequence := 0
+var world_sequence := 0
+var received_world := -1
+var received_event := -1
+var received_inputs: Dictionary = {}
+var received_throws: Dictionary = {}
+var held_throws: Dictionary = {}
+var outgoing_throw := false
+var clock_offset := 0.0
+var clock_tick := 0.0
+var pending_clock := -1.0
 var developer_bot_count := 4:
 	set(value):
 		developer_bot_count = clampi(value, 0, MAX_PLAYERS - 1)
 
 func _ready() -> void:
+	online = preload("res://autoload/gdsync_transport.gd").new()
+	online.name = "OnlineTransport"
+	add_child(online)
+	online.joined.connect(_online_joined)
+	online.message_received.connect(_online_message)
+	online.peer_left.connect(_peer_left)
+	online.failed.connect(_failed)
 	multiplayer.connected_to_server.connect(_connected)
 	multiplayer.connection_failed.connect(func() -> void: _failed("Could not connect. Check the code/address and the host's firewall."))
 	multiplayer.server_disconnected.connect(func() -> void: _failed("The host closed the room."))
 	multiplayer.peer_disconnected.connect(_peer_left)
 
 func is_networked() -> bool:
-	return multiplayer.multiplayer_peer != null and not multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+	return mode == "online" or multiplayer.multiplayer_peer != null and not multiplayer.multiplayer_peer is OfflineMultiplayerPeer
 
 func is_host() -> bool:
-	return not is_networked() or multiplayer.is_server()
+	return online.is_host() if mode == "online" else not is_networked() or multiplayer.is_server()
 
 func local_id() -> int:
-	return multiplayer.get_unique_id() if is_networked() else 1
+	return online.local_id() if mode == "online" else multiplayer.get_unique_id() if is_networked() else 1
 
 func member(id: int) -> Dictionary:
 	for entry in players:
@@ -58,7 +82,8 @@ func _own_member(id: int, slot: int) -> Dictionary:
 	return {"id": id, "name": UserSettings.display_name, "ready": false, "slot": slot, "character": maxi(0, character), "color": COLORS[slot], "bot": false}
 
 func close_room() -> void:
-	if is_networked():
+	online.stop()
+	if multiplayer.multiplayer_peer != null and not multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
 		multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	players.clear()
@@ -69,6 +94,91 @@ func close_room() -> void:
 	phase = "menu"
 	room_code = ""
 	join_deadline = 0.0
+	held_throws.clear()
+	received_inputs.clear()
+	received_throws.clear()
+	send_sequence = 0
+	throw_sequence = 0
+	world_sequence = 0
+	received_world = -1
+	event_sequence = 0
+	received_event = -1
+	outgoing_throw = false
+	clock_offset = 0.0
+	pending_clock = -1.0
+	clock_tick = 0.0
+
+func capacity() -> int:
+	return ONLINE_CAPACITY if mode == "online" else MAX_PLAYERS
+
+func clock_time() -> float:
+	return Time.get_ticks_msec() / 1000.0 + (clock_offset if is_networked() and not is_host() else 0.0)
+
+func host_online() -> Error:
+	close_room()
+	mode = "online"
+	phase = "joining"
+	join_deadline = Time.get_ticks_msec() / 1000.0 + 30.0
+	return online.begin(true)
+
+func join_online(raw: String) -> Error:
+	close_room()
+	var code := raw.strip_edges().to_upper().replace("-", "")
+	if code.length() != 7 or not Array(code.split("")).all(func(c: String) -> bool: return CODE_ALPHABET.contains(c)):
+		connection_status_changed.emit("Enter the 7-character online room code.")
+		return ERR_INVALID_PARAMETER
+	mode = "online"
+	phase = "joining"
+	join_deadline = Time.get_ticks_msec() / 1000.0 + 30.0
+	return online.begin(false, code)
+
+func _online_joined(creator: bool) -> void:
+	room_code = online.code
+	if creator:
+		phase = "waiting"
+		join_deadline = 0.0
+		players.append(_own_member(1, 0))
+		roster_changed.emit()
+		room_joined.emit()
+	else:
+		_connected()
+
+func _send(method: String, arguments: Array = [], id: int = 0, reliable: bool = true) -> void:
+	if mode == "online":
+		online.send(id, method, arguments, reliable)
+	elif is_networked():
+		var target := Callable(self, method)
+		if id == 0: target.rpc.callv(arguments)
+		else: target.rpc_id.callv([id] + arguments)
+
+func _sender_id() -> int:
+	return online_sender if mode == "online" else multiplayer.get_remote_sender_id()
+
+func _online_message(sender: int, method: String, arguments: Array) -> void:
+	var requests := {"_register": 3, "_request_ready": 1, "_tutorial_ack": 0, "_submit_input": 1, "_throw_edge": 5, "_clock_ping": 1}
+	var updates := {"_sync_roster": 2, "_begin_selection": 3, "_world_state": 2, "_match_event": 1, "_show_results": 1, "_reject": 1, "_clock_pong": 2}
+	if is_host():
+		if sender <= 1 or not requests.has(method) or arguments.size() != requests[method]: return
+	else:
+		if sender != 1 or not updates.has(method) or arguments.size() != updates[method]: return
+	var expected := {
+		"_register": [TYPE_STRING, TYPE_INT, TYPE_STRING], "_request_ready": [TYPE_BOOL],
+		"_tutorial_ack": [], "_submit_input": [TYPE_DICTIONARY],
+		"_throw_edge": [TYPE_BOOL, TYPE_INT, TYPE_INT, TYPE_FLOAT, TYPE_VECTOR2],
+		"_clock_ping": [TYPE_FLOAT], "_clock_pong": [TYPE_FLOAT, TYPE_FLOAT],
+		"_sync_roster": [TYPE_ARRAY, TYPE_STRING], "_begin_selection": [TYPE_INT, TYPE_INT, TYPE_STRING],
+		"_world_state": [TYPE_PACKED_BYTE_ARRAY, TYPE_INT], "_match_event": [TYPE_DICTIONARY],
+		"_show_results": [TYPE_ARRAY], "_reject": [TYPE_STRING],
+	}
+	for index in range(arguments.size()):
+		if typeof(arguments[index]) != expected[method][index]: return
+	online_sender = sender
+	Callable(self, method).callv(arguments)
+	online_sender = 0
+
+@rpc("authority", "call_remote", "reliable")
+func _reject(reason: String) -> void:
+	_failed(reason)
 
 func begin_local(local_mode: String = "developer") -> void:
 	close_room()
@@ -111,21 +221,27 @@ func join_room(address_or_code: String) -> Error:
 	mode = "lan"
 	phase = "joining"
 	join_deadline = Time.get_ticks_msec() / 1000.0 + 10.0
-	connection_status_changed.emit("Connecting to the host…")
+	connection_status_changed.emit("Connecting to the host...")
 	return OK
 
 func _connected() -> void:
-	_register.rpc_id(1, UserSettings.display_name, _own_member(local_id(), 0).character)
+	_send("_register", [UserSettings.display_name, _own_member(local_id(), 0).character, PROTOCOL], 1)
+	_request_clock()
 
 @rpc("any_peer", "call_remote", "reliable")
-func _register(player_name: String, character: int) -> void:
-	if not is_host() or phase != "waiting":
+func _register(player_name: String, character: int, protocol: String = "") -> void:
+	if not is_host(): return
+	var sender := _sender_id()
+	if protocol != PROTOCOL:
+		_send("_reject", ["Different game version. Everyone must use the same updated build."], sender)
 		return
-	var sender := multiplayer.get_remote_sender_id()
+	if phase != "waiting":
+		_send("_reject", ["This match has already started."], sender)
+		return
 	if sender <= 1 or not member(sender).is_empty():
 		return
-	if players.size() >= MAX_PLAYERS:
-		multiplayer.multiplayer_peer.disconnect_peer(sender)
+	if players.size() >= capacity():
+		_send("_reject", ["This room is full (%d players)." % capacity()], sender)
 		return
 	var used: Array = players.map(func(entry: Dictionary) -> int: return entry.slot)
 	var slot := 0
@@ -138,7 +254,7 @@ func _register(player_name: String, character: int) -> void:
 func _publish_roster() -> void:
 	roster_changed.emit()
 	if is_networked() and is_host():
-		_sync_roster.rpc(players, room_code)
+		_send("_sync_roster", [players, room_code])
 
 @rpc("authority", "call_remote", "reliable")
 func _sync_roster(roster: Array, code: String) -> void:
@@ -157,12 +273,12 @@ func set_ready(value: bool) -> void:
 	if is_host():
 		_apply_ready(local_id(), value)
 	else:
-		_request_ready.rpc_id(1, value)
+		_send("_request_ready", [value], 1)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_ready(value: bool) -> void:
 	if is_host():
-		_apply_ready(multiplayer.get_remote_sender_id(), value)
+		_apply_ready(_sender_id(), value)
 
 func _apply_ready(id: int, value: bool) -> void:
 	var entry := member(id)
@@ -188,7 +304,8 @@ func start_match() -> bool:
 	tutorial_ready.clear()
 	phase = "roulette"
 	if is_networked():
-		_begin_selection.rpc(selected_map, selection_seed, match_id)
+		_send("_begin_selection", [selected_map, selection_seed, match_id])
+		if mode == "online": online.close_admission()
 	_open_selection()
 	return true
 
@@ -215,11 +332,11 @@ func acknowledge_tutorial() -> void:
 	if is_host():
 		tutorial_ready[local_id()] = true
 	else:
-		_tutorial_ack.rpc_id(1)
+		_send("_tutorial_ack", [], 1)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _tutorial_ack() -> void:
-	var sender := multiplayer.get_remote_sender_id()
+	var sender := _sender_id()
 	if is_host() and phase == "match" and not member(sender).is_empty():
 		tutorial_ready[sender] = true
 
@@ -227,14 +344,50 @@ func humans_ready_for_match() -> bool:
 	return players.all(func(entry: Dictionary) -> bool: return entry.bot or tutorial_ready.has(entry.id))
 
 func send_input(packet: Dictionary) -> void:
-	if is_networked() and not is_host():
-		_submit_input.rpc_id(1, packet)
+	if not is_networked() or is_host(): return
+	send_sequence += 1
+	packet["sequence"] = send_sequence
+	var pressed: bool = packet.get("throw", false)
+	if pressed != outgoing_throw:
+		outgoing_throw = pressed
+		throw_sequence += 1
+		_send("_throw_edge", [pressed, throw_sequence, int(packet.get("charge_id", 0)), clock_time(), packet.get("aim", Vector2.ZERO)], 1)
+	_send("_submit_input", [packet], 1, false)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _throw_edge(pressed: bool, sequence: int, charge: int, at_time: float, aim: Vector2) -> void:
+	var sender := _sender_id()
+	if not is_host() or member(sender).is_empty() or not phase in ["waiting", "match"] or not aim.is_finite(): return
+	if sequence <= int(received_throws.get(sender, -1)): return
+	received_throws[sender] = sequence
+	held_throws[sender] = pressed
+	throw_input_received.emit(sender, pressed, charge, at_time, aim.clamp(Vector2(-10000, -10000), Vector2(10000, 10000)))
+
+func _request_clock() -> void:
+	pending_clock = Time.get_ticks_msec() / 1000.0
+	_send("_clock_ping", [pending_clock], 1)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _clock_ping(sent: float) -> void:
+	if is_host() and not member(_sender_id()).is_empty():
+		_send("_clock_pong", [sent, clock_time()], _sender_id())
+
+@rpc("authority", "call_remote", "reliable")
+func _clock_pong(sent: float, host_time: float) -> void:
+	if sent != pending_clock or not is_finite(host_time): return
+	var now := Time.get_ticks_msec() / 1000.0
+	var round_trip := now - sent
+	if round_trip >= 0.0 and round_trip <= 2.0:
+		clock_offset = host_time + round_trip * 0.5 - now
+	pending_clock = -1.0
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
 func _submit_input(packet: Dictionary) -> void:
-	var sender := multiplayer.get_remote_sender_id()
+	var sender := _sender_id()
 	if not is_host() or member(sender).is_empty() or not phase in ["waiting", "match"]:
 		return
+	var sequence := int(packet.get("sequence", -1))
+	if sequence <= int(received_inputs.get(sender, -1)): return
 	var now := Time.get_ticks_msec() / 1000.0
 	if now - float(last_input_time.get(sender, 0.0)) < 0.006:
 		return
@@ -245,21 +398,26 @@ func _submit_input(packet: Dictionary) -> void:
 	var clean := {"move": move.limit_length(), "aim": aim.clamp(Vector2(-10000, -10000), Vector2(10000, 10000))}
 	for key in ["sprint", "interact", "lunge", "throw"]:
 		clean[key] = packet.get(key, false) == true
+	clean["throw"] = held_throws.get(sender, false)
+	received_inputs[sender] = sequence
 	last_input_time[sender] = now
 	input_deadline[sender] = now + 0.5
 	input_received.emit(sender, clean)
 
 func publish_world(snapshot: Dictionary) -> void:
 	if is_networked() and is_host():
+		world_sequence += 1
+		snapshot["sequence"] = world_sequence
 		var bytes := var_to_bytes(snapshot)
-		_world_state.rpc(bytes.compress(FileAccess.COMPRESSION_ZSTD), bytes.size())
+		_send("_world_state", [bytes.compress(FileAccess.COMPRESSION_ZSTD), bytes.size()], 0, false)
 
 @rpc("authority", "call_remote", "unreliable_ordered", 2)
 func _world_state(payload: PackedByteArray, original_size: int) -> void:
 	if original_size <= 0 or original_size > 65536:
 		return
 	var snapshot = bytes_to_var(payload.decompress(original_size, FileAccess.COMPRESSION_ZSTD))
-	if snapshot is Dictionary:
+	if snapshot is Dictionary and int(snapshot.get("sequence", -1)) > received_world:
+		received_world = int(snapshot.sequence)
 		world_snapshot_received.emit(snapshot)
 
 func publish_event(event: Dictionary) -> void:
@@ -267,10 +425,12 @@ func publish_event(event: Dictionary) -> void:
 	event["sequence"] = event_sequence
 	match_event_received.emit(event)
 	if is_networked() and is_host():
-		_match_event.rpc(event)
+		_send("_match_event", [event])
 
 @rpc("authority", "call_remote", "reliable")
 func _match_event(event: Dictionary) -> void:
+	if int(event.get("sequence", -1)) <= received_event: return
+	received_event = int(event.sequence)
 	match_event_received.emit(event)
 
 func finish_match(rankings: Array) -> void:
@@ -279,7 +439,7 @@ func finish_match(rankings: Array) -> void:
 	results = rankings
 	phase = "results"
 	if is_networked():
-		_show_results.rpc(rankings)
+		_send("_show_results", [rankings])
 	get_tree().change_scene_to_file.call_deferred("res://ui/results/results.tscn")
 
 @rpc("authority", "call_remote", "reliable")
@@ -294,6 +454,9 @@ func _peer_left(id: int) -> void:
 	players = players.filter(func(entry: Dictionary) -> bool: return entry.id != id)
 	tutorial_ready.erase(id)
 	input_deadline.erase(id)
+	held_throws.erase(id)
+	received_inputs.erase(id)
+	received_throws.erase(id)
 	_publish_roster()
 
 func _failed(reason: String) -> void:
@@ -302,8 +465,13 @@ func _failed(reason: String) -> void:
 	room_closed.emit(reason)
 
 func _process(_delta: float) -> void:
+	if is_networked() and not is_host() and phase in ["waiting", "match"]:
+		clock_tick += _delta
+		if clock_tick >= 2.0:
+			clock_tick = 0.0
+			_request_clock()
 	if join_deadline > 0.0 and Time.get_ticks_msec() / 1000.0 > join_deadline:
-		_failed("Connection timed out. Check the room code, LAN connection, and firewall.")
+		_failed("Connection timed out. Check your internet connection and online code." if mode == "online" else "Connection timed out. Check the room code, LAN connection, and firewall.")
 	if is_host():
 		var now := Time.get_ticks_msec() / 1000.0
 		for id in input_deadline.keys():

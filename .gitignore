@@ -8,6 +8,7 @@ builds/*
 !builds/.gitkeep
 
 # Credentials and temporary files
+addons/GD-Sync/keys.cfg
 .env
 .env.*
 *.tmp

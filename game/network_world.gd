@@ -13,6 +13,7 @@ func setup_network_world() -> void:
 		get_node("Player").free()
 	LanSession.roster_changed.connect(_sync_actors)
 	LanSession.input_received.connect(_receive_input)
+	LanSession.throw_input_received.connect(_receive_throw)
 	LanSession.world_snapshot_received.connect(_apply_snapshot)
 	LanSession.room_closed.connect(_room_closed)
 	_sync_actors()
@@ -108,11 +109,24 @@ func _physics_process(delta: float) -> void:
 			var active: Node2D = actors.get(LanSession.local_id())
 			if active != null:
 				var enabled := _local_inputs_enabled()
-				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled else Vector2.ZERO, "aim": active.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null})
+				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled else Vector2.ZERO, "aim": active.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": active.charge_id})
 
 func _receive_input(id: int, packet: Dictionary) -> void:
 	if LanSession.is_host() and actors.has(id):
 		actors[id].apply_network_input(packet)
+
+func _receive_throw(id: int, pressed: bool, charge: int, at_time: float, aim: Vector2) -> void:
+	if not LanSession.is_host() or not actors.has(id) or not _world_inputs_enabled(): return
+	var actor: CharacterBody2D = actors[id]
+	actor.network_input["aim"] = aim
+	actor.network_input["throw"] = pressed
+	if pressed:
+		if not actor.is_taya and actor.attack_state == actor.AttackState.FREE and not is_instance_valid(actor.active_slipper):
+			actor._start_charge()
+	else:
+		if not actor.release_network_throw(charge, at_time, aim) and actor.attack_state == actor.AttackState.CHARGING:
+			# Quick clicks can release before the start snapshot arrives; cancel, never award a perfect throw.
+			actor.set_taya_role(actor.is_taya)
 
 func _slipper_spawned(_actor: CharacterBody2D, _slipper: Node2D) -> void:
 	pass
@@ -152,7 +166,7 @@ func _update_bot(actor: CharacterBody2D) -> void:
 		var aim_distance: float = (can.get_hit_center() - actor.get_throw_origin()).length()
 		if aim_distance < 300.0:
 			destination = actor.global_position
-			throwing = actor.attack_state != actor.AttackState.CHARGING or actor.charge_elapsed < 1.65
+			throwing = actor.attack_state != actor.AttackState.CHARGING or actor.charge_bar.value < float(actor.get_meta("bot_release_at", actor.sweet_spot))
 	var toward := destination - actor.global_position
 	actor.apply_network_input({"move": toward.normalized() if toward.length() > 18.0 else Vector2.ZERO, "aim": can.get_hit_center() if not actor.is_taya else destination, "throw": throwing, "sprint": true, "interact": interact, "lunge": lunge})
 
@@ -160,7 +174,7 @@ func _snapshot() -> Dictionary:
 	var state := {"actors": [], "cans": [], "extra": _extra_snapshot()}
 	for id in actors:
 		var actor: CharacterBody2D = actors[id]
-		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "carrying": actor.carrying_can, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}}
+		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "carrying": actor.carrying_can, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}}
 		if is_instance_valid(actor.active_slipper):
 			var slipper: Node2D = actor.active_slipper
 			data.slipper = {"position": slipper.position, "velocity": slipper.velocity, "height": slipper.height, "spin": slipper.spin_angle, "charge": slipper.charge_ratio, "resting": slipper.resting, "bounces": slipper.floor_bounces, "lost": slipper.lost_remaining, "age": slipper.age}
@@ -187,6 +201,12 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		actor.attack_direction = data.aim
 		actor.aim_distance = data.distance
 		actor.slipper_spawned = true
+		actor.charge_id = int(data.get("charge_id", 0))
+		actor.charge_started = float(data.get("charge_started", 0.0))
+		actor.sweet_spot = float(data.get("sweet_spot", 0.5))
+		actor.throw_feedback = str(data.get("feedback", ""))
+		actor.feedback_until = float(data.get("feedback_until", 0.0))
+		actor.charge_bar.target_center = actor.sweet_spot
 		actor.charge_bar.value = data.charge
 		actor.charge_bar.visible = data.attack == actor.AttackState.CHARGING
 		actor.sprite.animation = data.sprite

@@ -31,3 +31,15 @@ scoring and results. The host must validate gameplay outcomes.
 
 Proposed controls are WASD movement, mouse aim and charged throwing, an
 Interact key, and a lunge key. Bindings, match duration, and tie rules remain TBD.
+
+
+### Local and online play
+
+Play Local hosts five-player LAN games. Play Online creates or joins four-player
+GD-Sync Free rooms using a shared code. Online requires the developer's game API
+configuration; see [GD-Sync setup and verification](docs/online_setup.md).
+LAN, Practice and developer mode work without online keys.
+
+Hold left-click and release the bouncing marker inside the randomized green zone
+for full power and accuracy. Yellow is weaker; red adds aim error. Tagged players
+regain movement immediately while retaining one second of re-tag protection.

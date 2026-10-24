@@ -66,7 +66,7 @@ func _refresh_start_button() -> void:
 	start_button.visible = host and LanSession.mode != "practice"
 	start_frame.visible = start_button.visible
 	start_button.disabled = not can_start
-	start_button.tooltip_text = "Start the game" if can_start else "Wait for another player, and make sure every member is ready." if LanSession.mode == "lan" and LanSession.players.size() < 2 else "Every player must be ready to start."
+	start_button.tooltip_text = "Start the game" if can_start else "Wait for another player, and make sure every member is ready." if LanSession.mode in ["lan", "online"] and LanSession.players.size() < 2 else "Every player must be ready to start."
 	start_frame.add_theme_stylebox_override("panel", start_glow if can_start else start_frame_style)
 	$HUD/Screen/ReadyFrame.offset_left = -608.0 if host else -440.0
 	$HUD/Screen/ReadyFrame.offset_right = -308.0 if host else -48.0
@@ -145,10 +145,10 @@ func _build_room_code() -> void:
 	room_code_button.offset_top = -145
 	room_code_button.offset_bottom = -55
 	room_code_button.add_theme_font_size_override("font_size", 23)
-	room_code_button.text = "ROOM CODE\n" + LanSession.room_code if LanSession.mode == "lan" else "DEVELOPER\n%d BOTS" % LanSession.developer_bot_count if LanSession.mode == "developer" else "PRACTICE"
-	room_code_button.tooltip_text = "Copy room code • Host IP: " + LanSession.host_address if LanSession.mode == "lan" else "Developer games and practice do not change saved statistics."
+	room_code_button.text = "ROOM CODE\n" + LanSession.room_code if LanSession.mode in ["lan", "online"] else "DEVELOPER\n%d BOTS" % LanSession.developer_bot_count if LanSession.mode == "developer" else "PRACTICE"
+	room_code_button.tooltip_text = "Copy online room code • Up to 4 players" if LanSession.mode == "online" else "Copy room code • Host IP: " + LanSession.host_address if LanSession.mode in ["lan", "online"] else "Developer games and practice do not change saved statistics."
 	room_code_button.pressed.connect(func() -> void:
-		if LanSession.mode == "lan":
+		if LanSession.mode in ["lan", "online"]:
 			DisplayServer.clipboard_set(LanSession.room_code)
 	)
 	$HUD/Screen.add_child(room_code_button)

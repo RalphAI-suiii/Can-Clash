@@ -2,7 +2,7 @@ extends "res://game/network_world.gd"
 
 const UI = preload("res://ui/game_ui.gd")
 const CATALOG = preload("res://game/maps/map_catalog.gd")
-const RULES := "Move: WASD / arrow keys. Hold Shift to sprint.\nAim with the mouse, hold left-click to charge, then release.\nThe dots predict first landing. Run over YOUR colored slipper to retrieve it.\nAn out-of-bounds slipper returns to your hand after 3 seconds.\n\nThrowers: knock down the can, retrieve your slipper, and return to the blue safe strip.\nThe can bounces and rolls, then stands where it settles after a short pause.\nTaya: tag throwers outside the safe strip while the can stands. Space lunges (10s cooldown).\n\nEarn +1 for a can hit, safe return, Taya tag, or a thrower's miss while you are Taya.\nAfter a 30-second grace period, score for 3 minutes. Highest score wins; ties share victory."
+const RULES := "Move: WASD / arrow keys. Hold Shift to sprint.\nAim with the mouse, hold left-click and release the bouncing marker in GREEN for full power.\nYellow is weaker; red is inaccurate. The green window changes each throw.\nThe dots predict first landing. Run over YOUR colored slipper to retrieve it.\nAn out-of-bounds slipper returns to your hand after 3 seconds.\n\nThrowers: knock down the can, retrieve your slipper, and return to the blue safe strip.\nThe can bounces and rolls, then stands where it settles after a short pause.\nTaya: tag throwers outside the safe strip while the can stands. Space lunges (10s cooldown).\n\nEarn +1 for a can hit, safe return, Taya tag, or a thrower's miss while you are Taya.\nAfter a 30-second grace period, score for 3 minutes. Highest score wins; ties share victory."
 const ARENA := Rect2(253, 220, 1350, 785)
 const SAFE := Rect2(295, 320, 235, 620)
 
@@ -179,6 +179,21 @@ func _tag_requested(thrower: Node2D, guard: CharacterBody2D) -> void:
 	_add_point(guard_id)
 	guard.flash_hit()
 	thrower.flash_hit()
+	# Separate bodies along the court before transferring roles; neither player is stunned.
+	var away: Vector2 = thrower.global_position - guard.global_position
+	if away.is_zero_approx(): away = guard.facing
+	var gap: float = guard.PLAYER_CLEARANCE * maxf(guard.scale.x, thrower.scale.x) + 8.0
+	if away.length() < gap:
+		# Ignore only the tagging partner while separating; scenery still blocks movement.
+		thrower.add_collision_exception_with(guard)
+		guard.add_collision_exception_with(thrower)
+		var direction := away.normalized()
+		thrower.move_and_collide(direction * (gap - away.length()))
+		var remaining_gap := gap - thrower.global_position.distance_to(guard.global_position)
+		if remaining_gap > 0.0:
+			guard.move_and_collide(-direction * remaining_gap)
+		thrower.remove_collision_exception_with(guard)
+		guard.remove_collision_exception_with(thrower)
 	guard.set_taya_role(false)
 	if is_instance_valid(thrower.active_slipper):
 		thrower.active_slipper.queue_free()
@@ -193,7 +208,7 @@ func _add_point(id: int) -> void:
 	scores[id] = int(scores.get(id, 0)) + 1
 
 func _match_event(event: Dictionary) -> void:
-	if event.get("kind") == "hit" and event.get("player") == LanSession.local_id() and event.get("match_id") == LanSession.match_id and LanSession.mode == "lan":
+	if event.get("kind") == "hit" and event.get("player") == LanSession.local_id() and event.get("match_id") == LanSession.match_id and LanSession.mode in ["lan", "online"]:
 		UserSettings.record_hit()
 
 func _finish() -> void:
@@ -243,7 +258,7 @@ func _build_hud() -> void:
 func _show_rules(first_time: bool) -> void:
 	tutorial_open = true
 	var view = UI.modal(self, "HOW TO PLAY", RULES)
-	view.content.add_child(UI.button("Got it — let's play" if first_time else "Back to game", func() -> void:
+	view.content.add_child(UI.button("Got it, let's play" if first_time else "Back to game", func() -> void:
 		tutorial_open = false
 		if first_time:
 			UserSettings.tutorial_seen = true

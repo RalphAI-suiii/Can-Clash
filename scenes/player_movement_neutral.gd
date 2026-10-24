@@ -2,7 +2,8 @@ extends "res://scenes/player_movement_base.gd"
 
 signal tag_requested(thrower: Node2D)
 
-@export var charge_duration: float = 2.5
+@export var charge_duration: float = 2.5 # Complete out-and-back meter cycle.
+const THROW_METER = preload("res://scenes/throw_meter.gd")
 @export var accept_local_input: bool = true
 @export var is_taya: bool = false
 @export var carry_speed: float = 68.0
@@ -38,6 +39,12 @@ var attack_direction: Vector2 = Vector2.DOWN
 var aim_distance: float = 48.0
 var charge_elapsed: float = 0.0
 var charge_ratio: float = 0.0
+var charge_id := 0
+var charge_started := 0.0
+var sweet_spot := 0.5
+var throw_feedback := ""
+var feedback_until := 0.0
+var release_spread := 0.0
 var slipper_spawned: bool = false
 var active_slipper: Node2D
 var dust_cooldown: float = 0.0
@@ -65,6 +72,12 @@ func _ready() -> void:
 	attack_sprite.animation_finished.connect(_on_attack_finished)
 	attack_sprite.frame_changed.connect(_on_attack_frame_changed)
 	attack_sprite.hide()
+	charge_bar.set_script(THROW_METER)
+	charge_bar.offset_left = -122
+	charge_bar.offset_right = 122
+	charge_bar.offset_top = -275
+	charge_bar.offset_bottom = -253
+	charge_bar._ready()
 	charge_bar.hide()
 	taya_visual.hide()
 	interact_prompt.hide()
@@ -75,7 +88,7 @@ func _ready() -> void:
 		add_to_group("throwers")
 	_update_taya_prompt()
 	throw_status = Label.new()
-	throw_status.position = Vector2(-110, -265)
+	throw_status.position = Vector2(-110, -312)
 	throw_status.size = Vector2(220, 26)
 	throw_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	throw_status.add_theme_font_override("font", preload("res://assets/fonts/TitanOne-Regular.ttf"))
@@ -105,13 +118,39 @@ func _physics_process(delta: float) -> void:
 			_update_slipper_pickup()
 	elif attack_state == AttackState.CHARGING:
 		_update_cursor_aim()
-		charge_elapsed = minf(charge_elapsed + delta, charge_duration)
-		charge_bar.value = charge_elapsed / maxf(charge_duration, 0.01)
-		charge_bar.modulate = Color.WHITE.lerp(Color(1.0, 0.92, 0.57), charge_bar.value)
+		_refresh_meter()
 		_update_trajectory()
 		if not _throw_pressed():
 			_start_throw()
 
+
+func _process(_delta: float) -> void:
+	# Replicas do not simulate physics, but their timing marker must animate smoothly.
+	if attack_state == AttackState.CHARGING and not LanSession.is_host():
+		_refresh_meter()
+		_update_throw_status()
+		if int(get_meta("peer_id", -1)) == LanSession.local_id():
+			_update_trajectory()
+
+func _refresh_meter() -> void:
+	charge_elapsed = maxf(0.0, LanSession.clock_time() - charge_started)
+	charge_bar.target_center = sweet_spot
+	charge_bar.value = THROW_METER.marker_at(charge_elapsed, charge_duration * 0.5)
+	charge_bar.modulate = Color.WHITE
+
+func throw_quality() -> Dictionary:
+	return THROW_METER.quality_at(charge_bar.value, sweet_spot)
+
+func release_network_throw(id: int, at_time: float, aim: Vector2) -> bool:
+	if attack_state != AttackState.CHARGING or charge_id != id or is_taya:
+		return false
+	var now := LanSession.clock_time()
+	if not is_finite(at_time) or at_time < now - 0.25 or at_time > now + 0.03 or at_time < charge_started:
+		return false
+	network_input["aim"] = aim
+	_update_cursor_aim()
+	_start_throw(maxf(0.0, minf(at_time, now) - charge_started))
+	return true
 
 func _taya_physics_process(delta: float) -> void:
 	if taya_action == &"lunge":
@@ -208,6 +247,8 @@ func _advance_lunge(delta: float) -> void:
 		target_distance = toward_target.length()
 		if target_distance <= TAG_DISTANCE:
 			_try_tag()
+			if not is_taya or taya_action != &"lunge":
+				return
 			lunge_target_reached = true
 			if lunge_collision_exception == null:
 				_land_lunge()
@@ -228,6 +269,8 @@ func _advance_lunge(delta: float) -> void:
 	var moved: float = global_position.distance_to(before)
 	lunge_travelled += moved
 	_try_tag()
+	if not is_taya or taya_action != &"lunge":
+		return
 	if is_instance_valid(lunge_target) and global_position.distance_to(lunge_target.global_position) <= TAG_DISTANCE:
 		lunge_target_reached = true
 	var reached_target: bool = is_instance_valid(lunge_target) and _is_eligible_thrower(lunge_target) and global_position.distance_to(lunge_target.global_position) <= TAG_DISTANCE
@@ -352,6 +395,18 @@ func set_taya_role(enabled: bool) -> void:
 		can_node.drop(self)
 		carrying_can = false
 	is_taya = enabled
+	velocity = Vector2.ZERO
+	attack_sprite.stop()
+	charge_elapsed = 0.0
+	charge_started = 0.0
+	predicted_path.clear()
+	slipper_spawned = true
+	lunge_target = null
+	lunge_elapsed = 0.0
+	lunge_landed = false
+	taya_visual.action = &""
+	network_edges.clear()
+	queue_redraw()
 	attack_state = AttackState.FREE
 	attack_sprite.hide()
 	charge_bar.hide()
@@ -373,6 +428,11 @@ func _start_charge() -> void:
 	velocity = Vector2.ZERO
 	dust_cooldown = 0.0
 	charge_elapsed = 0.0
+	charge_id += 1
+	charge_started = LanSession.clock_time()
+	sweet_spot = randf_range(0.25, 0.75)
+	charge_bar.target_center = sweet_spot
+	set_meta("bot_release_at", sweet_spot + randf_range(-0.12, 0.12))
 	charge_bar.value = 0.0
 	charge_bar.show()
 	interact_prompt.hide()
@@ -382,10 +442,17 @@ func _start_charge() -> void:
 	attack_sprite.play(StringName("aim_" + _attack_direction_name()))
 
 
-func _start_throw() -> void:
+func _start_throw(release_elapsed: float = -1.0) -> void:
 	predicted_path.clear()
 	queue_redraw()
-	charge_ratio = charge_bar.value
+	if release_elapsed >= 0.0:
+		charge_bar.value = THROW_METER.marker_at(release_elapsed, charge_duration * 0.5)
+	var quality := throw_quality()
+	charge_ratio = quality.power
+	release_spread = quality.spread
+	throw_feedback = "%s %d%%" % [quality.band, roundi(charge_ratio * 100.0)]
+	feedback_until = LanSession.clock_time() + 0.8
+	attack_direction = attack_direction.rotated(deg_to_rad(randf_range(-release_spread, release_spread)))
 	charge_bar.hide()
 	attack_state = AttackState.THROWING
 	slipper_spawned = false
@@ -496,7 +563,11 @@ func _update_throw_status() -> void:
 	if is_taya:
 		throw_status.text = "TAYA • LUNGE READY" if can_lunge() else "TAYA • GUARD THE CAN"
 	elif attack_state == AttackState.CHARGING:
-		throw_status.text = "CHARGE %d%%" % (charge_bar.value * 100.0)
+		var quality := throw_quality()
+		throw_status.text = "%s %d%%" % [quality.band, roundi(quality.power * 100.0)]
+		throw_status.add_theme_color_override("font_color", quality.color)
+	elif LanSession.clock_time() < feedback_until:
+		throw_status.text = throw_feedback
 	elif is_instance_valid(active_slipper):
 		throw_status.text = "RETURNS IN %.1fs" % active_slipper.lost_remaining if active_slipper.lost_remaining > 0.0 else "RUN OVER YOUR SLIPPER" if active_slipper.can_pick_up(self) else "SLIPPER IN PLAY"
 	else:
@@ -506,7 +577,7 @@ func _update_throw_status() -> void:
 func _update_trajectory() -> void:
 	var origin := get_throw_origin()
 	var release := origin + attack_direction * minf(48.0, aim_distance * 0.5)
-	predicted_path = SLIPPER_VISUAL.predict_path(get_world_2d(), origin, release, attack_direction, charge_bar.value, get_tree().get_nodes_in_group("can_targets"))
+	predicted_path = SLIPPER_VISUAL.predict_path(get_world_2d(), origin, release, attack_direction, float(throw_quality().power), get_tree().get_nodes_in_group("can_targets"))
 	queue_redraw()
 
 
@@ -514,6 +585,15 @@ func _draw() -> void:
 	draw_arc(Vector2(0, 5), 43.0, 0, TAU, 32, Color(player_color, 0.8), 4.0, true)
 	if attack_state != AttackState.CHARGING or predicted_path.is_empty():
 		return
+	var spread: float = throw_quality().spread
+	if spread > 0.0:
+		var origin := to_local(get_throw_origin())
+		var reach := origin.distance_to(to_local(predicted_path[-1]))
+		var left := origin + attack_direction.rotated(deg_to_rad(-spread)) * reach
+		var right := origin + attack_direction.rotated(deg_to_rad(spread)) * reach
+		draw_colored_polygon(PackedVector2Array([origin, left, right]), Color(player_color, 0.13))
+		draw_line(origin, left, Color(player_color, 0.5), 2.0, true)
+		draw_line(origin, right, Color(player_color, 0.5), 2.0, true)
 	for point in predicted_path:
 		draw_circle(to_local(point), 3.5, Color(player_color.lightened(0.3), 0.8))
 	var landing := to_local(predicted_path[-1])

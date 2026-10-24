@@ -19,7 +19,7 @@ func _ready() -> void:
 			leaders += 1
 		if member.id == LanSession.local_id():
 			own_score = member.score
-	if LanSession.mode == "lan" and own_score >= 0:
+	if LanSession.mode in ["lan", "online"] and own_score >= 0:
 		UserSettings.record_result(LanSession.match_id, own_score == best)
 	else:
 		body += "Developer games do not affect saved statistics."
