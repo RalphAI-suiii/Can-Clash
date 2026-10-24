@@ -72,6 +72,7 @@ const TAYA_NAME_COLOR := Color("ff6b65")
 var throw_status: Label
 var predicted_path := PackedVector2Array()
 var hit_flash_remaining := 0.0
+var lan_processed_input_sequence := 0
 
 
 func _ready() -> void:
@@ -107,6 +108,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if LanSession.mode == "lan" and LanSession.is_host():
+		lan_processed_input_sequence = int(network_input.get("sequence", lan_processed_input_sequence))
 	hit_flash_remaining = maxf(0.0, hit_flash_remaining - delta)
 	modulate = Color(1.8, 1.35, 0.9) if hit_flash_remaining > 0.0 else Color.WHITE
 	_update_throw_status()

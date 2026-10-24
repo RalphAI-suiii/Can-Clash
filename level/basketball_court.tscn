@@ -5223,7 +5223,7 @@ position = Vector2(650, -285.5)
 position = Vector2(253, -191)
 
 [node name="World Border" parent="World" unique_id=1642110461 instance=ExtResource("22_border")]
-position = Vector2(-82, -130)
+position = Vector2(0, 0)
 
 [node name="Spawn Points" type="Node2D" parent="." unique_id=65989194]
 

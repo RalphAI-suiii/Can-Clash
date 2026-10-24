@@ -1,5 +1,77 @@
 # Design decisions
 
+## Distinct Eskinita and Dusty Yard — 2026-10-24
+
+- Keep COURTYARD's floor, hoops, props and fence placement unchanged.
+- Eskinita uses repaired light concrete, edge drains, colorful homes and laundry
+  around the perimeter. Its asymmetric roadside cover differs from the court.
+- Dusty Yard uses an ochre earth floor, worn paths, palms and an open staggered
+  cover arrangement. Replace the shared asphalt rather than recoloring it.
+- Retain every non-hoop obstacle, its existing collision and shadows. Perimeter
+  scenery is decorative and outside the enclosure. Keep blue/spawns clear, the
+  center throwing route open, the can at (1450,610), and fence movement bounds.
+- Update map-selection previews/descriptions to the corresponding floor art.
+  Both host and client use the same static map configuration; no new gameplay API.
+
+## LAN client movement responsiveness — 2026-10-24
+
+- LAN-only local movement prediction uses acknowledged-input replay and bounded
+  history. Smooth remote movement between snapshots; keep host-owned outcomes.
+- Send LAN input at physics rate, publish host snapshots after actor physics and
+  acknowledge input actually consumed. Replays use explicit recorded timesteps.
+- Reset prediction on role/action/phase changes and teleports; stop speculative
+  movement after 350 ms without snapshots. Preserve real collision constraints.
+- Online retains its existing input/render path and protocol. LAN uses the new
+  canclash-lan-motion-1 compatibility identifier so old builds are rejected.
+- With 120 ms snapshot delay and 10% loss, local response improved from 172.5 ms
+  to 7.2 ms, moving on 61/61 sampled frames instead of 9/61, with zero settled
+  position error. This was measured with separate ENet processes on one PC.
+
+## Rules UI removed — 2026-10-24
+
+- Remove the match rules popup, its text and the Rules button. Fresh profiles
+  automatically enter the same seven-second Taya preparation as returning ones.
+- Retain the existing network acknowledgement transport as an automatic scene-load
+  handshake, including client retries. The host starts preparation after all human
+  scenes load; no acknowledgement button or saved tutorial flag is required.
+- Verified fresh-profile flow, five-process LAN and focused GD-Sync local match
+  loading/results. The full GD-Sync check still fails its separate waiting-room
+  green-release timing assertion under latency; that behavior was not changed.
+
+## Developer map and opening-role controls — 2026-10-24
+
+- Developer waiting rooms expose Map (Random or any arena) and Play As
+  (Random, Player, Taya) beside the existing bot controls. Defaults stay random;
+  choices last for this app session and apply only to developer matches.
+- Player guarantees a bot is selected as opening Taya and keeps at least one bot.
+  Taya selects the local player. Normal role transfers still work after tagging.
+- LAN/online keep random maps and opening roles. Remove the developer-code hint
+  from Join's visible copy while retaining the existing hidden test shortcut.
+
+## Fence-aligned movement bounds — 2026-10-24
+
+- Replace the inset court blockers with 32-pixel barriers along the visible
+  enclosure: inner edges x=153/1721 and y=49/1072. Corners overlap. The bottom fence is lowered 32 pixels to meet the pavement edge,
+  plus a 16-pixel artwork offset compensating for transparent tile padding.
+- Match slipper bounds and camera framing use that full enclosed rectangle.
+  Blue-zone permissions, prop collisions and the can base remain unchanged.
+
+## Basketball hoops — 2026-10-24
+
+- COURTYARD keeps the two hoops at the original authored court-end positions.
+- Shared map configuration removes the entire hoop instances from ESKINITA and
+  DUSTY YARD, including shadows and collision. Other props retain their layout.
+
+## Supplied music — 2026-10-24
+
+- Preserve the five named MP3s from the supplied Drive folder in assets/audio/music.
+- Main menu/results use mainmenu; lobby/Practice/selection/preparation use lobby.
+  Active matches use battle until 60 seconds remain, then intense battle.
+- A persistent two-player autoload loops and crossfades tracks, without restarting
+  on repeated timer snapshots. The host-owned match timer chooses the cue locally
+  on every PC. Retain trailer music for trailer use; no trailer scene exists yet.
+
+
 ## Character size and role names — 2026-10-24
 
 - Reduce live match/waiting-room characters by another 20%, from scale 0.72 to

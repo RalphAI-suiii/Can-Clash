@@ -33,7 +33,7 @@ func _run() -> void:
 		assert(game.remaining == 7.0 and game.stage == "preparation")
 		var guard: CharacterBody2D = game.actors[game.taya_id]
 		var thrower: CharacterBody2D = game.actors.values().filter(func(actor: Node2D) -> bool: return not actor.is_taya)[0]
-		assert(game.SAFE.position == Vector2(140, 0) and game.SAFE.end == Vector2(530, 1040), "Blue must fill the visible floor to the fence and curb")
+		assert(game.SAFE.position == Vector2(140, 0) and game.SAFE.end == Vector2(530, 1072), "Blue must fill the visible floor to the fence and curb")
 		var positions := {}
 		for id in game.actors:
 			positions[id] = game.actors[id].position
@@ -100,6 +100,11 @@ func _run() -> void:
 			actor.network_input = {}
 			assert(actor.scale == Vector2.ONE * 0.576)
 		var world := game.get_child(0).get_node("World")
+		if map_index == 0:
+			assert(world.get_node("Ring 1").position.is_equal_approx(Vector2(668.5, 21)), "Right hoop must retain its authored court position")
+			assert(world.get_node("Ring 2").position.is_equal_approx(Vector2(-629.99255, 19.454887)), "Left hoop must retain its authored court position")
+		else:
+			assert(not world.has_node("Ring 1") and not world.has_node("Ring 2"), "Non-court maps must have no hoop nodes or collisions")
 		assert(world.has_node("BarrelTrio") and world.has_node("ConeBox"), "Cleanup must retain the original props")
 		for prop_name in ["Crate", "Crate1_2", "Barrel", "Barrel2"]:
 			var prop: Node2D = world.get_node(NodePath(prop_name))
@@ -113,7 +118,7 @@ func _run() -> void:
 			var screen_position: Vector2 = game.get_viewport().get_canvas_transform() * subject.global_position
 			assert(game.get_viewport_rect().grow(-30).has_point(screen_position), "Both player and can remain visible")
 		assert(game.match_camera.zoom.x <= 0.9)
-		print("PASS: map ", map_index, " preparation, boundaries, throws, manual E recovery, cover and camera")
+		print("PASS: map ", map_index, " preparation, boundaries, throws, manual E recovery, court-only hoops, cover and camera")
 		game.free()
 		session.close_room()
 		await _frames(2)

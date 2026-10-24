@@ -7,6 +7,9 @@ var actors: Dictionary = {}
 var world_tick := 0.0
 var send_tick := 0.0
 var observed_slippers: Dictionary = {}
+var lan_movement: RefCounted
+var lan_remote_motion: Dictionary = {}
+var lan_phase := ""
 
 func setup_network_world() -> void:
 	if has_node("Player"):
@@ -20,7 +23,7 @@ func setup_network_world() -> void:
 	if not LanSession.is_host():
 		for can in get_tree().get_nodes_in_group("can_targets"):
 			can.set_physics_process(false)
-			can.collision_layer = 0
+			if LanSession.mode != "lan": can.collision_layer = 0
 
 func _spawn_point(slot: int) -> Vector2:
 	if LanSession.players.size() == 1:
@@ -59,7 +62,7 @@ func _sync_actors() -> void:
 		actor.add_child(shadow)
 		if not LanSession.is_host():
 			actor.set_physics_process(false)
-			actor.collision_layer = 0
+			actor.collision_layer = 2 if LanSession.mode == "lan" else 0
 		actor.throw_status.visible = entry.id == LanSession.local_id()
 		actor.throw_status.scale = Vector2.ONE / player_scale
 		actor.throw_status.position.x /= player_scale
@@ -79,6 +82,8 @@ func _sync_actors() -> void:
 		actor.update_name_color()
 		actors[entry.id] = actor
 		_actor_added(actor)
+		if LanSession.mode == "lan" and not LanSession.is_host() and entry.id == LanSession.local_id():
+			lan_movement = preload("res://game/lan_movement.gd").new(actor)
 
 func _actor_added(_actor: CharacterBody2D) -> void:
 	pass
@@ -105,7 +110,10 @@ func _physics_process(delta: float) -> void:
 		world_tick += delta
 		if world_tick >= 0.05:
 			world_tick = 0.0
-			LanSession.publish_world(_snapshot())
+			if LanSession.mode == "lan": _publish_lan_snapshot.call_deferred()
+			else: LanSession.publish_world(_snapshot())
+	elif LanSession.mode == "lan":
+		_update_lan_client(delta)
 	else:
 		send_tick += delta
 		if send_tick >= 1.0 / 30.0:
@@ -114,6 +122,30 @@ func _physics_process(delta: float) -> void:
 			if active != null:
 				var enabled := _local_inputs_enabled() and _actor_inputs_enabled(active)
 				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled else Vector2.ZERO, "aim": active.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": active.charge_id})
+
+func _publish_lan_snapshot() -> void:
+	if LanSession.mode == "lan" and LanSession.is_host(): LanSession.publish_world(_snapshot())
+
+func _update_lan_client(delta: float) -> void:
+	var actor: CharacterBody2D = actors.get(LanSession.local_id())
+	if actor == null or lan_movement == null: return
+	var enabled: bool = _local_inputs_enabled() and _actor_inputs_enabled(actor) and lan_movement.fresh()
+	var packet := {"move": Input.get_vector("left", "right", "up", "down") if enabled else Vector2.ZERO, "aim": actor.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": actor.charge_id}
+	LanSession.send_input(packet)
+	var movable: bool = enabled and actor.attack_state == actor.AttackState.FREE and actor.taya_action == &""
+	if not actor.is_taya and packet["throw"] and not is_instance_valid(actor.active_slipper): movable = false
+	lan_movement.step(delta, LanSession.send_sequence, packet, movable)
+
+func _process(delta: float) -> void:
+	if LanSession.mode != "lan" or LanSession.is_host(): return
+	for id in lan_remote_motion.keys():
+		if not actors.has(id):
+			lan_remote_motion.erase(id)
+			continue
+		var motion: Dictionary = lan_remote_motion[id]
+		motion.age += delta
+		var target: Vector2 = motion.position + motion.velocity * minf(motion.age, 0.08)
+		actors[id].position = actors[id].position.lerp(target, 1.0 - exp(-delta / 0.045))
 
 func _receive_input(id: int, packet: Dictionary) -> void:
 	if LanSession.is_host() and actors.has(id):
@@ -191,6 +223,7 @@ func _snapshot() -> Dictionary:
 		if is_instance_valid(actor.active_slipper):
 			var slipper: Node2D = actor.active_slipper
 			data.slipper = {"position": slipper.position, "velocity": slipper.velocity, "height": slipper.height, "spin": slipper.spin_angle, "charge": slipper.charge_ratio, "resting": slipper.resting, "bounces": slipper.floor_bounces, "lost": slipper.lost_remaining, "age": slipper.age}
+		if LanSession.mode == "lan": data["lan_ack"] = actor.lan_processed_input_sequence
 		state.actors.append(data)
 	for can in get_tree().get_nodes_in_group("can_targets"):
 		state.cans.append({"name": String(can.name), "position": can.position, "state": can.state, "height": can.height, "tilt": can.tilt_angle, "settled": can.settled, "flash": can.hit_flash_remaining, "squash": can.squash, "auto_stand": can.auto_stand_pending, "base": can.base.global_position if can.base != null else can.global_position})
@@ -199,12 +232,22 @@ func _snapshot() -> Dictionary:
 func _apply_snapshot(snapshot: Dictionary) -> void:
 	if LanSession.is_host():
 		return
+	var phase: String = snapshot.get("extra", {}).get("stage", "waiting")
+	var phase_changed := phase != lan_phase
+	lan_phase = phase
 	_apply_extra_snapshot(snapshot.get("extra", {}))
 	for data in snapshot.get("actors", []):
 		if not actors.has(data.id):
 			continue
 		var actor: CharacterBody2D = actors[data.id]
-		actor.position = data.position
+		var lan_client := LanSession.mode == "lan"
+		var own: bool = lan_client and data.id == LanSession.local_id() and lan_movement != null
+		var reset: bool = phase_changed or actor.is_taya != data.taya or actor.attack_state != data.attack or actor.carrying_can != data.carrying or String(actor.taya_action) != data.taya_action
+		if not lan_client:
+			actor.position = data.position
+		elif not own:
+			if reset or actor.position.distance_to(data.position) > 128.0: actor.position = data.position
+			lan_remote_motion[data.id] = {"position": data.position, "velocity": data.velocity, "age": 0.0}
 		actor.velocity = data.velocity
 		if actor.is_taya != data.taya:
 			actor.set_taya_role(data.taya)
@@ -222,12 +265,13 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		actor.charge_bar.target_center = actor.sweet_spot
 		actor.charge_bar.value = data.charge
 		actor.charge_bar.visible = data.attack == actor.AttackState.CHARGING
-		actor.sprite.animation = data.sprite
-		actor.sprite.frame = data.frame
-		actor.sprite.flip_h = data.flip
-		actor.sprite.position = data.sprite_pos
-		actor.sprite.scale = data.sprite_scale
-		actor.sprite.rotation = data.rotation
+		if not own or data.attack != actor.AttackState.FREE or data.carrying or data.taya_action != "":
+			actor.sprite.animation = data.sprite
+			actor.sprite.frame = data.frame
+			actor.sprite.flip_h = data.flip
+			actor.sprite.position = data.sprite_pos
+			actor.sprite.scale = data.sprite_scale
+			actor.sprite.rotation = data.rotation
 		actor.sprite.visible = data.attack == actor.AttackState.FREE and not data.carrying and data.taya_action == ""
 		actor.attack_sprite.visible = data.attack != actor.AttackState.FREE
 		actor.attack_sprite.animation = data.attack_sprite
@@ -267,8 +311,9 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 			slipper.visible = data.slipper.lost <= 0.0
 			slipper.age = data.slipper.age
 			slipper.queue_redraw()
+		if own: lan_movement.receive(data, reset)
 		actor._update_throw_status()
-		if data.id == LanSession.local_id() and actor.attack_state == actor.AttackState.CHARGING:
+		if not lan_client and data.id == LanSession.local_id() and actor.attack_state == actor.AttackState.CHARGING:
 			actor._update_trajectory()
 		actor.queue_redraw()
 	for data in snapshot.get("cans", []):

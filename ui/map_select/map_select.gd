@@ -9,6 +9,7 @@ var rail: Control
 var landed := false
 
 func _ready() -> void:
+	Music.play_music("lobby")
 	theme = UI.theme()
 	var background := TextureRect.new()
 	background.texture = preload("res://assets/ui/Sunset Campground Battle Stage.png")

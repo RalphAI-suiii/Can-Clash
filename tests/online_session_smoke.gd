@@ -30,7 +30,7 @@ func _run() -> void:
 	session.connection_status_changed.connect(func(message: String) -> void: print(role, " STATUS ", message))
 	var profile := root.get_node("UserSettings")
 	profile.display_name = role
-	profile.tutorial_seen = true
+	profile.tutorial_seen = false
 	session.online.gd.set_artificial_latency(40 if role == "host" else 80)
 	session.online.test_drop_every = 10
 	session.online.test_local = true # Real vendor transport locally; never consumes cloud data.
@@ -66,7 +66,7 @@ func _run() -> void:
 		assert(current_scene.start_button.visible and not current_scene.start_button.disabled)
 		assert(session.start_match())
 		while current_scene == null or current_scene.scene_file_path != "res://game/match/match.tscn": await process_frame
-		while current_scene.stage == "tutorial": await process_frame
+		while current_scene.stage == "loading": await process_frame
 		current_scene.remaining = 0.01
 		while current_scene.stage != "active": await process_frame
 		while not _all("active"): await process_frame

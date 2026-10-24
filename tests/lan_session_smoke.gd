@@ -38,7 +38,7 @@ func _run() -> void:
 	profile.display_name = "LAN " + role
 	var character_index := 0 if role == "host" else int(role.trim_prefix("client"))
 	profile.selected_character_scene = "res://scenes/Thrower %s.tscn" % session.CHARACTERS[character_index]
-	profile.tutorial_seen = true
+	profile.tutorial_seen = false
 	if role == "host":
 		assert(session.host_room() == OK)
 		_room()
@@ -63,7 +63,7 @@ func _run() -> void:
 		assert(session.start_match())
 		while current_scene == null or current_scene.scene_file_path != "res://game/match/match.tscn":
 			await process_frame
-		while current_scene.stage == "tutorial":
+		while current_scene.stage == "loading":
 			await process_frame
 		assert(current_scene.stage == "preparation")
 		assert(current_scene.remaining > 6.0)

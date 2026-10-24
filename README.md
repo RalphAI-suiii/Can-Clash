@@ -18,7 +18,7 @@ LAN, Practice and developer mode work without GD-Sync credentials.
 
 ## Match rules
 
-After everyone acknowledges the rules, a random participant becomes Taya.
+After everyone loads the map, a random participant becomes Taya.
 Throwers remain frozen for seven seconds while Taya prepares, then a ten-minute
 match begins. Taya has no slipper and cannot enter the full-height blue area.
 

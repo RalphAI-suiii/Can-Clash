@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ckg7tox0ir4qm"
+path="res://.godot/imported/silly-duck --battle match.mp3-ba2ef7027be08ede9875fed690f90519.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/silly-duck --battle match.mp3"
+dest_files=["res://.godot/imported/silly-duck --battle match.mp3-ba2ef7027be08ede9875fed690f90519.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -60,14 +60,11 @@ func _run() -> void:
 	await _frames(6)
 	var game: Node2D = current_scene
 	assert(game.scene_file_path == "res://game/match/match.tscn")
-	assert(game.actors.size() == 5 and game.stage == "tutorial" and game.tutorial_open)
-	await _frames(10)
-	assert(game.remaining == 7.0)
+	assert(game.actors.size() == 5 and game.stage == "preparation")
+	assert(not profile.tutorial_seen, "Fresh profiles start without rules acknowledgement")
+	assert(game.get_children().filter(func(node: Node) -> bool: return node is CanvasLayer).size() == 1, "Only the HUD canvas exists; no rules popup")
 	for button in game.find_children("*", "Button", true, false):
-		if button.text.begins_with("Got it"):
-			button.pressed.emit()
-	await _frames(4)
-	assert(profile.tutorial_seen and game.stage == "preparation")
+		assert(button.text != "Rules" and not button.text.begins_with("Got it"), "Rules UI is removed")
 	assert(game.remaining > 6.0 and game.remaining <= 7.0)
 	game.remaining = 0.01
 	await _frames(4)
@@ -160,7 +157,7 @@ func _run() -> void:
 	profile.load_profile()
 	assert(profile.statistics.successful_throws == old_hits + 1)
 	assert(profile.statistics.wins == old_wins + 1)
-	assert(profile.tutorial_seen and profile.display_name == "Test Player")
-	print("PASS: names, Practice, developer entry, one-member roster, ready Start, roulette, seven-second preparation and ten-minute match phases, four active bots, hit feedback/scoring, trajectory, out-of-bounds return, results, and persistent/idempotent statistics.")
+	assert(not profile.tutorial_seen and profile.display_name == "Test Player")
+	print("PASS: names, Practice, developer entry, one-member roster, ready Start, roulette, automatic loading without rules UI, seven-second preparation and ten-minute match phases, four active bots, hit feedback/scoring, trajectory, out-of-bounds return, results, and persistent/idempotent statistics.")
 	session.close_room()
 	quit()

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://2vth4sd26vr8"
+path="res://.godot/imported/rainbow-beat --lobby.mp3-177b3b210313f6f643a66a8e7e5330fe.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/rainbow-beat --lobby.mp3"
+dest_files=["res://.godot/imported/rainbow-beat --lobby.mp3-177b3b210313f6f643a66a8e7e5330fe.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

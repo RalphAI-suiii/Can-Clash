@@ -10,6 +10,7 @@ signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
 const PROTOCOL := "canclash-rules-3"
+const LAN_PROTOCOL := "canclash-lan-motion-1"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5
@@ -45,6 +46,8 @@ var outgoing_throw := false
 var clock_offset := 0.0
 var clock_tick := 0.0
 var pending_clock := -1.0
+var developer_map := -1 # -1 keeps normal random selection.
+var developer_role := "random"
 var developer_bot_count := 4:
 	set(value):
 		developer_bot_count = clampi(value, 0, MAX_PLAYERS - 1)
@@ -225,14 +228,14 @@ func join_room(address_or_code: String) -> Error:
 	return OK
 
 func _connected() -> void:
-	_send("_register", [UserSettings.display_name, _own_member(local_id(), 0).character, PROTOCOL], 1)
+	_send("_register", [UserSettings.display_name, _own_member(local_id(), 0).character, LAN_PROTOCOL if mode == "lan" else PROTOCOL], 1)
 	_request_clock()
 
 @rpc("any_peer", "call_remote", "reliable")
 func _register(player_name: String, character: int, protocol: String = "") -> void:
 	if not is_host(): return
 	var sender := _sender_id()
-	if protocol != PROTOCOL:
+	if protocol != (LAN_PROTOCOL if mode == "lan" else PROTOCOL):
 		_send("_reject", ["Different game version. Everyone must use the same updated build."], sender)
 		return
 	if phase != "waiting":
@@ -296,10 +299,12 @@ func can_start() -> bool:
 func start_match() -> bool:
 	if not can_start():
 		return false
+	if mode == "developer" and developer_role == "player":
+		developer_bot_count = maxi(1, developer_bot_count)
 	add_developer_bots()
 	_publish_roster()
 	selection_seed = randi()
-	selected_map = int(selection_seed % 3)
+	selected_map = developer_map if mode == "developer" and developer_map in range(3) else int(selection_seed % 3)
 	match_id = "%s-%d-%d" % [room_code, Time.get_unix_time_from_system(), selection_seed]
 	tutorial_ready.clear()
 	phase = "roulette"
@@ -399,6 +404,7 @@ func _submit_input(packet: Dictionary) -> void:
 	for key in ["sprint", "interact", "lunge", "throw"]:
 		clean[key] = packet.get(key, false) == true
 	clean["throw"] = held_throws.get(sender, false)
+	if mode == "lan": clean["sequence"] = sequence
 	received_inputs[sender] = sequence
 	last_input_time[sender] = now
 	input_deadline[sender] = now + 0.5

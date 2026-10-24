@@ -24,6 +24,7 @@ config/icon="uid://ujbpknkqu037"
 GDSync="*res://addons/GD-Sync/MultiplayerClient.gd"
 LanSession="*res://autoload/lan_session.gd"
 UserSettings="*res://autoload/user_settings.gd"
+Music="*res://autoload/music.gd"
 
 [display]
 

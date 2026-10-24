@@ -20,9 +20,12 @@ var bot_controls: PanelContainer
 var bot_count_label: Label
 var fewer_bots: Button
 var more_bots: Button
+var developer_map_picker: OptionButton
+var developer_role_picker: OptionButton
 
 
 func _ready() -> void:
+	Music.play_music("lobby")
 	if LanSession.mode == "menu":
 		LanSession.begin_local("developer")
 	setup_network_world()
@@ -163,21 +166,30 @@ func _build_bot_controls() -> void:
 	bot_controls.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	bot_controls.offset_left = -440
 	bot_controls.offset_right = -48
-	bot_controls.offset_top = 704
-	bot_controls.offset_bottom = 800
-	bot_controls.add_theme_stylebox_override("panel", ui.panel())
+	bot_controls.offset_top = 688
+	bot_controls.offset_bottom = 860
+	var style: StyleBoxFlat = ui.panel()
+	style.content_margin_top = 12
+	style.content_margin_bottom = 12
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	bot_controls.add_theme_stylebox_override("panel", style)
 	$HUD/Screen.add_child(bot_controls)
+	var controls := VBoxContainer.new()
+	controls.add_theme_constant_override("separation", 8)
+	bot_controls.add_child(controls)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
-	bot_controls.add_child(row)
-	bot_count_label = ui.label("", 26)
+	controls.add_child(row)
+	bot_count_label = ui.label("", 22)
 	bot_count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bot_count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(bot_count_label)
 	fewer_bots = Button.new()
 	more_bots = Button.new()
 	for button in [fewer_bots, more_bots]:
-		button.custom_minimum_size = Vector2(64, 56)
+		button.custom_minimum_size = Vector2(64, 44)
+		button.add_theme_font_size_override("font_size", 28)
 		for state in ["normal", "hover", "pressed", "disabled"]:
 			button.add_theme_stylebox_override(state, start_button.get_theme_stylebox(state))
 		row.add_child(button)
@@ -187,13 +199,55 @@ func _build_bot_controls() -> void:
 	more_bots.text = "+"
 	more_bots.tooltip_text = "Add one bot"
 	more_bots.pressed.connect(_change_bot_count.bind(1))
+	developer_map_picker = _developer_picker(controls, "MAP", ["RANDOM", "COURTYARD", "ESKINITA", "DUSTY YARD"])
+	developer_map_picker.name = "DeveloperMap"
+	developer_map_picker.select(LanSession.developer_map + 1)
+	developer_map_picker.item_selected.connect(func(index: int) -> void:
+		if not starting and LanSession.phase == "waiting": LanSession.developer_map = index - 1
+	)
+	developer_role_picker = _developer_picker(controls, "PLAY AS", ["RANDOM", "PLAYER", "TAYA"])
+	developer_role_picker.name = "DeveloperRole"
+	developer_role_picker.select(["random", "player", "taya"].find(LanSession.developer_role))
+	developer_role_picker.item_selected.connect(func(index: int) -> void:
+		if starting or LanSession.phase != "waiting": return
+		LanSession.developer_role = ["random", "player", "taya"][index]
+		if LanSession.developer_role == "player": LanSession.developer_bot_count = maxi(1, LanSession.developer_bot_count)
+		_refresh_bot_controls()
+	)
 	_refresh_bot_controls()
+
+
+func _developer_picker(controls: VBoxContainer, title: String, options: Array) -> OptionButton:
+	var ui = preload("res://ui/game_ui.gd")
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	controls.add_child(row)
+	var label: Label = ui.label(title, 22)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	var picker := OptionButton.new()
+	picker.custom_minimum_size = Vector2(220, 44)
+	picker.add_theme_font_size_override("font_size", 22)
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		picker.add_theme_stylebox_override(state, start_button.get_theme_stylebox(state))
+	for option in options: picker.add_item(option)
+	var popup := picker.get_popup()
+	popup.theme = ui.theme()
+	popup.add_theme_stylebox_override("panel", ui.panel())
+	popup.add_theme_stylebox_override("hover", ui.panel(Color("168f43"), 2))
+	popup.add_theme_font_size_override("font_size", 24)
+	popup.add_theme_color_override("font_color", Color("fff5dc"))
+	row.add_child(picker)
+	return picker
 
 
 func _change_bot_count(change: int) -> void:
 	if LanSession.mode != "developer" or not LanSession.is_host() or LanSession.phase != "waiting" or starting:
 		return
-	LanSession.developer_bot_count += change
+	var minimum := 1 if LanSession.developer_role == "player" else 0
+	LanSession.developer_bot_count = maxi(minimum, LanSession.developer_bot_count + change)
 	_refresh_bot_controls()
 
 
@@ -202,9 +256,9 @@ func _refresh_bot_controls() -> void:
 		return
 	bot_controls.visible = not starting
 	bot_count_label.text = "BOTS  %d" % LanSession.developer_bot_count
-	fewer_bots.disabled = LanSession.developer_bot_count == 0
+	fewer_bots.disabled = LanSession.developer_bot_count <= (1 if LanSession.developer_role == "player" else 0)
 	more_bots.disabled = LanSession.developer_bot_count == LanSession.MAX_PLAYERS - 1
-	bot_controls.tooltip_text = "No opponents; solo mechanics test." if LanSession.developer_bot_count == 0 else "Bots join when you press Start."
+	bot_controls.tooltip_text = "Player needs at least one bot to be Taya." if LanSession.developer_role == "player" else "No opponents; solo mechanics test." if LanSession.developer_bot_count == 0 else "Bots join when you press Start."
 	room_code_button.text = "DEVELOPER\n%d %s" % [LanSession.developer_bot_count, "BOT" if LanSession.developer_bot_count == 1 else "BOTS"]
 
 

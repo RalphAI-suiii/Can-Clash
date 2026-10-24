@@ -17,6 +17,7 @@ var popup_tween: Tween
 
 
 func _ready() -> void:
+	Music.play_music("menu")
 	_build_profile_controls()
 	_color_menu_buttons()
 	play_local.pressed.connect(_show_local_popup)

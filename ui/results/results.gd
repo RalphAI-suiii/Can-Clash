@@ -4,6 +4,7 @@ const UI = preload("res://ui/game_ui.gd")
 var podium_players: Array[Node2D] = []
 
 func _ready() -> void:
+	Music.play_music("menu")
 	LanSession.room_closed.connect(func(reason: String) -> void:
 		LanSession.set_meta("notice", reason)
 		get_tree().change_scene_to_file.call_deferred("res://ui/main_menu/main_menuu.tscn")

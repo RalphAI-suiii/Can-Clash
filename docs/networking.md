@@ -15,11 +15,23 @@ declare a tag, can hit, safe return, or role transfer.
 Validate the sending peer, player ownership, phase, role, legal action,
 cooldowns, and request values before applying requests.
 
-Clients send input at 30 Hz on an unreliable ordered channel. Host snapshots are
-sent at 20 Hz on another channel, using bounded Zstandard-compressed Godot Variant
-data to avoid oversized uncompressed state packets. Clients do not simulate
-collisions, hits, tags, or scores. Registration, readiness, map selection,
-tutorial acknowledgments, events, and results use reliable RPCs.
+LAN clients send sequenced input each physics tick (60 Hz by default). Host
+snapshots are sent at 20 Hz after actor physics, including the last input sequence
+actually processed. The joining player predicts movement immediately, then replays
+unacknowledged input from the authoritative position with a short visual correction.
+Prediction uses explicit recorded timesteps, real scenery/player collisions, and
+the same speeds, acceleration, friction, and Taya movement restriction as the host.
+History is limited to 64 commands and prediction stops after 350 ms without a host
+snapshot. Role/action/phase changes and teleports reset the prediction buffer.
+Remote LAN actors are smoothed between snapshots with at most 80 ms extrapolation.
+Client prediction never decides hits, tags, pickup, role transfers, or scores.
+
+Online keeps its existing 30 Hz input and replica path. Both modes use bounded
+Zstandard-compressed Godot Variant snapshots on an unreliable ordered channel.
+Registration, readiness, map selection, automatic scene-load acknowledgements,
+events, and results use reliable delivery. LAN compatibility is now
+`canclash-lan-motion-1`; both PCs must run the updated build. Online compatibility
+and its adapter are unchanged.
 
 Only the host accepts registered peer input. Movement is limited to unit length,
 aim must be finite and bounded, action keys are explicitly selected, and stale
@@ -36,8 +48,8 @@ Departing clients leave the roster and active world. Host loss returns clients
 to the menu with a notice. If Taya leaves during preparation or active play, a remaining member
 takes over and the can resets at its base, including when it was being carried.
 There is no host migration or late match joining. Play Online now uses a
-GD-Sync relay adapter with four-player rooms; see [online setup](online_setup.md). Snapshot interpolation/prediction and the concept's powered throw
-and opening throw-off remain future work; these are not required by Adjustments.
+GD-Sync relay adapter with four-player rooms; see [online setup](online_setup.md). The concept's powered throw and opening throw-off remain future work;
+LAN movement prediction and smoothing are implemented as described above.
 
 Verified using five separate processes on one PC. A physical five-PC LAN test,
 including Windows firewall configuration and adapter selection, remains manual.
@@ -68,8 +80,8 @@ are still required before internet connectivity can be marked verified.
 
 ## Gameplay rules protocol 3
 
-The host chooses initial Taya from every registered participant after tutorial
-acknowledgments. Seven seconds of preparation unlock only Taya's movement;
+The host chooses initial Taya from every registered participant after automatic scene-load
+acknowledgements. Seven seconds of preparation unlock only Taya's movement;
 throwers' movement/action requests are rejected until the 600-second match starts.
 Snapshots include the phase deadline against synchronized host time. Clients
 clamp the displayed timer to its phase duration.
@@ -82,3 +94,21 @@ host disconnect rules and scoring authority are unchanged.
 
 Result entries now include the member's character index for podium art. Builds
 with a different protocol are rejected during registration; all peers must update.
+
+
+## LAN responsiveness check — 2026-10-24
+
+`tests/lan_responsiveness_smoke.gd` runs as a host/client pair with arguments
+`host|client <shared-test-folder> [baseline]`. It uses actual ENet, 120 ms delayed
+received snapshots and one dropped snapshot in ten. On this PC, before/after:
+
+| Measure | Before | After |
+| --- | ---: | ---: |
+| First visible local movement | 172.5 ms | 7.2 ms |
+| Local movement frames per 61 samples | 9 | 61 |
+| Remote movement frames per 61 samples | 9 | 48 |
+| Position error after stopping | 0 px | 0 px |
+
+These are controlled process measurements, not a physical Wi-Fi benchmark.
+`lan_prediction_smoke.gd` checks all five characters' reconciliation, boundaries,
+action locks, role/spawn changes, stale-network cutoff and bounded history.

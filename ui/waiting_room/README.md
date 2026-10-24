@@ -74,8 +74,8 @@ host's LAN IPv4 address, so all PCs must be on the same reachable LAN.
 Three arena variants reuse the existing level art with different prop layouts
 and palettes: Courtyard, Eskinita, and Dusty Yard. The host chooses once; every
 member sees the same decelerating map carousel and loads the chosen variant.
-First-time players acknowledge the rules before the 30-second grace period.
-Scoring then lasts three minutes and results rank individual scores.
+Matches begin seven seconds of Taya preparation once everyone loads the map; no rules popup is shown.
+Scoring then lasts ten minutes and results rank individual scores.
 
 Developer mode offers minus/plus controls below the roster for zero to four bots
 (four by default). Bots join on Start, throw, retrieve, return to the safe strip,
@@ -109,7 +109,7 @@ directions, and players crossing the divider freely.
 Visual checks cover 1920x1080 and 1280x720, including ready and not-ready states.
 `tests/slipper_pickup_smoke.gd` checks automatic moving pickup across all five
 characters. `tests/adjustments_smoke.gd` covers the new menu-to-results flow,
-bots, timers, tutorial persistence, trajectory, penalties, scoring, and saves.
+bots, timers, automatic match loading, trajectory, penalties, scoring, and saves.
 `tests/lan_session_smoke.gd` runs as a host and four separate client processes to
 check real registration, movement, readiness, shared map/phase/results, and exits.
 `tests/bot_count_smoke.gd` checks every zero-to-four bot setting through Start,
@@ -117,3 +117,8 @@ solo can reset, movement, scaled collisions and throw origins, and the direct-sc
 `tests/can_tumble_smoke.gd` checks spinning, vertical and wall bounces, recovery at
 the settled point, repeat hits, marker relocation, and the original practice Reset.
 See `docs/adjustments_2026-10-21.md` for the requirement-by-requirement record.
+
+Developer-only Map and Play As selectors below the roster choose any arena and
+the local opening role (Player or Taya), or leave either Random. Player keeps at
+least one bot to fill Taya. Normal matches ignore these test choices; later tags
+still transfer roles normally. The Join screen does not advertise the shortcut.

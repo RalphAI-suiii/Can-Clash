@@ -70,19 +70,24 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var input_direction: Vector2 = _movement_input()
-	var speed: float = sprint_speed if _action_pressed("sprint") else walk_speed
+	move_from_input(delta, _movement_input(), _action_pressed("sprint"))
+
+
+func move_from_input(delta: float, input_direction: Vector2, sprinting: bool, animate: bool = true, explicit_delta: bool = false) -> void:
+	var speed: float = sprint_speed if sprinting else walk_speed
 	var target_velocity: Vector2 = input_direction * speed
 	var change_rate: float = acceleration if input_direction != Vector2.ZERO else stopping_friction
 
 	velocity = velocity.move_toward(target_velocity, change_rate * delta)
-	_move_character()
+	if explicit_delta: _move_character_delta(delta)
+	else: _move_character()
 
 	if input_direction != Vector2.ZERO:
 		facing = input_direction
 
+	if not animate: return
 	if velocity.length_squared() > 12.0 * 12.0:
-		var sprint_animation: bool = _action_pressed("sprint") and sprite.sprite_frames.has_animation("sprint_down")
+		var sprint_animation: bool = sprinting and sprite.sprite_frames.has_animation("sprint_down")
 		_play("sprint" if sprint_animation else "walk", facing)
 		sprite.speed_scale = clampf(velocity.length() / 150.0, 0.45, 1.35)
 	else:
@@ -140,4 +145,18 @@ func _move_character() -> void:
 		var step := maxf(get_physics_process_delta_time(), 0.001)
 		velocity.x = maxf(velocity.x, (movement_min_x - global_position.x) / step)
 	move_and_slide()
+	global_position.x = maxf(global_position.x, movement_min_x)
+
+
+func _move_character_delta(delta: float) -> void:
+	# Replaying input outside a physics callback must use its recorded timestep.
+	var step := maxf(delta, 0.001)
+	if is_finite(movement_min_x):
+		velocity.x = maxf(velocity.x, (movement_min_x - global_position.x) / step)
+	var motion := velocity * step
+	for slide in range(4):
+		var collision := move_and_collide(motion)
+		if collision == null: break
+		motion = collision.get_remainder().slide(collision.get_normal())
+		velocity = velocity.slide(collision.get_normal())
 	global_position.x = maxf(global_position.x, movement_min_x)

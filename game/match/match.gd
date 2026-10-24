@@ -2,16 +2,16 @@ extends "res://game/network_world.gd"
 
 const UI = preload("res://ui/game_ui.gd")
 const CATALOG = preload("res://game/maps/map_catalog.gd")
-const RULES := "Move: WASD / arrows. Shift sprints.\nThrow ONLY from the blue area. Hold left-click, then release in the tiny GREEN window for full power.\nOrange is weaker; red is inaccurate. Retrieve YOUR colored slipper and return to blue for a point.\n\nOne random player becomes Taya. Throwers wait 7 seconds while Taya prepares.\nTaya cannot enter blue or tag protected throwers. Tags work ONLY while the can stands. Space lunges (10s cooldown).\nWhen the can falls, Taya uses E to pick it up, carries it to its original circle, then uses E to place it.\n\nEarn +1 for a can hit, safe return, Taya tag, or a thrower's miss while you are Taya.\nPlay for 10 minutes. Highest score wins; ties share victory."
-const ARENA := Rect2(253, 220, 1350, 785)
+# Inner fence edges; shared by slipper limits and camera framing.
+const ARENA := Rect2(153, 49, 1568, 1023)
 # Cover the visible floor to the fence/curb, not only the inset movement bounds.
-const SAFE := Rect2(140, 0, 390, 1040)
+const SAFE := Rect2(140, 0, 390, 1072)
 const PREPARATION_SECONDS := 7.0
 const MATCH_SECONDS := 600.0
 const CAN_START := Vector2(1450, 610)
 const TAYA_START := CAN_START + Vector2(-180, 0)
 
-var stage := "tutorial"
+var stage := "loading"
 var remaining := 7.0
 var phase_deadline := 0.0
 var opening_label: Label
@@ -20,7 +20,6 @@ var scores: Dictionary = {}
 var taya_id := 0
 var tag_immunity := 0.0
 var acknowledgment_clock := 0.0
-var tutorial_open := false
 var can: CharacterBody2D
 var phase_label: Label
 var score_label: Label
@@ -28,6 +27,7 @@ var notice_label: Label
 var notice_remaining := 0.0
 
 func _ready() -> void:
+	Music.play_music("lobby")
 	if LanSession.players.is_empty():
 		LanSession.begin_local("developer")
 		LanSession.players[0].ready = true
@@ -42,7 +42,7 @@ func _ready() -> void:
 		level.get_node(layer).z_index = -10
 	level.get_node("World/FenceLayer").y_sort_enabled = true
 	level.get_node("World/World Border").collision_layer = 16
-	# Match spawns and ARENA use the established court bounds.
+	# Keep the authored fence-aligned border at the World origin.
 	level.get_node("World/World Border").position = Vector2.ZERO
 	CATALOG.configure(level, LanSession.selected_map)
 	add_child(level)
@@ -63,10 +63,8 @@ func _ready() -> void:
 	LanSession.match_event_received.connect(_match_event)
 	_build_hud()
 	_build_camera()
-	if not UserSettings.tutorial_seen:
-		_show_rules(true)
-	else:
-		LanSession.acknowledge_tutorial()
+	# Automatically acknowledge scene loading; no rules dialog gates the match.
+	LanSession.acknowledge_tutorial()
 	queue_redraw()
 
 func _spawn_point(slot: int) -> Vector2:
@@ -104,16 +102,13 @@ func _world_inputs_enabled() -> bool:
 func _actor_inputs_enabled(actor: CharacterBody2D) -> bool:
 	return stage == "active" or (stage == "preparation" and actor.is_taya)
 
-func _local_inputs_enabled() -> bool:
-	return _world_inputs_enabled() and not tutorial_open
-
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 	notice_remaining = maxf(0.0, notice_remaining - delta)
 	if notice_label != null and notice_remaining == 0.0:
 		notice_label.text = ""
 	if not LanSession.is_host():
-		if stage == "tutorial" and not tutorial_open:
+		if stage == "loading":
 			acknowledgment_clock += delta
 			if acknowledgment_clock >= 1.0:
 				acknowledgment_clock = 0.0
@@ -123,7 +118,7 @@ func _physics_process(delta: float) -> void:
 		_update_hud()
 		return
 	tag_immunity = maxf(0.0, tag_immunity - delta)
-	if stage == "tutorial" and LanSession.humans_ready_for_match():
+	if stage == "loading" and LanSession.humans_ready_for_match():
 		_start_preparation()
 	elif stage == "preparation":
 		remaining = maxf(0.0, remaining - delta)
@@ -152,7 +147,13 @@ func _start_preparation() -> void:
 	remaining = PREPARATION_SECONDS
 	phase_deadline = LanSession.clock_time() + remaining
 	can.reset_for_preview(can.base.position)
-	taya_id = int(LanSession.players.pick_random().id)
+	var candidates: Array[Dictionary] = LanSession.players
+	if LanSession.mode == "developer":
+		if LanSession.developer_role == "taya":
+			candidates = [LanSession.member(LanSession.local_id())]
+		elif LanSession.developer_role == "player":
+			candidates = LanSession.players.filter(func(entry: Dictionary) -> bool: return entry.id != LanSession.local_id())
+	taya_id = int(candidates.pick_random().id) if not candidates.is_empty() else 0
 	for id in actors:
 		var actor: CharacterBody2D = actors[id]
 		if is_instance_valid(actor.active_slipper): actor.active_slipper.queue_free()
@@ -253,7 +254,7 @@ func _build_hud() -> void:
 	screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	screen.theme = UI.theme()
 	hud.add_child(screen)
-	phase_label = UI.label("WAITING FOR PLAYERS TO READ THE RULES", 30)
+	phase_label = UI.label("WAITING FOR PLAYERS TO LOAD", 30)
 	phase_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	phase_label.position = Vector2(-650, 35)
 	phase_label.size = Vector2(1300, 60)
@@ -276,30 +277,16 @@ func _build_hud() -> void:
 	opening_label.position = Vector2(-700, -100)
 	opening_label.size = Vector2(1400, 200)
 	screen.add_child(opening_label)
-	var rules_button := UI.button("Rules", func() -> void: _show_rules(false))
-	rules_button.position = Vector2(1675, 28)
-	screen.add_child(rules_button)
 	var leave := UI.button("Leave", _leave_match)
 	leave.position = Vector2(25, 28)
 	screen.add_child(leave)
 
-func _show_rules(first_time: bool) -> void:
-	tutorial_open = true
-	var view = UI.modal(self, "HOW TO PLAY", RULES)
-	view.content.add_child(UI.button("Got it, let's play" if first_time else "Back to game", func() -> void:
-		tutorial_open = false
-		if first_time:
-			UserSettings.tutorial_seen = true
-			UserSettings.save_profile()
-		LanSession.acknowledge_tutorial()
-		view.layer.queue_free()
-	))
-
 func _update_hud() -> void:
+	Music.update_match(stage, remaining)
 	if phase_label == null:
 		return
 	var time_text := "%d:%02d" % [int(ceil(remaining)) / 60, int(ceil(remaining)) % 60]
-	phase_label.text = "WAITING FOR PLAYERS TO READ THE RULES" if stage == "tutorial" else "TAYA PREPARATION  " + time_text if stage == "preparation" else "MATCH  " + time_text
+	phase_label.text = "WAITING FOR PLAYERS TO LOAD" if stage == "loading" else "TAYA PREPARATION  " + time_text if stage == "preparation" else "MATCH  " + time_text
 	if opening_label != null:
 		opening_label.text = "%s IS TAYA\n%d" % [LanSession.member(taya_id).get("name", "Player"), ceili(remaining)] if stage == "preparation" else "THROW!" if stage == "active" and remaining > MATCH_SECONDS - 2.0 else ""
 	var text: String = CATALOG.MAPS[LanSession.selected_map].name + "\n\n"
@@ -345,6 +332,7 @@ func _build_camera() -> void:
 	match_camera.reset_smoothing()
 
 func _process(delta: float) -> void:
+	super._process(delta)
 	_update_camera(delta)
 
 func _update_camera(delta: float) -> void:

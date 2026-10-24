@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cq3lxfqa60es4"
+path="res://.godot/imported/mr-snarky-destructoid --trailer music.mp3-5fa1e7ca6d0505e7bb60e0019c36e8f0.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/mr-snarky-destructoid --trailer music.mp3"
+dest_files=["res://.godot/imported/mr-snarky-destructoid --trailer music.mp3-5fa1e7ca6d0505e7bb60e0019c36e8f0.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

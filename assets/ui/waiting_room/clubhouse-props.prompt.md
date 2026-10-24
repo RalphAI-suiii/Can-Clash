@@ -9,3 +9,11 @@ Use case: precise-object-edit. Edit this existing directly-overhead cartoon club
 ## Layout refinement prompt
 
 Precise layout-only edit of this 1672x941 directly-overhead clubhouse map. Keep the entire room geometry, wall locations, divider, left practice floor, linework, wood floor, lighting, style, duffel bag, bench, plants and existing soft shadows EXACTLY unchanged. Move the crate of rolled towels plus basketball and two water bottles DOWN along the right wall: crate centered around image pixel (1550, 620), then basketball and bottles grouped directly below it around y=720. The old positions around (1550,250) and (1550,350) must be cleared back to the matching wooden floor. IMPORTANT: a game roster covers image coordinates x=1260..1620, y=195..565, so that region must stay empty of new props; the moved props must be fully below y=580 and above y=775. Also reduce and shift the woven mat left so its bounds are approximately x=1080..1250, y=805..870; clear its old larger placement back to the same planks. A Ready button overlays x=1290..1630,y=810..900 so the mat must remain LEFT of that. Keep subtle offset soft drop shadows for every moved prop. Do not add anything else. No text, no UI, no characters, no cans, no slippers. Preserve straight-down top-down orthographic projection and exact 16:9 canvas.
+
+## Basketball removed — 2026-10-24
+
+User request: remove the basketball from the lobby. Built-in Imagegen edited the
+existing clubhouse background, clearing the orange ball and its shadow below-left
+of the towel crate back to matching wooden floorboards. The two bottles, crate,
+other props, directly overhead layout and 1672×941 canvas were preserved.
+Generated output: exec-e6172175-46b5-4348-9ba0-e92ef1194a90.png.
