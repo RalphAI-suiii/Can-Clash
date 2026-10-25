@@ -57,6 +57,7 @@ func _ready() -> void:
 	Music.play_music("lobby")
 	if LanSession.players.is_empty():
 		LanSession.begin_local("developer")
+		LanSession.players[0].character = 0
 		LanSession.players[0].ready = true
 		LanSession.add_developer_bots()
 	LanSession.phase = "match"
@@ -123,6 +124,7 @@ func _sync_actors() -> void:
 
 func _actor_added(actor: CharacterBody2D) -> void:
 	actor.can_node = can
+	actor.require_standing_can = true
 	actor.safe_strip_rect = SAFE
 	actor.allowed_throw_rect = SAFE
 	actor.throw_speed_multiplier = 1.45
@@ -211,9 +213,15 @@ func _physics_process(delta: float) -> void:
 		for actor in actors.values():
 			if actor.get_meta("returning", false) and not SAFE.has_point(actor.global_position):
 				actor.set_meta("left_safe", true)
+			if actor.get_meta("rapid_complete", false):
+				actor.set_meta("rapid_complete", false)
+				if not actor.is_taya:
+					actor.set_meta("retrieved", true)
+					if not actor.get_meta("rapid_hit", false) and taya_id != 0:
+						_add_point(taya_id)
 			if is_instance_valid(actor.active_slipper):
 				var slipper: Node2D = actor.active_slipper
-				if not slipper.get_meta("outcome", false) and (slipper.is_resting() or slipper.lost_remaining > 0.0):
+				if slipper.special_kind != &"rapid" and not slipper.get_meta("outcome", false) and (slipper.is_resting() or slipper.lost_remaining > 0.0):
 					slipper.set_meta("outcome", true)
 					if not slipper.hit_registered and taya_id != 0:
 						_add_point(taya_id)
@@ -345,12 +353,15 @@ func _slipper_spawned(actor: CharacterBody2D, slipper: Node2D) -> void:
 		actor.throwoff_locked = true
 		slipper.throwoff_stop_at_can = true
 	if stage == "active":
-		actor.set_meta("returning", true)
-		actor.set_meta("left_safe", not SAFE.has_point(actor.global_position))
-		actor.set_meta("retrieved", false)
+		if slipper == actor.active_slipper:
+			actor.set_meta("returning", true)
+			actor.set_meta("left_safe", not SAFE.has_point(actor.global_position))
+			actor.set_meta("retrieved", false)
 	slipper.can_hit.connect(_can_hit.bind(actor, slipper))
+	slipper.player_hit.connect(_special_player_hit.bind(actor))
 	slipper.picked_up.connect(func() -> void:
-		actor.set_meta("retrieved", true)
+		if slipper.special_kind != &"rapid": actor.set_meta("retrieved", true)
+		if slipper.special_kind == &"rapid": return
 		if stage == "active" and not slipper.get_meta("outcome", false):
 			slipper.set_meta("outcome", true)
 			if not slipper.hit_registered and taya_id != 0:
@@ -361,6 +372,9 @@ func _slipper_spawned(actor: CharacterBody2D, slipper: Node2D) -> void:
 func _can_hit(_target: Node2D, actor: CharacterBody2D, slipper: Node2D) -> void:
 	if not LanSession.is_host() or stage != "active" or actor.is_taya or slipper.get_meta("skill_counted", false):
 		return
+	if slipper.special_kind == &"rapid":
+		if actor.get_meta("rapid_hit", false): return
+		actor.set_meta("rapid_hit", true)
 	slipper.set_meta("skill_counted", true)
 	slipper.set_meta("outcome", true)
 	var id: int = actor.get_meta("peer_id")
@@ -373,25 +387,43 @@ func _can_hit(_target: Node2D, actor: CharacterBody2D, slipper: Node2D) -> void:
 	else:
 		_notice("%s KNOCKED DOWN THE CAN!" % player_name)
 
+func _special_player_hit(target: Node2D, actor: CharacterBody2D) -> void:
+	if not LanSession.is_host() or stage != "active" or actor.is_taya or not target.is_taya:
+		return
+	if target.apply_stun():
+		_notice("%s IS STUNNED!" % LanSession.member(int(target.get_meta("peer_id"))).get("name", "Player"))
+
+func _taya_stun_spawned(_actor: CharacterBody2D, slipper: Node2D) -> void:
+	slipper.player_hit.connect(func(target: Node2D) -> void:
+		_notice("%s IS STUNNED!" % LanSession.member(int(target.get_meta("peer_id"))).get("name", "Player"))
+	)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventMouseButton:
 		return
 	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index != MOUSE_BUTTON_RIGHT or not mouse_event.pressed or stage != "active":
+	if mouse_event.button_index != MOUSE_BUTTON_RIGHT or stage != "active":
 		return
-	if get_viewport().gui_get_hovered_control() != null:
+	if mouse_event.pressed and get_viewport().gui_get_hovered_control() != null:
 		return
+	var aim := get_global_mouse_position()
 	if LanSession.is_host():
-		_skill_requested(LanSession.local_id())
+		_skill_requested(LanSession.local_id(), mouse_event.pressed, aim)
 	else:
-		LanSession.request_skill()
+		LanSession.request_skill(mouse_event.pressed, aim)
 	get_viewport().set_input_as_handled()
 
-func _skill_requested(id: int) -> void:
-	if not LanSession.is_host() or stage != "active" or not actors.has(id) or actors[id].skill_charge < 3:
+func _skill_requested(id: int, pressed: bool, aim: Vector2) -> void:
+	if not LanSession.is_host() or stage != "active" or not actors.has(id) or not aim.is_finite():
 		return
-	# Keep the full charge until the character-specific ability is defined.
-	_notice("%s'S SPECIAL ABILITY IS COMING SOON" % LanSession.member(id).get("name", "Player"))
+	var actor: CharacterBody2D = actors[id]
+	if actor.is_stunned(): return
+	if actor.is_taya:
+		if pressed: actor.begin_taya_stun_aim()
+		else: actor.release_taya_stun(aim)
+	elif pressed and (actor.special_armed or actor.skill_charge == 3 and actor.throw_target_ready()):
+		actor.special_armed = not actor.special_armed
+		actor.queue_redraw()
 
 func _tag_requested(thrower: Node2D, guard: CharacterBody2D) -> void:
 	if not LanSession.is_host() or stage != "active" or tag_immunity > 0.0 or not guard.can_tag() or thrower.is_taya or SAFE.has_point(thrower.global_position):
@@ -421,6 +453,10 @@ func _tag_requested(thrower: Node2D, guard: CharacterBody2D) -> void:
 	thrower.active_slipper = null
 	thrower.set_taya_role(true)
 	thrower.set_meta("returning", false)
+	thrower.set_meta("rapid_complete", false)
+	for shot in thrower.rapid_slippers:
+		if is_instance_valid(shot): shot.queue_free()
+	thrower.rapid_slippers.clear()
 	taya_id = thrower.get_meta("peer_id")
 	tag_immunity = 1.0
 	_announce_new_taya(taya_id, thrower.global_position)

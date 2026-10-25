@@ -3,6 +3,7 @@ extends Node2D
 ## The node position is the slipper's ground track; height is its small visual arc.
 signal picked_up
 signal can_hit(target: Node2D)
+signal player_hit(target: Node2D)
 signal returned_after_penalty
 
 const MIN_LAUNCH_SPEED := 312.0
@@ -33,6 +34,11 @@ var outline_color := Color("329dff")
 var lost_remaining := 0.0
 var hit_registered := false
 var throwoff_stop_at_can := false
+var special_kind: StringName = &""
+var steer_until := 0.0
+var returning := false
+var return_complete := false
+var ricochet_redirected := false
 
 
 func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float, origin: Vector2, speed_multiplier: float = 1.0) -> void:
@@ -51,6 +57,7 @@ func is_resting() -> bool:
 
 
 func can_pick_up(actor: Node2D) -> bool:
+	if special_kind == &"rapid" or special_kind == &"self_return": return false
 	# Retrieve on landing, including the small floor bounce; don't wait for spin/friction.
 	var near_ground := resting or (floor_bounces > 0 and height <= 12.0)
 	return lost_remaining <= 0.0 and not is_queued_for_deletion() and near_ground and actor == throw_owner and actor.global_position.distance_to(global_position) <= pickup_radius
@@ -67,6 +74,22 @@ func pick_up(actor: Node2D) -> bool:
 func _physics_process(delta: float) -> void:
 	if is_queued_for_deletion():
 		return
+	if returning:
+		if not is_instance_valid(throw_owner):
+			queue_free()
+			return
+		global_position = global_position.move_toward(throw_owner.get_throw_origin(), 850.0 * delta)
+		spin_angle += 9.0 * delta
+		queue_redraw()
+		if global_position.distance_to(throw_owner.get_throw_origin()) < 16.0:
+			returning = false
+			return_complete = true
+			visible = false
+			picked_up.emit()
+			if special_kind == &"self_return":
+				if throw_owner.active_slipper == self: throw_owner.active_slipper = null
+				queue_free()
+		return
 	if lost_remaining > 0.0:
 		lost_remaining = maxf(0.0, lost_remaining - delta)
 		if lost_remaining == 0.0:
@@ -76,19 +99,52 @@ func _physics_process(delta: float) -> void:
 			queue_free()
 		return
 	if resting:
+		if special_kind == &"rapid" or special_kind == &"self_return": returning = true
 		return
 	# Sweep the hand-to-release gap too, so close throws cannot spawn past a wall.
 	var previous_position: Vector2 = launch_origin if age == 0.0 else global_position
+	if special_kind == &"mind_control" and age < 2.0 and LanSession.clock_time() < steer_until and is_instance_valid(throw_owner) and not throw_owner.is_stunned():
+		var desired: Vector2 = throw_owner._aim_position() - global_position
+		if desired.length_squared() > 100.0 and velocity.length_squared() > 1.0:
+			var turn := clampf(wrapf(desired.angle() - velocity.angle(), -PI, PI), -deg_to_rad(150.0) * delta, deg_to_rad(150.0) * delta)
+			velocity = velocity.rotated(turn)
 	var next_position: Vector2 = global_position + velocity * delta
 	age += delta
+	if (special_kind == &"rapid" or special_kind == &"self_return") and age >= 2.5:
+		returning = true
+		return
 	if velocity.length_squared() > 1.0:
 		var ray := PhysicsRayQueryParameters2D.create(previous_position, next_position, WALL_COLLISION_MASK)
 		var wall: Dictionary = get_world_2d().direct_space_state.intersect_ray(ray)
 		if not wall.is_empty():
 			next_position = wall.position + wall.normal * 3.0
 			velocity = velocity.bounce(wall.normal) * WALL_BOUNCE
+			if special_kind == &"ricochet" and not ricochet_redirected:
+				ricochet_redirected = true
+				for target in get_tree().get_nodes_in_group("can_targets"):
+					if target.is_standing():
+						var desired: Vector2 = target.get_hit_center() - next_position
+						var turn := clampf(wrapf(desired.angle() - velocity.angle(), -PI, PI), -deg_to_rad(75.0), deg_to_rad(75.0))
+						velocity = velocity.rotated(turn)
+						break
 			angular_speed *= -0.7
 			vertical_speed = maxf(vertical_speed, 75.0)
+			if special_kind == &"self_return":
+				global_position = next_position
+				returning = true
+				queue_redraw()
+				return
+	if special_kind == &"stun":
+		for candidate in get_tree().get_nodes_in_group("taya_players"):
+			if not candidate.is_taya or LanSession.clock_time() < candidate.stun_immune_until: continue
+			var point := Geometry2D.get_closest_point_to_segment(candidate.global_position, previous_position, next_position)
+			if point.distance_squared_to(candidate.global_position) <= 42.0 * 42.0:
+				global_position = point
+				velocity = Vector2.ZERO
+				resting = true
+				player_hit.emit(candidate)
+				queue_redraw()
+				return
 
 	var hit_can
 	var hit_point: Vector2
@@ -125,9 +181,13 @@ func _physics_process(delta: float) -> void:
 		velocity = velocity.bounce(normal) * 0.38
 		vertical_speed = maxf(vertical_speed, 115.0)
 		angular_speed *= -0.65
+		if special_kind == &"rapid" or special_kind == &"self_return": returning = true
 	else:
 		global_position = next_position
 	if arena_bounds.has_area() and not arena_bounds.has_point(global_position):
+		if special_kind == &"rapid" or special_kind == &"self_return":
+			returning = true
+			return
 		lost_remaining = 3.0
 		visible = false
 		velocity = Vector2.ZERO
@@ -151,6 +211,7 @@ func _physics_process(delta: float) -> void:
 				velocity = Vector2.ZERO
 				angular_speed = 0.0
 				resting = true
+				if special_kind == &"rapid" or special_kind == &"self_return": returning = true
 	else:
 		velocity *= exp(-AIR_DRAG * delta)
 	spin_angle = wrapf(spin_angle + angular_speed * delta, -PI, PI)
@@ -159,6 +220,9 @@ func _physics_process(delta: float) -> void:
 
 func _draw() -> void:
 	var power: float = charge_ratio
+	if special_kind != &"":
+		var glow := Color("ffb83e") if special_kind == &"rapid" else Color("61d8ff") if special_kind == &"ricochet" else Color("70edb7") if special_kind == &"self_return" else Color("db8aff") if special_kind == &"stun" else Color("ff83ca")
+		draw_arc(Vector2(0, -height * 0.55), 37.0, 0, TAU, 32, Color(glow, 0.7), 5.0, true)
 	var shadow_alpha: float = 0.23 / (1.0 + height * 0.02)
 	draw_set_transform(Vector2(6, 6), 0.0, Vector2(1.0, 0.4))
 	for ring in range(6, 0, -1):
@@ -168,13 +232,14 @@ func _draw() -> void:
 		var trail: Vector2 = -velocity.normalized()
 		var side: Vector2 = Vector2(-trail.y, trail.x)
 		var origin: Vector2 = Vector2(0, -height * 0.55)
+		var trail_color := Color("ffb83e") if special_kind == &"rapid" else Color("61d8ff") if special_kind == &"ricochet" else Color("70edb7") if special_kind == &"self_return" else Color("db8aff") if special_kind == &"stun" else Color("ff83ca") if special_kind == &"mind_control" else Color("ffba32")
 		draw_colored_polygon(PackedVector2Array([
 			origin + trail * 20.0 + side * 12.0,
 			origin + trail * (76.0 + power * 44.0),
 			origin + trail * 20.0 - side * 12.0,
-		]), Color(1.0, 0.56, 0.16, 0.12 + power * 0.18))
-		draw_line(origin + trail * 27.0, origin + trail * (72.0 + power * 42.0), Color(1.0, 0.79, 0.34, 0.31 + power * 0.34), 8.0, true)
-		draw_line(origin + trail * 32.0, origin + trail * (64.0 + power * 34.0), Color(1.0, 0.97, 0.72, 0.34 + power * 0.38), 3.0, true)
+		]), Color(trail_color, 0.12 + power * 0.18))
+		draw_line(origin + trail * 27.0, origin + trail * (72.0 + power * 42.0), Color(trail_color, 0.31 + power * 0.34), 8.0, true)
+		draw_line(origin + trail * 32.0, origin + trail * (64.0 + power * 34.0), Color(trail_color.lightened(0.45), 0.34 + power * 0.38), 3.0, true)
 		for index in range(3):
 			var offset: float = (index - 1) * 13.0
 			var start: Vector2 = origin + trail * (34.0 + index * 7.0) + side * offset

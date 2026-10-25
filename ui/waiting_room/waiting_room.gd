@@ -1,5 +1,7 @@
 extends "res://game/network_world.gd"
 
+const CHARACTER_SELECT = preload("res://ui/character_select/character_select.tscn")
+
 @export var local_player_id: int = 1
 
 @onready var ready_panel: Control = $ReadyPanel/Player_ready
@@ -22,6 +24,8 @@ var fewer_bots: Button
 var more_bots: Button
 var developer_map_picker: OptionButton
 var developer_role_picker: OptionButton
+var character_button: Button
+var selection_overlay: Control
 
 
 func _ready() -> void:
@@ -47,6 +51,7 @@ func _ready() -> void:
 	_on_ready_toggled(false)
 	_build_room_code()
 	_build_bot_controls()
+	_build_character_button()
 	_roster_changed()
 	_refresh_start_button()
 	if LanSession.mode == "practice":
@@ -69,7 +74,7 @@ func _refresh_start_button() -> void:
 	start_button.visible = host and LanSession.mode != "practice"
 	start_frame.visible = start_button.visible
 	start_button.disabled = not can_start
-	start_button.tooltip_text = "Start the game" if can_start else "Wait for another player, and make sure every member is ready." if LanSession.mode in ["lan", "online"] and LanSession.players.size() < 2 else "Every player must be ready to start."
+	start_button.tooltip_text = "Start the game" if can_start else "Wait for another player, then choose different characters and ready up." if LanSession.mode in ["lan", "online"] and LanSession.players.size() < 2 else "Every player must choose a different character and be ready."
 	start_frame.add_theme_stylebox_override("panel", start_glow if can_start else start_frame_style)
 	$HUD/Screen/ReadyFrame.offset_left = -608.0 if host else -440.0
 	$HUD/Screen/ReadyFrame.offset_right = -308.0 if host else -48.0
@@ -114,6 +119,10 @@ func _reset_practice() -> void:
 
 
 func _on_ready_toggled(is_ready: bool) -> void:
+	if is_ready and int(LanSession.member(local_player_id).get("character", -1)) < 0:
+		ready_button.set_pressed_no_signal(false)
+		ready_status.text = "CHOOSE A CHARACTER FIRST"
+		return
 	LanSession.set_ready(is_ready)
 	ready_status.text = "YOU ARE READY" if is_ready else "YOU ARE NOT READY"
 	ready_button.text = "Not ready" if is_ready else "Ready"
@@ -121,7 +130,14 @@ func _on_ready_toggled(is_ready: bool) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		if is_instance_valid(selection_overlay):
+			selection_overlay.queue_free()
+			get_viewport().set_input_as_handled()
+			return
 		_leave()
+
+func _local_inputs_enabled() -> bool:
+	return not is_instance_valid(selection_overlay)
 
 
 func _leave() -> void:
@@ -131,12 +147,39 @@ func _leave() -> void:
 
 func _roster_changed() -> void:
 	ready_panel.set_roster(LanSession.players)
+	player = actors.get(local_player_id, player)
 	var own: Dictionary = LanSession.member(local_player_id)
 	if not own.is_empty():
+		var character: int = int(own.character)
 		ready_button.set_pressed_no_signal(own.ready)
 		ready_button.text = "Not ready" if own.ready else "Ready"
-		ready_status.text = "YOU ARE READY" if own.ready else "YOU ARE NOT READY"
+		ready_button.disabled = character < 0
+		ready_button.tooltip_text = "Choose a character first" if character < 0 else "Change your ready status"
+		ready_status.text = "CHOOSE A CHARACTER FIRST" if character < 0 else "YOU ARE READY" if own.ready else "YOU ARE NOT READY"
+		if character_button != null:
+			character_button.text = "CHOOSE CHARACTER" if character < 0 else "CHANGE: %s" % LanSession.CHARACTERS[character].to_upper()
 	_refresh_start_button()
+
+func _build_character_button() -> void:
+	character_button = Button.new()
+	character_button.name = "ChooseCharacter"
+	character_button.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	character_button.offset_left = -260
+	character_button.offset_right = 260
+	character_button.offset_top = -142
+	character_button.offset_bottom = -56
+	character_button.add_theme_font_size_override("font_size", 30)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		character_button.add_theme_stylebox_override(state, start_button.get_theme_stylebox(state))
+	character_button.pressed.connect(_open_character_select)
+	$HUD/Screen.add_child(character_button)
+
+func _open_character_select() -> void:
+	if is_instance_valid(selection_overlay):
+		return
+	selection_overlay = CHARACTER_SELECT.instantiate() as Control
+	selection_overlay.set("lobby_mode", true)
+	$HUD/Screen.add_child(selection_overlay)
 
 
 func _build_room_code() -> void:

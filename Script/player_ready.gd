@@ -2,7 +2,7 @@ extends Control
 
 signal readiness_changed
 
-@export var row_height: float = 44.0
+@export var row_height: float = 72.0
 @export var panel_width: float = 280.0
 
 @onready var player_list: VBoxContainer = $PanelContainer/VBoxContainer
@@ -98,7 +98,9 @@ func set_player_ready(player_id: int, ready: bool) -> void:
 func _update_player_row(player: Dictionary) -> void:
 	var row: PanelContainer = player_rows[player["id"]]
 	var label: Label = row.get_node("Content/PlayerText")
-	label.text = "%s%s\n%s" % [player["name"], " (HOST)" if player["id"] == 1 else "", "READY" if player["ready"] else "NOT READY"]
+	var character: int = int(player.get("character", -1))
+	var character_name: String = LanSession.CHARACTERS[character] if character >= 0 else "CHOOSE CHARACTER"
+	label.text = "%s%s\n%s\n%s" % [player["name"], " (HOST)" if player["id"] == 1 else "", character_name, "READY" if player["ready"] else "NOT READY"]
 	label.add_theme_color_override("font_color", Color("#1c5930") if player["ready"] else Color("#51483b"))
 
 

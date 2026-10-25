@@ -92,7 +92,7 @@ func _copy_empty_hand(target: SpriteFrames, source: SpriteFrames, name: StringNa
 
 func _play(action: String, direction: Vector2) -> void:
 	var empty_handed := is_taya or is_instance_valid(active_slipper)
-	super._play("taya_" + action if empty_handed else action, direction)
+	super._play("taya_" + action if empty_handed and action in ["idle", "walk", "sprint"] else action, direction)
 	sprite.flip_h = DIRECTIONS[(roundi(direction.angle() / (PI / 4.0)) + 8) % 8] == "left"
 
 

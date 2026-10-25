@@ -2,11 +2,12 @@
 
 Status: implemented for the active 2D menu, waiting room, and match flow.
 
-The match host also owns each participant's three-hit special meter. World snapshots
-replicate `skill_charge`; a reliable right-click request only asks the host to
-activate a full meter. Character-specific effects are placeholders and do not
-change match state yet. Current LAN compatibility is `canclash-lan-skill-1`;
-current online compatibility is `canclash-rules-5`.
+The match host owns each participant's three-hit special meter, equipped thrower
+special, Taya stun cooldown, and stun/immunity timers. Reliable RMB press/release
+requests include a finite bounded cursor target. Host snapshots carry the armed
+state, timers, the main slipper, up to two extra Rapid Fire slippers, and Taya's
+stun projectile. Current LAN compatibility is `canclash-lan-abilities-3`;
+current online compatibility is `canclash-rules-7`.
 
 One PC hosts and plays. Four other PCs join, for five players total.
 Godot 4.7.2 ENet uses UDP port 54652, with four remote peers plus the host.
@@ -17,6 +18,9 @@ The host validates input requests and owns movement outcomes, can state,
 slipper outcomes, tags, scores, match phase, and timer.
 Clients display replicated state. A client must not award itself points or
 declare a tag, can hit, safe return, or role transfer.
+Match throwers can charge and release only while the host's can is standing;
+the toppled and carried states pause new throws until Taya resets it. Clients
+display the same rule from the replicated can state.
 
 Validate the sending peer, player ownership, phase, role, legal action,
 cooldowns, and request values before applying requests.
@@ -34,10 +38,20 @@ Client prediction never decides hits, tags, pickup, role transfers, or scores.
 
 Online keeps its existing 30 Hz input and 20 Hz replica path. Both modes use bounded
 Zstandard-compressed Godot Variant snapshots on an unreliable ordered channel.
-Registration, readiness, map selection, automatic scene-load acknowledgements,
+Registration, character claims, readiness, map selection, automatic scene-load acknowledgements,
 events, and results use reliable delivery. Current LAN compatibility is
-`canclash-lan-skill-1`; both PCs must run the updated build. Online protocol
-is `canclash-rules-5`; its adapter is unchanged.
+`canclash-lan-abilities-3`; all PCs must run the updated build. Online protocol
+is `canclash-rules-7`.
+
+Players enter the waiting room without a character. Each player claims one of five
+characters there before becoming ready. Claims use a reliable request; the host
+checks the sender, waiting phase, index, and existing owners, then replicates the
+roster. A claimed character cannot be taken by another player. Changing a choice
+clears that player's ready state. The host checks unique, valid choices again at
+Start. Developer bots take the remaining characters. The saved player color is
+sent at registration and used for the roster badge and in-game marker; colors may
+repeat. Cosmetic options in the main-menu customization preview remain local
+and are not sent to a room or drawn on match actors.
 
 Only the host accepts registered peer input. Movement is limited to unit length,
 aim must be finite and bounded, action keys are explicitly selected, and stale
@@ -54,7 +68,7 @@ Departing clients leave the roster and active world. Host loss returns clients
 to the menu with a notice. If Taya leaves during preparation or active play, a remaining member
 takes over and the can resets at its base, including when it was being carried.
 There is no host migration or late match joining. Play Online now uses a
-GD-Sync relay adapter with four-player rooms; see [online setup](online_setup.md). The concept's powered throw remains future work. The opening throw-off is implemented but has not yet been playtested;
+GD-Sync relay adapter with four-player rooms; see [online setup](online_setup.md). The earlier two-hit powered throw rule was retired in favor of five three-orb specials. The opening throw-off is implemented but has not yet been playtested;
 LAN movement prediction and smoothing are implemented as described above.
 
 Verified using five separate processes on one PC. A physical five-PC LAN test,

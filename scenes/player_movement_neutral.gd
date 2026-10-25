@@ -14,6 +14,7 @@ var throwoff_locked := false
 @export var lunge_cooldown_seconds: float = 10.0
 @export var safe_strip_rect: Rect2
 @export var allowed_throw_rect: Rect2
+var require_standing_can := false
 @export var throw_speed_multiplier := 1.0
 @export var throw_grunt: AudioStream
 @export var show_player_ring := true
@@ -24,6 +25,7 @@ var taya_min_x := -INF
 const SLIPPER_VISUAL = preload("res://scenes/slipper_visual.gd")
 const SPRINT_DUST = preload("res://scenes/sprint_dust.gd")
 const THROW_BURST = preload("res://scenes/throw_burst.gd")
+const TAYA_STUN_SLIPPER = preload("res://scenes/taya_stun_slipper.gd")
 const SKILL_FONT = preload("res://assets/fonts/TitanOne-Regular.ttf")
 const THROW_ORIGIN: Vector2 = Vector2(0.0, -103.0)
 const TAG_DISTANCE: float = 132.0
@@ -74,6 +76,18 @@ var last_tagged_target: Node2D
 var name_label: Label
 var role_label: Label
 var skill_charge := 0
+var special_armed := false
+var ability_glow_until := 0.0
+var stunned_until := 0.0
+var stun_started_at := 0.0
+var stun_immune_until := 0.0
+var taya_stun_ready_at := 0.0
+var taya_stun_aiming := false
+var taya_stun_cast_until := 0.0
+var taya_stun_projectile: Node2D
+var rapid_slippers: Array[Node2D] = []
+var rapid_remaining := 0
+var rapid_next_at := 0.0
 const THROWER_NAME_COLOR := Color("65e37b")
 const TAYA_NAME_COLOR := Color("ff3030")
 var throw_status: Label
@@ -84,6 +98,8 @@ var lan_processed_input_sequence := 0
 
 func _ready() -> void:
 	super._ready()
+	_build_reaction_frames()
+	_build_cast_frames()
 	if throw_grunt != null:
 		throw_grunt_player = AudioStreamPlayer2D.new()
 		throw_grunt_player.stream = throw_grunt
@@ -123,23 +139,42 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if LanSession.mode == "lan" and LanSession.is_host():
 		lan_processed_input_sequence = int(network_input.get("sequence", lan_processed_input_sequence))
+	_advance_rapid_burst()
 	hit_flash_remaining = maxf(0.0, hit_flash_remaining - delta)
-	modulate = Color(1.8, 1.35, 0.9) if hit_flash_remaining > 0.0 else Color.WHITE
+	modulate = Color(1.8, 1.35, 0.9) if hit_flash_remaining > 0.0 else Color(1.35, 1.15 + 0.12 * sin(LanSession.clock_time() * 9.0), 1.8) if is_stunned() else Color.WHITE
 	_update_throw_status()
+	if is_taya or special_armed or is_stunned(): queue_redraw()
 	if not accept_local_input:
 		velocity = Vector2.ZERO
+		return
+	if is_stunned():
+		velocity = Vector2.ZERO
+		var elapsed := LanSession.clock_time() - stun_started_at
+		_play("hit" if elapsed < 0.17 else "recover" if stunned_until - LanSession.clock_time() < 0.2 else "stunned", facing)
+		var remaining := stunned_until - LanSession.clock_time()
+		var lean_degrees := 8.0 * smoothstep(0.0, 0.12, elapsed) if elapsed < 0.17 else 5.0 * smoothstep(0.0, 0.2, remaining) if remaining < 0.2 else 2.5 * sin(elapsed * 3.5)
+		var lean := deg_to_rad(lean_degrees) * (-1.0 if facing.x < 0.0 else 1.0)
+		sprite.rotation = lean
+		sprite.position.x = sin(lean) * sprite.scale.y * 150.0
+		if is_taya and carrying_can:
+			sprite.hide()
+			taya_visual.show_carry(_facing_sector(), false)
+		queue_redraw()
 		return
 	if is_taya:
 		_taya_physics_process(delta)
 		return
 	if attack_state == AttackState.FREE:
-		if _throw_pressed() and not is_instance_valid(active_slipper):
+		if _throw_pressed() and not is_instance_valid(active_slipper) and can_throw_here():
 			_start_charge()
 		else:
 			super._physics_process(delta)
 			_update_sprint_dust(delta)
 			_update_slipper_pickup()
 	elif attack_state == AttackState.CHARGING:
+		if not throw_target_ready():
+			set_taya_role(is_taya)
+			return
 		_update_cursor_aim()
 		_refresh_meter()
 		_update_trajectory()
@@ -176,6 +211,26 @@ func release_network_throw(id: int, at_time: float, aim: Vector2) -> bool:
 	return true
 
 func _taya_physics_process(delta: float) -> void:
+	if taya_stun_aiming:
+		var aim: Vector2 = _aim_position() - get_throw_origin()
+		if aim.length_squared() > 1.0:
+			facing = aim.normalized()
+			attack_direction = facing
+			if carrying_can: taya_visual.show_carry(_facing_sector(), false)
+			else:
+				_set_attack_visual(_attack_sector(), false)
+				var animation := StringName("taya_stun_aim_" + _attack_direction_name())
+				if attack_sprite.animation != animation: attack_sprite.play(animation)
+		velocity = Vector2.ZERO
+		return
+	if LanSession.clock_time() < taya_stun_cast_until:
+		velocity = Vector2.ZERO
+		return
+	if taya_stun_cast_until > 0.0:
+		taya_stun_cast_until = 0.0
+		attack_sprite.hide()
+		if carrying_can: taya_visual.show_carry(_facing_sector(), false)
+		else: sprite.show()
 	if taya_action == &"lunge":
 		_advance_lunge(delta)
 		return
@@ -401,7 +456,7 @@ func _update_taya_prompt() -> void:
 
 
 func can_tag() -> bool:
-	return is_taya and not carrying_can and can_node != null and can_node.is_standing()
+	return is_taya and not is_stunned() and not carrying_can and can_node != null and can_node.is_standing()
 
 
 func can_lunge() -> bool:
@@ -414,6 +469,10 @@ func _facing_sector() -> int:
 
 func set_taya_role(enabled: bool) -> void:
 	_restore_lunge_collision(taya_action == &"lunge")
+	special_armed = false
+	rapid_remaining = 0
+	taya_stun_aiming = false
+	taya_stun_cast_until = 0.0
 	if is_taya and not enabled and carrying_can and can_node != null:
 		can_node.drop(self)
 		carrying_can = false
@@ -439,8 +498,10 @@ func set_taya_role(enabled: bool) -> void:
 	last_tagged_target = null
 	if enabled:
 		remove_from_group("throwers")
+		add_to_group("taya_players")
 	else:
 		add_to_group("throwers")
+		remove_from_group("taya_players")
 	taya_action = &""
 	taya_visual.hide()
 	sprite.show()
@@ -460,8 +521,140 @@ func set_skill_charge(value: int) -> void:
 		queue_redraw()
 
 
+func is_stunned() -> bool:
+	return LanSession.clock_time() < stunned_until
+
+
+func apply_stun() -> bool:
+	var now := LanSession.clock_time()
+	if now < stun_immune_until:
+		return false
+	stunned_until = now + 3.0
+	stun_started_at = now
+	stun_immune_until = stunned_until + 5.0
+	if attack_state != AttackState.FREE:
+		set_taya_role(is_taya)
+	_restore_lunge_collision(true)
+	taya_action = &""
+	taya_visual.hide()
+	taya_stun_aiming = false
+	taya_stun_cast_until = 0.0
+	attack_sprite.hide()
+	if is_taya and carrying_can: taya_visual.show_carry(_facing_sector(), false)
+	else: sprite.show()
+	velocity = Vector2.ZERO
+	queue_redraw()
+	return true
+
+
+func begin_taya_stun_aim() -> bool:
+	if not is_taya or is_stunned() or taya_action != &"" or LanSession.clock_time() < taya_stun_ready_at:
+		return false
+	taya_stun_aiming = true
+	attack_direction = facing
+	_set_attack_visual(_attack_sector(), false)
+	attack_sprite.play(StringName("taya_stun_aim_" + _attack_direction_name()))
+	if carrying_can: taya_visual.show_carry(_facing_sector(), false)
+	else: attack_sprite.show()
+	sprite.hide()
+	if not carrying_can: taya_visual.hide()
+	return true
+
+
+func release_taya_stun(aim: Vector2) -> bool:
+	if not taya_stun_aiming or not is_taya or is_stunned() or not aim.is_finite():
+		taya_stun_aiming = false
+		return false
+	var direction := (aim - get_throw_origin()).normalized()
+	if direction.is_zero_approx():
+		taya_stun_aiming = false
+		return false
+	taya_stun_aiming = false
+	taya_stun_ready_at = LanSession.clock_time() + 120.0
+	taya_stun_cast_until = LanSession.clock_time() + 0.42
+	ability_glow_until = LanSession.clock_time() + 0.8
+	facing = direction
+	attack_direction = direction
+	_set_attack_visual(_attack_sector(), true)
+	if not carrying_can: attack_sprite.play(StringName("taya_stun_throw_" + _attack_direction_name()))
+	var projectile = TAYA_STUN_SLIPPER.new()
+	get_parent().add_child(projectile)
+	projectile.launch_taya(self, get_throw_origin() + direction * 42.0, direction)
+	taya_stun_projectile = projectile
+	queue_redraw()
+	return true
+
+func _build_reaction_frames() -> void:
+	# All five characters reuse their own directional drawings and original feet alignment.
+	# Effects and timing distinguish these states without changing their silhouette size.
+	var frames: SpriteFrames = sprite.sprite_frames.duplicate(true)
+	for direction in DIRECTIONS:
+		var idle := StringName("idle_" + direction)
+		if not frames.has_animation(idle): continue
+		for action in ["hit", "stunned", "recover"]:
+			var name := StringName(action + "_" + direction)
+			frames.add_animation(name)
+			frames.set_animation_loop(name, action == "stunned")
+			frames.set_animation_speed(name, 5.0 if action == "stunned" else 8.0)
+			var count := frames.get_frame_count(idle)
+			for index in range(count):
+				frames.add_frame(name, frames.get_frame_texture(idle, index))
+	sprite.sprite_frames = frames
+
+func _build_cast_frames() -> void:
+	var frames: SpriteFrames = attack_sprite.sprite_frames.duplicate(true)
+	for direction in DIRECTIONS:
+		for action in ["aim", "throw"]:
+			var original := StringName(action + "_" + direction)
+			if not frames.has_animation(original): continue
+			for variant in ["special_", "taya_stun_"]:
+				var name := StringName(variant + action + "_" + direction)
+				frames.add_animation(name)
+				frames.set_animation_loop(name, frames.get_animation_loop(original))
+				frames.set_animation_speed(name, frames.get_animation_speed(original))
+				for index in range(frames.get_frame_count(original)):
+					frames.add_frame(name, frames.get_frame_texture(original, index), frames.get_frame_duration(original, index))
+	attack_sprite.sprite_frames = frames
+
+
+func _advance_rapid_burst() -> void:
+	if rapid_remaining == 0 and is_instance_valid(active_slipper) and active_slipper.special_kind == &"rapid":
+		var finished := true
+		for shot in rapid_slippers:
+			if is_instance_valid(shot) and not shot.return_complete:
+				finished = false
+		if finished and is_instance_valid(active_slipper) and active_slipper.return_complete:
+			set_meta("rapid_complete", true)
+			for shot in rapid_slippers:
+				if is_instance_valid(shot): shot.queue_free()
+			rapid_slippers.clear()
+			active_slipper.queue_free()
+			active_slipper = null
+	if rapid_remaining <= 0 or LanSession.clock_time() < rapid_next_at:
+		return
+	if is_taya or is_stunned() or not throw_target_ready():
+		rapid_remaining = 0
+		return
+	var slipper = SLIPPER_VISUAL.new()
+	get_parent().add_child(slipper)
+	var origin := get_throw_origin()
+	var direction := attack_direction
+	slipper.launch(self, origin + direction * 42.0, direction, charge_ratio, origin, throw_speed_multiplier)
+	slipper.special_kind = &"rapid"
+	slipper.arena_bounds = arena_bounds
+	slipper.outline_color = player_color
+	rapid_slippers.append(slipper)
+	rapid_remaining -= 1
+	rapid_next_at = LanSession.clock_time() + 0.25
+	ability_glow_until = LanSession.clock_time() + 0.35
+
+
+func throw_target_ready() -> bool:
+	return not require_standing_can or (is_instance_valid(can_node) and can_node.is_standing())
+
+
 func can_throw_here() -> bool:
-	return not is_taya and not throwoff_locked and accept_local_input and (not allowed_throw_rect.has_area() or allowed_throw_rect.has_point(global_position))
+	return not is_taya and not is_stunned() and not throwoff_locked and accept_local_input and throw_target_ready() and (not allowed_throw_rect.has_area() or allowed_throw_rect.has_point(global_position))
 
 
 func _start_charge() -> void:
@@ -482,7 +675,7 @@ func _start_charge() -> void:
 	_update_cursor_aim()
 	sprite.hide()
 	attack_sprite.show()
-	attack_sprite.play(StringName("aim_" + _attack_direction_name()))
+	attack_sprite.play(StringName(("special_aim_" if special_armed else "aim_") + _attack_direction_name()))
 
 
 func _start_throw(release_elapsed: float = -1.0) -> void:
@@ -503,7 +696,7 @@ func _start_throw(release_elapsed: float = -1.0) -> void:
 	attack_state = AttackState.THROWING
 	slipper_spawned = false
 	_set_attack_visual(_attack_sector(), true)
-	attack_sprite.play(StringName("throw_" + _attack_direction_name()))
+	attack_sprite.play(StringName(("special_throw_" if special_armed else "throw_") + _attack_direction_name()))
 
 
 func _attack_direction_name() -> String:
@@ -524,10 +717,11 @@ func _update_cursor_aim() -> void:
 	attack_direction = aim.normalized()
 	facing = attack_direction
 	_set_attack_visual(sector, false)
-	if attack_sprite.visible and sector != previous_sector:
+	var desired := StringName(("special_aim_" if special_armed else "aim_") + DIRECTIONS[sector])
+	if attack_sprite.visible and (sector != previous_sector or attack_sprite.animation != desired):
 		var frame: int = attack_sprite.frame
 		var progress: float = attack_sprite.frame_progress
-		attack_sprite.play(StringName("aim_" + DIRECTIONS[sector]))
+		attack_sprite.play(desired)
 		attack_sprite.set_frame_and_progress(frame, progress)
 
 
@@ -559,6 +753,23 @@ func _on_attack_frame_changed() -> void:
 	slipper.launch(self, release_point, attack_direction, charge_ratio, get_throw_origin(), throw_speed_multiplier)
 	slipper.arena_bounds = arena_bounds
 	slipper.outline_color = player_color
+	if special_armed and skill_charge == 3 and not is_taya and throw_target_ready():
+		var kinds := [&"rapid", &"ricochet", &"self_return", &"stun", &"mind_control"]
+		var index := clampi(int(get_meta("character_index", 0)), 0, kinds.size() - 1)
+		slipper.special_kind = kinds[index]
+		if index == 0:
+			rapid_remaining = 2
+			rapid_next_at = LanSession.clock_time() + 0.25
+			rapid_slippers.clear()
+			set_meta("rapid_complete", false)
+			set_meta("rapid_hit", false)
+		elif index == 4:
+			slipper.steer_until = LanSession.clock_time() + 2.0
+		set_skill_charge(0)
+		special_armed = false
+		ability_glow_until = LanSession.clock_time() + 0.8
+	else:
+		special_armed = false
 	active_slipper = slipper
 
 
@@ -618,8 +829,12 @@ func _update_throw_status() -> void:
 		return
 	throw_status.position.y = -405 if is_taya else -312
 	throw_status.add_theme_color_override("font_color", player_color.lightened(0.4))
-	if is_taya:
-		throw_status.text = "TAYA • LUNGE READY" if can_lunge() else "TAYA • GUARD THE CAN"
+	if is_stunned():
+		throw_status.text = "STUNNED %.1fs" % (stunned_until - LanSession.clock_time())
+	elif is_taya:
+		throw_status.text = "STUN %.0fs" % ceilf(taya_stun_ready_at - LanSession.clock_time()) if LanSession.clock_time() < taya_stun_ready_at else "RMB  STUN READY"
+	elif special_armed:
+		throw_status.text = "SPECIAL ARMED"
 	elif attack_state == AttackState.CHARGING:
 		var quality := throw_quality()
 		throw_status.text = "%s %d%%" % [quality.band, roundi(quality.power * 100.0)]
@@ -628,6 +843,8 @@ func _update_throw_status() -> void:
 		throw_status.text = throw_feedback
 	elif is_instance_valid(active_slipper):
 		throw_status.text = "RETURNS IN %.1fs" % active_slipper.lost_remaining if active_slipper.lost_remaining > 0.0 else "RUN OVER YOUR SLIPPER" if active_slipper.can_pick_up(self) else "SLIPPER IN PLAY"
+	elif not throw_target_ready():
+		throw_status.text = "WAIT FOR CAN RESET"
 	else:
 		throw_status.text = "READY TO THROW"
 
@@ -642,6 +859,20 @@ func _update_trajectory() -> void:
 func _draw() -> void:
 	if show_player_ring:
 		draw_arc(Vector2(0, 5), 43.0, 0, TAU, 32, Color(player_color, 0.8), 4.0, true)
+	if is_taya:
+		var cooldown_progress := clampf(1.0 - (taya_stun_ready_at - LanSession.clock_time()) / 120.0, 0.0, 1.0)
+		draw_arc(Vector2(0, 5), 53.0, -PI * 0.5, -PI * 0.5 + TAU * cooldown_progress, 48, Color("bd70ff") if cooldown_progress >= 1.0 else Color("744a8c"), 5.0, true)
+	if (attack_sprite.visible or is_taya and carrying_can) and (special_armed or taya_stun_aiming or LanSession.clock_time() < taya_stun_cast_until or LanSession.clock_time() < ability_glow_until):
+		var colors := [Color("ffb83e"), Color("61d8ff"), Color("70edb7"), Color("db8aff"), Color("ff83ca")]
+		var character_index := clampi(int(get_meta("character_index", 0)), 0, 4)
+		var aura: Color = Color("bd70ff") if is_taya else colors[character_index]
+		var direction := attack_direction.normalized()
+		var center := Vector2(direction.x * 48.0, -86.0 + direction.y * 10.0) if character_index == 4 else Vector2(direction.x * 86.0, -118.0 + direction.y * 22.0)
+		var pulse := 21.0 + 3.0 * sin(LanSession.clock_time() * 12.0)
+		draw_arc(center, pulse, 0.0, TAU, 24, Color(aura, 0.76), 4.0, true)
+		for ray_index in range(4):
+			var ray := Vector2.RIGHT.rotated(ray_index * PI * 0.5 + LanSession.clock_time() * 1.2)
+			draw_line(center + ray * 28.0, center + ray * 36.0, Color(aura, 0.65), 3.0, true)
 	for orb in range(3):
 		var center := Vector2((orb - 1) * 58.0, 91.0)
 		draw_circle(center, 23.0, Color("241a17"))
@@ -654,7 +885,13 @@ func _draw() -> void:
 			draw_arc(center, 20.0, 0.0, TAU, 32, Color("b2a08a"), 2.0, true)
 	if skill_charge == 3:
 		draw_rect(Rect2(-95, 122, 190, 34), Color("241a17"))
-		draw_string(SKILL_FONT, Vector2(-90, 149), "RMB  SPECIAL", HORIZONTAL_ALIGNMENT_CENTER, 180, 22, Color("fff1b1"))
+		draw_string(SKILL_FONT, Vector2(-90, 149), "ARMED" if special_armed else "RMB  SPECIAL", HORIZONTAL_ALIGNMENT_CENTER, 180, 22, Color("fff1b1"))
+	if LanSession.clock_time() < ability_glow_until:
+		draw_arc(Vector2(0, -115), 106.0, 0, TAU, 48, Color(player_color.lightened(0.5), 0.75), 7.0, true)
+	if is_stunned():
+		for index in 3:
+			var at := Vector2(-44 + index * 44, -235) + Vector2(0, sin(LanSession.clock_time() * 7.0 + index * 2.0) * 8.0)
+			draw_circle(at, 9.0, Color("ffdf56"))
 	if attack_state != AttackState.CHARGING or predicted_path.is_empty():
 		return
 	var spread: float = throw_quality().spread

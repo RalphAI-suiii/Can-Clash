@@ -390,7 +390,7 @@ theme_override_font_sizes/font_size = 43
 theme_override_styles/normal = SubResource("StyleBoxFlat_uad2a")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_a3kwp")
 theme_override_styles/hover = SubResource("StyleBoxFlat_my348")
-text = "Avatar"
+text = "Customize"
 
 [node name="Friends" type="Button" parent="." unique_id=710831898]
 layout_mode = 1

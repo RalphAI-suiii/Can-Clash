@@ -28,7 +28,7 @@ func _ready() -> void:
 	join.pressed.connect(_open_join)
 	close_button.pressed.connect(_hide_local_popup)
 	backdrop.gui_input.connect(_on_backdrop_input)
-	$Avatar.pressed.connect(_open_character_select)
+	$Avatar.pressed.connect(_show_customization)
 	if LanSession.has_meta("notice"):
 		var notice = UI.modal(self, "ROOM CLOSED", str(LanSession.get_meta("notice")))
 		notice.content.add_child(UI.button("Back to menu", notice.layer.queue_free))
@@ -82,9 +82,17 @@ func _open_join() -> void:
 	get_tree().change_scene_to_file("res://ui/lobby/join_local.tscn")
 
 
-func _open_character_select() -> void:
+func _show_customization() -> void:
 	_save_name()
-	get_tree().change_scene_to_file("res://ui/character_select/character_select.tscn")
+	var layer := CanvasLayer.new()
+	layer.layer = 20
+	add_child(layer)
+	var screen := preload("res://ui/character_customization/character_customization.tscn").instantiate()
+	screen.connect("closed", func() -> void:
+		name_input.text = UserSettings.display_name
+		layer.queue_free()
+	)
+	layer.add_child(screen)
 
 
 func _build_profile_controls() -> void:
