@@ -2,6 +2,8 @@ extends Node2D
 
 const PLAYER_FONT = preload("res://assets/fonts/TitanOne-Regular.ttf")
 const SLIPPER = preload("res://scenes/slipper_visual.gd")
+const LAN_SNAPSHOT_INTERVAL := 1.0 / 30.0
+const ONLINE_SNAPSHOT_INTERVAL := 1.0 / 20.0
 @export_range(0.5, 1.0, 0.001) var player_scale := 0.576
 var actors: Dictionary = {}
 var world_tick := 0.0
@@ -108,8 +110,9 @@ func _physics_process(delta: float) -> void:
 				observed_slippers[id] = actor.active_slipper.get_instance_id()
 				_slipper_spawned(actor, actor.active_slipper)
 		world_tick += delta
-		if world_tick >= 0.05:
-			world_tick = 0.0
+		var snapshot_interval := LAN_SNAPSHOT_INTERVAL if LanSession.mode == "lan" else ONLINE_SNAPSHOT_INTERVAL
+		if world_tick >= snapshot_interval:
+			world_tick = fmod(world_tick, snapshot_interval)
 			if LanSession.mode == "lan": _publish_lan_snapshot.call_deferred()
 			else: LanSession.publish_world(_snapshot())
 	elif LanSession.mode == "lan":
@@ -144,8 +147,8 @@ func _process(delta: float) -> void:
 			continue
 		var motion: Dictionary = lan_remote_motion[id]
 		motion.age += delta
-		var target: Vector2 = motion.position + motion.velocity * minf(motion.age, 0.08)
-		actors[id].position = actors[id].position.lerp(target, 1.0 - exp(-delta / 0.045))
+		var target: Vector2 = motion.position + motion.velocity * minf(motion.age, 0.05)
+		actors[id].position = actors[id].position.lerp(target, 1.0 - exp(-delta / 0.035))
 
 func _receive_input(id: int, packet: Dictionary) -> void:
 	if LanSession.is_host() and actors.has(id):

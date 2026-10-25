@@ -16,17 +16,17 @@ Validate the sending peer, player ownership, phase, role, legal action,
 cooldowns, and request values before applying requests.
 
 LAN clients send sequenced input each physics tick (60 Hz by default). Host
-snapshots are sent at 20 Hz after actor physics, including the last input sequence
+snapshots are sent at 30 Hz after actor physics, including the last input sequence
 actually processed. The joining player predicts movement immediately, then replays
 unacknowledged input from the authoritative position with a short visual correction.
 Prediction uses explicit recorded timesteps, real scenery/player collisions, and
 the same speeds, acceleration, friction, and Taya movement restriction as the host.
 History is limited to 64 commands and prediction stops after 350 ms without a host
 snapshot. Role/action/phase changes and teleports reset the prediction buffer.
-Remote LAN actors are smoothed between snapshots with at most 80 ms extrapolation.
+Remote LAN actors are smoothed between snapshots with at most 50 ms extrapolation.
 Client prediction never decides hits, tags, pickup, role transfers, or scores.
 
-Online keeps its existing 30 Hz input and replica path. Both modes use bounded
+Online keeps its existing 30 Hz input and 20 Hz replica path. Both modes use bounded
 Zstandard-compressed Godot Variant snapshots on an unreliable ordered channel.
 Registration, readiness, map selection, automatic scene-load acknowledgements,
 events, and results use reliable delivery. LAN compatibility is now
@@ -112,3 +112,10 @@ received snapshots and one dropped snapshot in ten. On this PC, before/after:
 These are controlled process measurements, not a physical Wi-Fi benchmark.
 `lan_prediction_smoke.gd` checks all five characters' reconciliation, boundaries,
 action locks, role/spawn changes, stale-network cutoff and bounded history.
+
+On 2026-10-25, LAN host snapshots increased to 30 Hz, remote visual extrapolation
+was capped at 50 ms, and acknowledged inputs are removed without filtering a new
+history array. The same two-process ENet check with 120 ms snapshot delay and 10%
+loss passed: 6.695 ms first local movement, 61/61 local moving frames, 52/61
+remote moving frames, and 0 px settled drift. This remains a one-PC check; five
+physical PCs and different Wi-Fi conditions need a playtest.

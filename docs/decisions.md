@@ -1,5 +1,11 @@
 # Design decisions
 
+## Screen fit and LAN presentation — 2026-10-25
+
+- Keep the 1920×1080 design canvas centered and scale it uniformly to the available window. On screens with a different aspect ratio, use bars in the spare space so menus, HUD, and camera framing are not cropped or stretched.
+- Send host LAN snapshots at 30 Hz while keeping online at 20 Hz. Retain physics-rate client input and host-owned outcomes. Bound remote visual extrapolation to 50 ms and smooth toward the newer snapshots over 35 ms; discard acknowledged input commands in place to avoid rebuilding the prediction history each snapshot.
+- Godot 4.7.2 loaded the game headlessly with this setting. The existing two-process ENet responsiveness check passed from a clean main checkout with 120 ms delayed snapshots and 10% dropped snapshots: 6.695 ms first local movement, 61/61 local moving frames, 52/61 remote moving frames, and 0 px settled drift. A rendered resolution check and physical five-PC LAN latency check are still needed. The earlier 2026-10-24 measurements below predate this tuning.
+
 ## Distinct Eskinita and Dusty Yard — 2026-10-24
 
 - Keep COURTYARD's floor, hoops, props and fence placement unchanged.

@@ -34,7 +34,8 @@ func receive(data: Dictionary, reset: bool) -> void:
 	var displayed := actor.position
 	if reset: pending.clear()
 	var acknowledged := int(data.get("lan_ack", 0))
-	pending = pending.filter(func(command: Dictionary) -> bool: return int(command.sequence) > acknowledged)
+	while not pending.is_empty() and int(pending[0].sequence) <= acknowledged:
+		pending.pop_front()
 	position = data.position
 	velocity = data.velocity
 	for command in pending: _simulate(command, false)
