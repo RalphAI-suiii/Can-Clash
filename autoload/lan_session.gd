@@ -11,8 +11,8 @@ signal skill_requested(peer_id: int, pressed: bool, aim: Vector2)
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
-const PROTOCOL := "canclash-rules-8"
-const LAN_PROTOCOL := "canclash-lan-abilities-4"
+const PROTOCOL := "canclash-rules-9"
+const LAN_PROTOCOL := "canclash-lan-abilities-5"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5
@@ -307,9 +307,6 @@ func _apply_character(id: int, index: int) -> bool:
 	var entry := member(id)
 	if phase != "waiting" or entry.is_empty() or index < 0 or index >= CHARACTERS.size():
 		return false
-	for other in players:
-		if other.id != id and other.character == index:
-			return false
 	entry.character = index
 	entry.ready = false
 	_publish_roster()
@@ -332,11 +329,9 @@ func _apply_ready(id: int, value: bool) -> void:
 func all_ready() -> bool:
 	if players.is_empty():
 		return false
-	var chosen := []
 	for entry in players:
-		if not entry.ready or entry.character < 0 or entry.character >= CHARACTERS.size() or chosen.has(entry.character):
+		if not entry.ready or entry.character < 0 or entry.character >= CHARACTERS.size():
 			return false
-		chosen.append(entry.character)
 	return true
 
 func can_start() -> bool:

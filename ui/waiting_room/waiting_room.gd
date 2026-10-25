@@ -74,7 +74,7 @@ func _refresh_start_button() -> void:
 	start_button.visible = host and LanSession.mode != "practice"
 	start_frame.visible = start_button.visible
 	start_button.disabled = not can_start
-	start_button.tooltip_text = "Start the game" if can_start else "Wait for another player, then choose different characters and ready up." if LanSession.mode in ["lan", "online"] and LanSession.players.size() < 2 else "Every player must choose a different character and be ready."
+	start_button.tooltip_text = "Start the game" if can_start else "Wait for another player, then choose characters and ready up." if LanSession.mode in ["lan", "online"] and LanSession.players.size() < 2 else "Every player must choose a character and be ready."
 	start_frame.add_theme_stylebox_override("panel", start_glow if can_start else start_frame_style)
 	$HUD/Screen/ReadyFrame.offset_left = -608.0 if host else -440.0
 	$HUD/Screen/ReadyFrame.offset_right = -308.0 if host else -48.0

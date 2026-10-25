@@ -54,9 +54,34 @@ func _sync_actors() -> void:
 	for entry in LanSession.players:
 		if actors.has(entry.id):
 			continue
-		var character_index: int = maxi(0, int(entry.character))
+		var character_index: int = clampi(int(entry.character), 0, LanSession.CHARACTERS.size() - 1)
 		var path := "res://scenes/Thrower %s.tscn" % LanSession.CHARACTERS[character_index]
-		var actor: CharacterBody2D = load(path).instantiate()
+		var scene := load(path) as PackedScene
+		if scene == null:
+			push_error("Could not load %s; using Head Band until the game files are repaired." % path)
+			scene = load("res://scenes/Thrower Head Band.tscn") as PackedScene
+		if scene == null:
+			push_error("Could not load the fallback player scene.")
+			continue
+		var actor := scene.instantiate() as CharacterBody2D
+		var body: AnimatedSprite2D
+		if actor != null:
+			body = actor.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+		if body == null or body.sprite_frames == null:
+			push_error("Missing character frames in %s; using Head Band until the game files are repaired." % path)
+			if actor != null:
+				actor.free()
+			var fallback := load("res://scenes/Thrower Head Band.tscn") as PackedScene
+			if fallback == null:
+				continue
+			actor = fallback.instantiate() as CharacterBody2D
+			if actor == null:
+				continue
+			body = actor.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+			if body == null or body.sprite_frames == null:
+				push_error("The fallback Head Band scene also has missing frames.")
+				actor.free()
+				continue
 		actor.name = "Player" if entry.id == 1 else "Player_%s" % entry.id
 		actor.position = previous_positions.get(entry.id, _spawn_point(entry.slot))
 		actor.scale = Vector2.ONE * player_scale

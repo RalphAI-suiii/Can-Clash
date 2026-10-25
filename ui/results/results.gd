@@ -53,7 +53,16 @@ func _ready() -> void:
 		if rank >= rankings.size(): continue
 		var member: Dictionary = rankings[rank]
 		var character := clampi(int(member.get("character", 0)), 0, LanSession.CHARACTERS.size() - 1)
-		var actor: CharacterBody2D = load("res://scenes/Taya %s.tscn" % LanSession.CHARACTERS[character]).instantiate()
+		var scene := load("res://scenes/Taya %s.tscn" % LanSession.CHARACTERS[character]) as PackedScene
+		if scene == null:
+			push_error("Missing results character scene: %s" % LanSession.CHARACTERS[character])
+			scene = load("res://scenes/Taya Head Band.tscn") as PackedScene
+		if scene == null:
+			continue
+		var actor := scene.instantiate() as CharacterBody2D
+		if actor == null:
+			push_error("Invalid results character scene: %s" % LanSession.CHARACTERS[character])
+			continue
 		actor.position = Vector2(positions[rank], top - 10)
 		actor.scale = Vector2.ONE * 0.85
 		actor.accept_local_input = false
