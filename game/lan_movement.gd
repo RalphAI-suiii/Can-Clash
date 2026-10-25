@@ -51,8 +51,8 @@ func _simulate(command: Dictionary, animate: bool) -> void:
 		var original_walk: float = actor.walk_speed
 		var original_sprint: float = actor.sprint_speed
 		if command.carrying:
-			actor.walk_speed = actor.carry_speed
-			actor.sprint_speed = actor.carry_speed
+			actor.walk_speed = original_walk * actor.carry_speed_ratio
+			actor.sprint_speed = actor.walk_speed
 		actor.move_from_input(command.delta, command.move, command.sprint, animate, true)
 		actor.walk_speed = original_walk
 		actor.sprint_speed = original_sprint

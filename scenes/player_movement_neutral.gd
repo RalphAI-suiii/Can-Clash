@@ -7,7 +7,9 @@ const THROW_METER = preload("res://scenes/throw_meter.gd")
 @export var accept_local_input: bool = true
 var throwoff_locked := false
 @export var is_taya: bool = false
-@export var carry_speed: float = 68.0
+@export_range(0.1, 1.0, 0.05) var carry_speed_ratio := 0.85
+const TAG_DELAY := 3.0
+var tag_ready_at := 0.0
 @export var can_path: NodePath
 @export var lunge_distance: float = 300.0
 @export var lunge_lock_radius: float = 260.0
@@ -17,6 +19,7 @@ var throwoff_locked := false
 @export var throw_speed_multiplier := 1.0
 @export var throw_grunt: AudioStream
 @export var show_player_ring := true
+@export var show_gameplay_overlays := true
 var taya_min_x := -INF
 @export var arena_bounds: Rect2
 @export var player_color := Color("329dff")
@@ -54,6 +57,7 @@ var feedback_until := 0.0
 var release_spread := 0.0
 var slipper_spawned: bool = false
 var active_slipper: Node2D
+var possession_icon: Node2D
 var throw_grunt_player: AudioStreamPlayer2D
 var last_grunt_charge_id := -1
 var dust_cooldown: float = 0.0
@@ -83,6 +87,13 @@ var lan_processed_input_sequence := 0
 
 
 func _ready() -> void:
+	_prepare_movement_banks()
+	possession_icon = preload("res://scenes/possession_icon.gd").new()
+	possession_icon.name = "PossessionIcon"
+	possession_icon.hide()
+	possession_icon.position = Vector2(0, -340)
+	possession_icon.scale = Vector2.ONE * 1.5
+	add_child(possession_icon)
 	super._ready()
 	if throw_grunt != null:
 		throw_grunt_player = AudioStreamPlayer2D.new()
@@ -148,12 +159,69 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
+	_refresh_possession_visual()
 	# Replicas do not simulate physics, but their timing marker must animate smoothly.
 	if attack_state == AttackState.CHARGING and not LanSession.is_host():
 		_refresh_meter()
 		_update_throw_status()
 		if int(get_meta("peer_id", -1)) == LanSession.local_id():
 			_update_trajectory()
+
+func _prepare_movement_banks() -> void:
+	# Never mutate shared authored SpriteFrames when adding role aliases.
+	sprite.sprite_frames = sprite.sprite_frames.duplicate()
+	var frames := sprite.sprite_frames
+	for direction in DIRECTIONS:
+		for action in ["idle", "walk", "sprint"]:
+			var original := StringName(action + "_" + direction)
+			if not frames.has_animation(original): continue
+			for prefix in ["empty_", "taya_"]:
+				var name := StringName(prefix + original)
+				if frames.has_animation(name): continue
+				frames.add_animation(name)
+				frames.set_animation_loop(name, frames.get_animation_loop(original))
+				frames.set_animation_speed(name, frames.get_animation_speed(original))
+				for frame in range(frames.get_frame_count(original)):
+					frames.add_frame(name, frames.get_frame_texture(original, frame), frames.get_frame_duration(original, frame))
+
+
+func _movement_animation(action: String, direction_name: String) -> StringName:
+	var prefix := "taya_" if is_taya else "empty_" if is_instance_valid(active_slipper) else ""
+	var name := StringName(prefix + action + "_" + direction_name)
+	return name if sprite.sprite_frames.has_animation(name) else super._movement_animation(action, direction_name)
+
+
+func is_local_view() -> bool:
+	return show_gameplay_overlays and int(get_meta("peer_id", LanSession.local_id())) == LanSession.local_id() and not bool(get_meta("bot", false))
+
+
+func _refresh_possession_visual() -> void:
+	if possession_icon == null: return
+	if not show_gameplay_overlays:
+		possession_icon.item = &""
+		charge_bar.hide()
+		return
+	charge_bar.visible = attack_state == AttackState.CHARGING and is_local_view()
+	var windup := attack_state == AttackState.CHARGING or (attack_state == AttackState.THROWING and not slipper_spawned)
+	var can_action := is_taya and taya_action in [&"pickup", &"place"]
+	# Item-bearing artwork is hidden; ownership is shown solely by the overhead icon.
+	if windup or can_action:
+		sprite.show()
+		attack_sprite.hide()
+		taya_visual.hide()
+		_play("idle", facing)
+	elif attack_state == AttackState.THROWING:
+		sprite.hide()
+		attack_sprite.show() # Release/recovery drawings have empty hands.
+	elif carrying_can and taya_action == &"":
+		sprite.show()
+		taya_visual.hide()
+	if attack_state == AttackState.FREE and taya_action == &"":
+		var action := "sprint" if "sprint_" in String(sprite.animation) else "walk" if "walk_" in String(sprite.animation) else "idle"
+		var expected := _movement_animation(action, DIRECTIONS[_facing_sector()])
+		if sprite.animation != expected: _play(action, facing)
+	possession_icon.item = &"can" if carrying_can else &"slipper" if not is_taya and not is_instance_valid(active_slipper) and not (attack_state == AttackState.THROWING and slipper_spawned) else &""
+
 
 func _refresh_meter() -> void:
 	charge_elapsed = maxf(0.0, LanSession.clock_time() - charge_started)
@@ -197,15 +265,15 @@ func _taya_physics_process(delta: float) -> void:
 	var original_walk: float = walk_speed
 	var original_sprint: float = sprint_speed
 	if carrying_can:
-		walk_speed = carry_speed
-		sprint_speed = carry_speed
+		walk_speed = original_walk * carry_speed_ratio
+		sprint_speed = walk_speed
 	super._physics_process(delta)
 	walk_speed = original_walk
 	sprint_speed = original_sprint
 	if carrying_can:
 		dust_cooldown = 0.0
-		sprite.hide()
-		taya_visual.show_carry(_facing_sector(), velocity.length_squared() > 144.0)
+		sprite.show()
+		taya_visual.hide()
 	else:
 		taya_visual.hide()
 		_update_sprint_dust(delta)
@@ -223,12 +291,13 @@ func _start_taya_action(next_action: StringName) -> void:
 	charge_bar.hide()
 	interact_prompt.hide()
 	taya_visual.play_action(next_action, _facing_sector())
+	_refresh_possession_visual()
 
 
 func _start_lunge() -> void:
 	_restore_lunge_collision(false)
 	lunge_target = _find_lunge_target()
-	if lunge_target != null and lunge_target.global_position.distance_to(global_position) <= TAG_DISTANCE:
+	if can_tag() and lunge_target != null and lunge_target.global_position.distance_to(global_position) <= TAG_DISTANCE:
 		_try_tag()
 		return
 	var aim: Vector2 = _aim_position() - global_position
@@ -374,16 +443,14 @@ func _try_tag() -> void:
 
 
 func _on_taya_action_finished(completed: StringName) -> void:
-	if completed == &"place" and can_node != null:
+	if completed == &"place" and can_node != null and LanSession.is_host():
 		if can_node.reset_at_base(self):
 			carrying_can = false
 	taya_action = &""
-	if carrying_can:
-		taya_visual.show_carry(_facing_sector(), false)
-	else:
-		taya_visual.hide()
-		sprite.show()
-		_play("idle", facing)
+	taya_visual.hide()
+	sprite.show()
+	_play("idle", facing)
+	_refresh_possession_visual()
 	_update_taya_prompt()
 
 
@@ -400,12 +467,16 @@ func _update_taya_prompt() -> void:
 	interact_prompt.show()
 
 
+func tag_delay_remaining() -> float:
+	return clampf(tag_ready_at - LanSession.clock_time(), 0.0, TAG_DELAY)
+
+
 func can_tag() -> bool:
-	return is_taya and not carrying_can and can_node != null and can_node.is_standing()
+	return is_taya and not carrying_can and can_node != null and can_node.is_standing() and LanSession.clock_time() >= tag_ready_at
 
 
 func can_lunge() -> bool:
-	return can_tag() and Time.get_ticks_msec() / 1000.0 >= next_lunge_time
+	return is_taya and not carrying_can and can_node != null and can_node.is_standing() and Time.get_ticks_msec() / 1000.0 >= next_lunge_time
 
 
 func _facing_sector() -> int:
@@ -417,6 +488,8 @@ func set_taya_role(enabled: bool) -> void:
 	if is_taya and not enabled and carrying_can and can_node != null:
 		can_node.drop(self)
 		carrying_can = false
+	if enabled and not is_taya: tag_ready_at = LanSession.clock_time() + TAG_DELAY
+	if not enabled: tag_ready_at = 0.0
 	is_taya = enabled
 	update_name_color()
 	movement_min_x = taya_min_x if enabled else -INF
@@ -444,6 +517,8 @@ func set_taya_role(enabled: bool) -> void:
 	taya_action = &""
 	taya_visual.hide()
 	sprite.show()
+	_play("idle", facing)
+	_refresh_possession_visual()
 	_update_taya_prompt()
 
 
@@ -477,12 +552,13 @@ func _start_charge() -> void:
 	charge_bar.target_center = sweet_spot
 	set_meta("bot_release_at", sweet_spot + randf_range(-0.025, 0.025))
 	charge_bar.value = 0.0
-	charge_bar.show()
+	charge_bar.visible = is_local_view()
 	interact_prompt.hide()
 	_update_cursor_aim()
 	sprite.hide()
 	attack_sprite.show()
 	attack_sprite.play(StringName("aim_" + _attack_direction_name()))
+	_refresh_possession_visual()
 
 
 func _start_throw(release_elapsed: float = -1.0) -> void:
@@ -504,6 +580,7 @@ func _start_throw(release_elapsed: float = -1.0) -> void:
 	slipper_spawned = false
 	_set_attack_visual(_attack_sector(), true)
 	attack_sprite.play(StringName("throw_" + _attack_direction_name()))
+	_refresh_possession_visual()
 
 
 func _attack_direction_name() -> String:
@@ -560,6 +637,7 @@ func _on_attack_frame_changed() -> void:
 	slipper.arena_bounds = arena_bounds
 	slipper.outline_color = player_color
 	active_slipper = slipper
+	_refresh_possession_visual()
 
 
 func play_throw_grunt() -> void:
@@ -579,6 +657,7 @@ func _update_slipper_pickup() -> void:
 		return
 	if active_slipper.pick_up(self):
 		active_slipper = null
+		_refresh_possession_visual()
 		interact_prompt.hide()
 
 
@@ -616,9 +695,11 @@ func flash_hit() -> void:
 func _update_throw_status() -> void:
 	if throw_status == null:
 		return
-	throw_status.position.y = -405 if is_taya else -312
+	throw_status.position.y = -525 if is_taya else -440
 	throw_status.add_theme_color_override("font_color", player_color.lightened(0.4))
-	if is_taya:
+	if is_taya and LanSession.clock_time() < tag_ready_at:
+		throw_status.text = "TAGGING IN %d" % ceili(tag_delay_remaining())
+	elif is_taya:
 		throw_status.text = "TAYA • LUNGE READY" if can_lunge() else "TAYA • GUARD THE CAN"
 	elif attack_state == AttackState.CHARGING:
 		var quality := throw_quality()
@@ -633,6 +714,10 @@ func _update_throw_status() -> void:
 
 
 func _update_trajectory() -> void:
+	if not is_local_view():
+		predicted_path.clear()
+		queue_redraw()
+		return
 	var origin := get_throw_origin()
 	var release := origin + attack_direction * minf(48.0, aim_distance * 0.5)
 	predicted_path = SLIPPER_VISUAL.predict_path(get_world_2d(), origin, release, attack_direction, float(throw_quality().power), get_tree().get_nodes_in_group("can_targets"), throw_speed_multiplier)
@@ -640,6 +725,7 @@ func _update_trajectory() -> void:
 
 
 func _draw() -> void:
+	if not show_gameplay_overlays: return
 	if show_player_ring:
 		draw_arc(Vector2(0, 5), 43.0, 0, TAU, 32, Color(player_color, 0.8), 4.0, true)
 	for orb in range(3):
@@ -655,7 +741,7 @@ func _draw() -> void:
 	if skill_charge == 3:
 		draw_rect(Rect2(-95, 122, 190, 34), Color("241a17"))
 		draw_string(SKILL_FONT, Vector2(-90, 149), "RMB  SPECIAL", HORIZONTAL_ALIGNMENT_CENTER, 180, 22, Color("fff1b1"))
-	if attack_state != AttackState.CHARGING or predicted_path.is_empty():
+	if not is_local_view() or attack_state != AttackState.CHARGING or predicted_path.is_empty():
 		return
 	var spread: float = throw_quality().spread
 	if spread > 0.0:

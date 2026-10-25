@@ -63,7 +63,7 @@ func show_carry(direction_sector: int, is_walking: bool) -> void:
 
 
 func _process(delta: float) -> void:
-	if not visible:
+	if not visible and action == &"":
 		return
 	elapsed += delta
 	var lunge_done: bool = action == &"lunge" and lunge_recovery_at < INF and elapsed >= lunge_recovery_at + 0.20

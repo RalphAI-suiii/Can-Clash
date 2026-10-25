@@ -111,7 +111,7 @@ func _play(action: String, direction: Vector2) -> void:
 		direction_name = "up_right"
 	elif mirror_sprint_left:
 		direction_name = "right"
-	var animation_name: StringName = StringName(action + "_" + direction_name)
+	var animation_name: StringName = _movement_animation(action, direction_name)
 	var visual_y: float = idle_sprite_y if action == "idle" else walk_sprite_y
 	if moving and sector % 2 == 1:
 		visual_y += diagonal_walk_y_offset
@@ -134,13 +134,17 @@ func _play(action: String, direction: Vector2) -> void:
 	# Compensate for center-based rotation so the feet stay at the same world position.
 	sprite.position = Vector2(sin(lean) * sprite.scale.y * 150.0, visual_y)
 	if sprite.animation != animation_name or not sprite.is_playing():
-		var previous_motion: bool = String(sprite.animation).begins_with("walk_") or String(sprite.animation).begins_with("sprint_")
+		var previous_motion: bool = "walk_" in String(sprite.animation) or "sprint_" in String(sprite.animation)
 		var keep_step: bool = moving and previous_motion
 		var step_frame: int = sprite.frame
 		var step_progress: float = sprite.frame_progress
 		sprite.play(animation_name)
 		if keep_step:
 			sprite.set_frame_and_progress(step_frame, step_progress)
+
+
+func _movement_animation(action: String, direction_name: String) -> StringName:
+	return StringName(action + "_" + direction_name)
 
 
 func _move_character() -> void:

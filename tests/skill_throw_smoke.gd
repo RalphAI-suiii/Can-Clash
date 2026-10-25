@@ -82,6 +82,7 @@ func _run() -> void:
 		actor.can_node = can
 		guard.position = actor.position
 		guard.set_taya_role(true)
+		guard.tag_ready_at = 0.0 # This guard is already past the new-role cooldown.
 		actor._start_charge()
 		match_logic.tag_immunity = 0.0
 		match_logic._tag_requested(actor, guard)

@@ -29,6 +29,7 @@ func _run() -> void:
 		for actor in game.actors.values():
 			actor.set_meta("bot", false)
 			actor.network_controlled = true
+		game.taya_id = int(game.actors.keys()[0])
 		game._start_preparation()
 		assert(game.remaining == 7.0 and game.stage == "preparation")
 		var guard: CharacterBody2D = game.actors[game.taya_id]
@@ -145,6 +146,8 @@ func _run() -> void:
 		var results: Control = load("res://ui/results/results.tscn").instantiate()
 		root.add_child(results)
 		assert(results.podium_players.size() == mini(3, count))
+		for actor in results.podium_players:
+			assert(not actor.show_gameplay_overlays and not actor.possession_icon.visible, "Podium ranks must stay clear of gameplay circles/icons")
 		assert(results.get_node("Podium").get_child_count() >= 3)
 		results.free()
 	print("PASS: power-dependent tumble and podium layouts for 1, 2, 3 and 5 players")

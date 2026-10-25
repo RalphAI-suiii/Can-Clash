@@ -23,6 +23,9 @@ func _run() -> void:
 	assert(music.current_track == "menu")
 	assert(music.players[music.active_index].playing and music.players[music.active_index].stream.loop)
 	assert(is_equal_approx(music.players[music.active_index].volume_db, music.volume_db))
+	# Discard startup silence: a full capture buffer retains its oldest samples.
+	capture.clear_buffer()
+	await create_timer(0.15).timeout
 	var samples := capture.get_buffer(capture.get_frames_available())
 	var peak := 0.0
 	for sample in samples: peak = maxf(peak, maxf(absf(sample.x), absf(sample.y)))

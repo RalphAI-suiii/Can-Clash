@@ -63,7 +63,8 @@ func _run() -> void:
 		assert(session.start_match())
 		while current_scene == null or current_scene.scene_file_path != "res://game/match/match.tscn":
 			await process_frame
-		while current_scene.stage == "loading":
+		# The current build opens with an intro and one-shot throw-off before preparation.
+		while current_scene.stage in ["loading", "intro", "run_to_line", "throw_off", "throw_off_result"]:
 			await process_frame
 		assert(current_scene.stage == "preparation")
 		assert(current_scene.remaining > 6.0)
@@ -92,6 +93,9 @@ func _run() -> void:
 		guard.position = landed + Vector2(55, 0)
 		assert(current_scene.can.pick_up(guard))
 		guard.carrying_can = true
+		_mark("carrying")
+		while not _all_marked("saw-carry"):
+			await process_frame
 		guard.position = current_scene.can.base.position + Vector2(55, 0)
 		assert(current_scene.can.reset_at_base(guard))
 		guard.carrying_can = false
@@ -167,6 +171,38 @@ func _run() -> void:
 			await process_frame
 		assert(current_scene.remaining > 595.0 and current_scene.remaining <= 600.0, "Replicated match timer: %s" % current_scene.remaining)
 		assert(current_scene.actors.size() == 5)
+		# Exercise the replica path with charging snapshots: only this PC's actor gets guides.
+		var saved: Dictionary = current_scene._snapshot()
+		var preview: Dictionary = saved.duplicate(true)
+		for data in preview.actors:
+			data.taya = false
+			data.carrying = false
+			data.taya_action = ""
+			data.attack = 1
+			data.released = false
+			data.slipper = {}
+		current_scene._apply_snapshot(preview)
+		for id in current_scene.actors:
+			var actor: Node2D = current_scene.actors[id]
+			actor._update_trajectory()
+			assert(actor.charge_bar.visible == (id == session.local_id()))
+			assert(actor.predicted_path.is_empty() == (id != session.local_id()))
+		var deadline: float = session.clock_time() + 3.0
+		for data in preview.actors:
+			data.attack = 0
+			data.taya = data.id == session.local_id()
+			data.tag_ready_at = deadline if data.taya else 0.0
+		preview.extra.taya = session.local_id()
+		current_scene._apply_snapshot(preview)
+		current_scene._update_hud()
+		assert(current_scene.role_status_label.visible and not current_scene.actors[session.local_id()].can_tag())
+		assert(current_scene.actors[session.local_id()].tag_ready_at == deadline)
+		for data in preview.actors: data.taya = data.id == 1
+		preview.extra.taya = 1
+		current_scene._apply_snapshot(preview)
+		current_scene._update_hud()
+		assert(not current_scene.role_status_label.visible, "Only the new Taya sees the tag countdown")
+		current_scene._apply_snapshot(saved)
 		_mark("active")
 		var saw_slipper := false
 		var saw_flash := false
@@ -180,10 +216,21 @@ func _run() -> void:
 					assert(actor.active_slipper.outline_color == actor.player_color)
 					saw_slipper = true
 					if actor.get_script().resource_path.ends_with("character_role_player.gd") and actor.attack_state == actor.AttackState.FREE:
-						saw_empty_hand = saw_empty_hand or String(actor.sprite.animation).begins_with("taya_")
+						saw_empty_hand = saw_empty_hand or String(actor.sprite.animation).begins_with("empty_")
 			saw_flash = saw_flash or current_scene.can.can_sprite.modulate.r > 1.5
 		_mark("feedback")
-		var saw_tumble := false
+		while not FileAccess.file_exists(folder.path_join("host-carrying")):
+			await process_frame
+		var carrier: Node2D
+		while carrier == null:
+			for actor in current_scene.actors.values():
+				if actor.carrying_can: carrier = actor
+			if carrier == null: await process_frame
+		carrier._refresh_possession_visual()
+		assert(carrier.possession_icon.item == &"can" and carrier.sprite.visible and not carrier.taya_visual.visible)
+		assert(not current_scene.can.can_sprite.visible and not carrier.can_tag())
+		_mark("saw-carry")
+		var saw_tumble: bool = absf(current_scene.can.tilt_angle) > 0.5
 		while not FileAccess.file_exists(folder.path_join("host-can-recovered")) or not current_scene.can.is_standing() or current_scene.can.position.distance_to(current_scene.can.base.position) > 0.1:
 			saw_tumble = saw_tumble or absf(current_scene.can.tilt_angle) > 0.5
 			await process_frame

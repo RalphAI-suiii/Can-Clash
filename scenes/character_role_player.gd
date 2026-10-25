@@ -2,6 +2,9 @@ extends "res://scenes/player_movement_neutral.gd"
 
 ## Adapts each character's existing drawings to the shared thrower/Taya rules.
 @export var art_kind: StringName = &"thrower"
+@export var relaxed_cardinal: Texture2D
+@export var relaxed_diagonal: Texture2D
+@export var release_sheet: Texture2D
 
 
 func _ready() -> void:
@@ -56,6 +59,34 @@ func _normalized_frames(source: SpriteFrames) -> SpriteFrames:
 			_copy_empty_hand(result, source, StringName("taya_idle_" + direction), release_source, false)
 			_copy_empty_hand(result, source, StringName("taya_walk_" + direction), release_source, true)
 			_copy_empty_hand(result, source, StringName("taya_sprint_" + direction), release_source, true)
+		if relaxed_cardinal != null and relaxed_diagonal != null:
+			var sheet := relaxed_diagonal if diagonal else relaxed_cardinal
+			# Cardinal rows face down, left, up, right; diagonal rows DR, UL, UR, DL.
+			var row := ["down_right", "up_left", "up_right", "down_left"].find(lookup) if diagonal else ["down", "left", "up", "right"].find(lookup)
+			for action in ["idle", "walk", "sprint"]:
+				var name := StringName(action + "_" + direction)
+				result.clear(name)
+				result.set_animation_speed(name, 1.0 if action == "idle" else 11.0 if action == "sprint" else 8.0)
+				for frame in ([0] if action == "idle" else [0, 1, 2, 3]):
+					var texture := AtlasTexture.new()
+					texture.atlas = sheet
+					var cell := Vector2(sheet.get_width() / 4.0, sheet.get_height() / 5.0)
+					texture.region = Rect2(Vector2(frame, row) * cell + Vector2(0, 12), cell - Vector2(0, 12))
+					texture.margin = Rect2(0, 12, 0, 12)
+					texture.filter_clip = true
+					result.add_frame(name, texture)
+		if release_sheet != null:
+			var row := ["down", "down_right", "right", "up_right", "up", "up_left", "left", "down_left"].find(direction)
+			var cell := Vector2(release_sheet.get_width() / 4.0, release_sheet.get_height() / 8.0)
+			for action in ["aim", "throw"]:
+				var name := StringName(action + "_" + direction)
+				result.clear(name)
+				for frame in ([1] if action == "aim" else [1, 1, 2, 3]):
+					var texture := AtlasTexture.new()
+					texture.atlas = release_sheet
+					texture.region = Rect2(Vector2(frame, row) * cell, cell)
+					texture.filter_clip = true
+					result.add_frame(name, texture)
 	return result
 
 
@@ -85,14 +116,25 @@ func _copy_empty_hand(target: SpriteFrames, source: SpriteFrames, name: StringNa
 		return
 	if moving:
 		for index in [count - 2, count - 1, count - 2, count - 1]:
-			target.add_frame(name, source.get_frame_texture(original, index))
+			target.add_frame(name, _trim_recovery_frame(source.get_frame_texture(original, index)))
 	else:
-		target.add_frame(name, source.get_frame_texture(original, count - 1))
+		target.add_frame(name, _trim_recovery_frame(source.get_frame_texture(original, count - 1)))
+
+
+func _trim_recovery_frame(texture: Texture2D) -> Texture2D:
+	# Some old atlas cells contain the previous row's shoe at their upper edge.
+	if not texture is AtlasTexture: return texture
+	var trimmed: AtlasTexture = texture.duplicate()
+	trimmed.region.position.y += 12
+	trimmed.region.size.y -= 12
+	trimmed.margin.position.y += 12
+	trimmed.margin.size.y += 12
+	trimmed.filter_clip = true
+	return trimmed
 
 
 func _play(action: String, direction: Vector2) -> void:
-	var empty_handed := is_taya or is_instance_valid(active_slipper)
-	super._play("taya_" + action if empty_handed else action, direction)
+	super._play(action, direction)
 	sprite.flip_h = DIRECTIONS[(roundi(direction.angle() / (PI / 4.0)) + 8) % 8] == "left"
 
 
@@ -100,3 +142,6 @@ func _set_attack_visual(sector: int, _releasing: bool) -> void:
 	attack_sprite.scale = idle_sprite_scale
 	attack_sprite.position = Vector2(0.0, idle_sprite_y)
 	attack_sprite.flip_h = sector == 4
+	if release_sheet != null:
+		attack_sprite.scale *= Vector2(280.0 * 0.9 / (release_sheet.get_width() / 4.0), 273.0 * 0.9 / (release_sheet.get_height() / 8.0))
+		attack_sprite.flip_h = false

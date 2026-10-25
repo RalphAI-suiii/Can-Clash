@@ -69,8 +69,7 @@ func _run() -> void:
 		await physics_frame
 		await physics_frame
 		assert(is_instance_valid(player.active_slipper), "Out-of-range slipper must remain")
-		if character != "Hat Thrower":
-			assert(String(player.sprite.animation).begins_with("taya_"), "Use empty hands while retrieving: " + character)
+		assert(String(player.sprite.animation).begins_with("empty_"), "Use relaxed empty hands while retrieving: " + character)
 		grounded.position = player.position + Vector2(20, 0)
 		var before: Vector2 = player.position
 		Input.action_release("sprint")
@@ -79,7 +78,7 @@ func _run() -> void:
 		assert(not is_instance_valid(player.active_slipper), "Walking collects without E")
 		assert(player.position.x > before.x and player.velocity.x >= player.walk_speed)
 		await physics_frame
-		assert(not String(player.sprite.animation).begins_with("taya_"), "Pickup restores normal movement: " + character)
+		assert(not String(player.sprite.animation).begins_with("empty_") and player.possession_icon.visible, "Pickup restores held-slipper movement: " + character)
 		player._start_charge()
 		assert(player.attack_state == player.AttackState.CHARGING, "No post-pickup cooldown")
 		Input.action_release("interact")
@@ -90,14 +89,13 @@ func _run() -> void:
 			if player.attack_state == player.AttackState.FREE:
 				break
 		assert(player.attack_state == player.AttackState.FREE and is_instance_valid(player.active_slipper))
-		if character != "Hat Thrower":
-			assert(String(player.sprite.animation).begins_with("taya_idle_"), "Release must end in empty-hand idle: " + character)
+		assert(String(player.sprite.animation).begins_with("empty_idle_"), "Release must end in empty-hand idle: " + character)
 		# The same empty-hand state lasts through an out-of-bounds return countdown.
 		player.active_slipper.lost_remaining = 0.05
 		for i in range(8):
 			await physics_frame
 		assert(not is_instance_valid(player.active_slipper))
-		assert(not String(player.sprite.animation).begins_with("taya_"), "Penalty return restores the slipper pose: " + character)
+		assert(not String(player.sprite.animation).begins_with("empty_") and player.possession_icon.visible, "Penalty return restores the slipper pose: " + character)
 		player.free()
 	print("PASS: all five throwers collect while moving, use empty-hand idle/movement after release and during retrieval, restore normal poses on pickup/penalty return, and can throw again immediately.")
 	arena.free()

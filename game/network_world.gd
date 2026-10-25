@@ -82,7 +82,7 @@ func _sync_actors() -> void:
 		actor.add_child(name_label)
 		actor.name_label = name_label
 		var role_label := Label.new()
-		role_label.position = Vector2(-70 / player_scale, -345)
+		role_label.position = Vector2(-70 / player_scale, -455)
 		role_label.scale = Vector2.ONE / player_scale
 		role_label.size = Vector2(140, 30)
 		role_label.text = "TAYA"
@@ -236,7 +236,7 @@ func _snapshot() -> Dictionary:
 	var state := {"actors": [], "cans": [], "extra": _extra_snapshot()}
 	for id in actors:
 		var actor: CharacterBody2D = actors[id]
-		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "skill_charge": actor.skill_charge, "carrying": actor.carrying_can, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}}
+		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "skill_charge": actor.skill_charge, "carrying": actor.carrying_can, "tag_ready_at": actor.tag_ready_at, "released": actor.slipper_spawned, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}}
 		if is_instance_valid(actor.active_slipper):
 			var slipper: Node2D = actor.active_slipper
 			data.slipper = {"position": slipper.position, "velocity": slipper.velocity, "height": slipper.height, "spin": slipper.spin_angle, "charge": slipper.charge_ratio, "resting": slipper.resting, "bounces": slipper.floor_bounces, "lost": slipper.lost_remaining, "age": slipper.age}
@@ -270,11 +270,12 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 			actor.set_taya_role(data.taya)
 		actor.set_skill_charge(int(data.get("skill_charge", 0)))
 		actor.carrying_can = data.carrying
+		actor.tag_ready_at = float(data.get("tag_ready_at", 0.0))
 		actor.facing = data.facing
 		actor.attack_state = data.attack
 		actor.attack_direction = data.aim
 		actor.aim_distance = data.distance
-		actor.slipper_spawned = true
+		actor.slipper_spawned = bool(data.get("released", true))
 		actor.charge_id = int(data.get("charge_id", 0))
 		actor.charge_started = float(data.get("charge_started", 0.0))
 		actor.sweet_spot = float(data.get("sweet_spot", 0.5))
@@ -282,7 +283,7 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		actor.feedback_until = float(data.get("feedback_until", 0.0))
 		actor.charge_bar.target_center = actor.sweet_spot
 		actor.charge_bar.value = data.charge
-		actor.charge_bar.visible = data.attack == actor.AttackState.CHARGING
+		actor.charge_bar.visible = data.attack == actor.AttackState.CHARGING and actor.is_local_view()
 		if not own or data.attack != actor.AttackState.FREE or data.carrying or data.taya_action != "":
 			actor.sprite.animation = data.sprite
 			actor.sprite.frame = data.frame
@@ -332,6 +333,7 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 			slipper.age = data.slipper.age
 			slipper.queue_redraw()
 		if own: lan_movement.receive(data, reset)
+		actor._refresh_possession_visual()
 		actor._update_throw_status()
 		if not lan_client and data.id == LanSession.local_id() and actor.attack_state == actor.AttackState.CHARGING:
 			actor._update_trajectory()

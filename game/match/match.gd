@@ -28,6 +28,7 @@ var taya_id := 0
 var tag_immunity := 0.0
 var acknowledgment_clock := 0.0
 var can: CharacterBody2D
+var role_status_label: Label
 var phase_label: Label
 var score_panel: PanelContainer
 var scoreboard
@@ -513,6 +514,13 @@ func _build_hud() -> void:
 	phase_label.position = Vector2(-650, 35)
 	phase_label.size = Vector2(1300, 60)
 	screen.add_child(phase_label)
+	role_status_label = UI.label("", 32)
+	role_status_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	role_status_label.position = Vector2(-430, 98)
+	role_status_label.size = Vector2(860, 52)
+	role_status_label.add_theme_color_override("font_color", Color("ffe071"))
+	role_status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	screen.add_child(role_status_label)
 	score_panel = PanelContainer.new()
 	score_panel.anchor_left = 1.0
 	score_panel.anchor_right = 1.0
@@ -570,6 +578,10 @@ func _update_hud() -> void:
 	phase_label.text = "WAITING FOR PLAYERS TO LOAD" if stage == "loading" else "THROW OFF INCOMING" if stage in ["intro", "run_to_line"] else "WAITING FOR SLIPPERS" if stage == "throw_off" and remaining <= 0.0 else "THROW OFF  " + time_text if stage == "throw_off" else "INITIAL TAYA" if stage == "throw_off_result" else "TAYA PREPARATION  " + time_text if stage == "preparation" else "MATCH  " + time_text
 	phase_label.visible = stage != "intro" and stage != "throw_off_result"
 	score_panel.visible = stage in ["preparation", "active"]
+	var own: Node2D = actors.get(LanSession.local_id())
+	var tag_wait: float = own.tag_delay_remaining() if own != null else 0.0
+	role_status_label.visible = stage == "active" and own != null and own.is_taya and tag_wait > 0.0
+	role_status_label.text = "YOU CAN TAG IN %d" % ceili(tag_wait)
 	if opening_label != null:
 		opening_label.text = "%s IS TAYA\n%d" % [LanSession.member(taya_id).get("name", "Player"), ceili(remaining)] if stage == "preparation" else "THROW!" if stage == "active" and remaining > MATCH_SECONDS - 2.0 else ""
 	_update_intro_visual()

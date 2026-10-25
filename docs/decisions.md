@@ -1,5 +1,26 @@
 # Design decisions
 
+## Map-selection spinning sound — 2026-10-25
+
+- Reuse the user's named spinning-wheel MP3 from the soundtrack Drive folder. Keep the original file intact, skip its silent lead-in during playback and align the final cue with the existing five-second map shuffle. Selection duration, host map choice and networking stay unchanged.
+- A scene-owned AudioStreamPlayer plays once on entry, mixes with the continuing lobby track, and stops on transition or early exit. No new global audio manager or network messages are needed.
+
+## Possession icons, tag cooldown and private aiming — 2026-10-25
+
+- Circle badges above each actor show owned slippers or a carried can. Hand props and item-bearing wind-up/carry artwork are hidden; empty-hand release and lunge drawings remain visible. Hidden pickup/place animation clocks still complete normally, and only the host places the can.
+- Becoming Taya sets a host-clock deadline three seconds ahead. Tags are rejected before that deadline, while movement and lunges remain usable. The new Taya alone sees a fixed-screen countdown. Reapplying the same role does not restart the delay; the deadline is replicated unchanged to clients.
+- Can return stays manual: carry at 85% of normal walking speed, with no sprint boost, and press E near the original spot to place. No automatic return, steering or placement is added.
+- Timing meters, trajectory paths and spread previews are rendered only for the locally owned human actor. Other players and bots retain synchronized gameplay state without visible aiming guides on this PC.
+- Podium actors disable gameplay overlays entirely so skill circles and possession badges cannot cover their place numbers.
+- The new possession regression check covers every character, real pickup/place completion, carrying speed, three-second unlocking and owner-only aim state. Updated animation, pickup and five-process LAN checks retain role/retrieval coverage.
+
+## Movement artwork follows role and slipper ownership — 2026-10-25
+
+- All five characters select relaxed `idle`/`walk`/`sprint` while holding a slipper, separate `empty_` movement while retrieving it, and `taya_` movement only in the Taya role. Role transfers refresh immediately. Existing aim, release, pickup, carry, place and lunge actions remain distinct.
+- Head Band, Glasses and Curly receive six relaxed empty-hand sheets derived from their original aiming-walk artwork. Hat and Bullcap keep their authored neutral motion. A small native slipper drawing follows the lowered hand only in free movement when the actor actually owns the slipper; the projectile uses the same silhouette. Original aiming/release artwork is preserved. Bullcap now has its own eight-direction aiming/release sheet, replacing the old walk-frame throw placeholder. Taya still uses the existing character-specific Taya action coverage described below.
+- Held-slipper visibility and movement selection update on both host state and replicated snapshots, including the locally predicted LAN actor. Updated animation names require the current LAN/online compatibility versions; old builds are rejected at registration.
+- `tests/role_animation_smoke.gd` exercises both starting roles for every character, eight directions, idle/walk/sprint, held/empty/Taya selection, charge interruption and can actions. Pickup and five-process LAN checks verify the live transition paths.
+
 ## Screen fit and LAN presentation — 2026-10-25
 
 - Keep the 1920×1080 design canvas centered and scale it uniformly to the available window. On screens with a different aspect ratio, use bars in the spare space so menus, HUD, and camera framing are not cropped or stretched.

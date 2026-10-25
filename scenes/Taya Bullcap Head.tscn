@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://scenes/character_taya_visual.gd" id="4_taya_visual"]
 [ext_resource type="AudioStream" path="res://assets/audio/voices/bullcap_head_throw_grunt.mp3" id="5_throw_grunt"]
 
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/relaxed/bullcap_release.png" id="release_sheet"]
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_charge_background"]
 bg_color = Color(0.26, 0.16, 0.1, 1)
 border_width_left = 2
@@ -35,6 +37,7 @@ motion_mode = 1
 script = ExtResource("1_script")
 throw_grunt = ExtResource("5_throw_grunt")
 art_kind = &"bullcap"
+release_sheet = ExtResource("release_sheet")
 is_taya = true
 idle_sprite_y = -104.0
 walk_sprite_y = -104.0

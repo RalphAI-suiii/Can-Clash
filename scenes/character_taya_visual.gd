@@ -24,7 +24,7 @@ func _ready() -> void:
 	carried_can.region_enabled = true
 	carried_can.region_rect = Rect2(397, 295, 486, 655)
 	carried_can.scale = Vector2.ONE * 0.057
-	carried_can.position = Vector2(36, -145)
+	carried_can.position = Vector2(0, -78)
 	carried_can.hide()
 	add_child(carried_can)
 
@@ -64,6 +64,7 @@ func _show_pose(prefix: String) -> void:
 	if body == null or body.sprite_frames == null:
 		return
 	var direction: String = DIRECTIONS[sector]
+	carried_can.position = Vector2(0, -78) if sector == 2 else Vector2(-38 if sector in [3, 4, 5] else 38, -80)
 	body.flip_h = direction == "left"
 	var name: StringName = StringName("taya_" + prefix + "_" + direction)
 	if body.animation != name or not body.is_playing():
@@ -71,7 +72,7 @@ func _show_pose(prefix: String) -> void:
 
 
 func _process(delta: float) -> void:
-	if not visible:
+	if not visible and action == &"":
 		return
 	elapsed += delta
 	if action == &"lunge":

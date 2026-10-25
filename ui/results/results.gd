@@ -58,6 +58,7 @@ func _ready() -> void:
 		actor.scale = Vector2.ONE * 0.85
 		actor.accept_local_input = false
 		actor.show_player_ring = false
+		actor.show_gameplay_overlays = false
 		actor.collision_layer = 0
 		actor.collision_mask = 0
 		stage.add_child(actor)

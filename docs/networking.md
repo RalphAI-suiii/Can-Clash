@@ -5,8 +5,8 @@ Status: implemented for the active 2D menu, waiting room, and match flow.
 The match host also owns each participant's three-hit special meter. World snapshots
 replicate `skill_charge`; a reliable right-click request only asks the host to
 activate a full meter. Character-specific effects are placeholders and do not
-change match state yet. Current LAN compatibility is `canclash-lan-skill-1`;
-current online compatibility is `canclash-rules-5`.
+change match state yet. Current LAN compatibility is `canclash-lan-items-3`;
+current online compatibility is `canclash-rules-7`.
 
 One PC hosts and plays. Four other PCs join, for five players total.
 Godot 4.7.2 ENet uses UDP port 54652, with four remote peers plus the host.
@@ -36,8 +36,8 @@ Online keeps its existing 30 Hz input and 20 Hz replica path. Both modes use bou
 Zstandard-compressed Godot Variant snapshots on an unreliable ordered channel.
 Registration, readiness, map selection, automatic scene-load acknowledgements,
 events, and results use reliable delivery. Current LAN compatibility is
-`canclash-lan-skill-1`; both PCs must run the updated build. Online protocol
-is `canclash-rules-5`; its adapter is unchanged.
+`canclash-lan-roles-2`; both PCs must run the updated build. Online protocol
+is `canclash-rules-6`; its adapter is unchanged.
 
 Only the host accepts registered peer input. Movement is limited to unit length,
 aim must be finite and bounded, action keys are explicitly selected, and stale

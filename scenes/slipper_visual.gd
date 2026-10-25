@@ -188,6 +188,10 @@ func _draw() -> void:
 
 	# Keep the original slipper silhouette at one size in every motion state.
 	draw_set_transform(Vector2(0, -height * 0.55), spin_angle, Vector2.ONE)
+	draw_footwear(self, outline_color)
+
+
+static func draw_footwear(canvas: CanvasItem, ring_color: Color = Color.TRANSPARENT) -> void:
 	var outline: PackedVector2Array = PackedVector2Array([
 		Vector2(-29, -14), Vector2(-17, -20), Vector2(12, -19),
 		Vector2(28, -12), Vector2(32, -1), Vector2(27, 11),
@@ -205,12 +209,12 @@ func _draw() -> void:
 	])
 	var colored_outline := outline.duplicate()
 	colored_outline.append(outline[0])
-	draw_polyline(colored_outline, outline_color, 8.0, true)
-	draw_colored_polygon(outline, Color("20130f"))
-	draw_colored_polygon(footbed, Color("9b653d"))
-	draw_colored_polygon(strap, Color("63391f"))
-	draw_line(Vector2(-15, -11), Vector2(8, -12), Color("d1a16d"), 2.0, true)
-	draw_line(Vector2(-20, 10), Vector2(13, 10), Color("4e2c1b"), 2.0, true)
+	canvas.draw_polyline(colored_outline, ring_color, 8.0, true)
+	canvas.draw_colored_polygon(outline, Color("20130f"))
+	canvas.draw_colored_polygon(footbed, Color("9b653d"))
+	canvas.draw_colored_polygon(strap, Color("63391f"))
+	canvas.draw_line(Vector2(-15, -11), Vector2(8, -12), Color("d1a16d"), 2.0, true)
+	canvas.draw_line(Vector2(-20, 10), Vector2(13, 10), Color("4e2c1b"), 2.0, true)
 
 
 static func predict_path(world: World2D, origin: Vector2, release: Vector2, aim: Vector2, charge: float, targets: Array, speed_multiplier: float = 1.0) -> PackedVector2Array:
