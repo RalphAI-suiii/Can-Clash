@@ -190,8 +190,15 @@ func _build_room_code() -> void:
 	room_code_button.offset_right = -630
 	room_code_button.offset_top = -145
 	room_code_button.offset_bottom = -55
-	room_code_button.add_theme_font_size_override("font_size", 23)
-	room_code_button.text = "ROOM CODE\n" + LanSession.room_code if LanSession.mode in ["lan", "online"] else "DEVELOPER\n%d BOTS" % LanSession.developer_bot_count if LanSession.mode == "developer" else "PRACTICE"
+	room_code_button.add_theme_font_size_override("font_size", 20 if LanSession.mode == "lan" else 23)
+	if LanSession.mode == "lan":
+		room_code_button.text = "ROOM %s\n%s" % [LanSession.room_code, LanSession.host_address]
+	elif LanSession.mode == "online":
+		room_code_button.text = "ROOM CODE\n" + LanSession.room_code
+	elif LanSession.mode == "developer":
+		room_code_button.text = "DEVELOPER\n%d BOTS" % LanSession.developer_bot_count
+	else:
+		room_code_button.text = "PRACTICE"
 	room_code_button.tooltip_text = "Copy online room code • Up to 4 players" if LanSession.mode == "online" else "Copy room code • Host IP: " + LanSession.host_address if LanSession.mode in ["lan", "online"] else "Developer games and practice do not change saved statistics."
 	room_code_button.pressed.connect(func() -> void:
 		if LanSession.mode in ["lan", "online"]:

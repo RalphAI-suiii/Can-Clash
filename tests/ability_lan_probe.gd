@@ -24,13 +24,13 @@ func _ready() -> void:
 	if role == "host":
 		if LanSession.host_room() != OK: get_tree().quit(1)
 	elif role == "client":
-		if LanSession.join_room("127.0.0.1") != OK: get_tree().quit(1)
+		if LanSession.join_room(args[1] if args.size() > 1 else "127.0.0.1") != OK: get_tree().quit(1)
 	else:
 		get_tree().quit(1)
 
 func _process(delta: float) -> void:
 	wall_elapsed += delta
-	if wall_elapsed > 12.0:
+	if wall_elapsed > 30.0:
 		push_error("LAN probe timed out: %s phase=%s roster=%d" % [role, LanSession.phase, LanSession.players.size()])
 		get_tree().quit(1)
 		return

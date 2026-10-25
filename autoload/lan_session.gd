@@ -195,9 +195,10 @@ func begin_local(local_mode: String = "developer") -> void:
 func host_room() -> Error:
 	close_room()
 	var peer := ENetMultiplayerPeer.new()
+	peer.set_bind_ip("0.0.0.0")
 	var error := peer.create_server(PORT, MAX_PLAYERS - 1)
 	if error != OK:
-		connection_status_changed.emit("Couldn't host. Another room may already be using port %d." % PORT)
+		connection_status_changed.emit("Couldn't open LAN port %d (error %d). Check whether another app is using it." % [PORT, error])
 		return error
 	multiplayer.multiplayer_peer = peer
 	mode = "lan"
@@ -225,7 +226,7 @@ func join_room(address_or_code: String) -> Error:
 	mode = "lan"
 	phase = "joining"
 	join_deadline = Time.get_ticks_msec() / 1000.0 + 10.0
-	connection_status_changed.emit("Connecting to the host...")
+	connection_status_changed.emit("Connecting to %s:%d..." % [target, PORT])
 	return OK
 
 func _connected() -> void:
@@ -544,8 +545,25 @@ func _process(_delta: float) -> void:
 				input_deadline.erase(id)
 
 func _lan_address() -> String:
-	for prefix in ["192.168.", "10.", "172."]:
-		for address in IP.get_local_addresses():
+	var addresses := IP.get_local_addresses()
+	if OS.get_name() == "Windows":
+		# The default route identifies the active adapter when host-only adapters are also present.
+		var output: Array = []
+		if OS.execute("route.exe", ["PRINT", "-4"], output) == OK:
+			var best_address := ""
+			var best_metric := 2147483647
+			for chunk in output:
+				for line in str(chunk).split("\n"):
+					var fields := line.strip_edges().replace("\t", " ").split(" ", false)
+					if fields.size() < 5 or fields[0] != "0.0.0.0" or fields[1] != "0.0.0.0":
+						continue
+					if addresses.has(fields[3]) and fields[4].is_valid_int() and int(fields[4]) < best_metric:
+						best_address = fields[3]
+						best_metric = int(fields[4])
+			if not best_address.is_empty():
+				return best_address
+	for prefix in ["10.", "192.168.", "172."]:
+		for address in addresses:
 			if address.begins_with(prefix) and address.is_valid_ip_address() and not address.contains(":"):
 				return address
 	return "127.0.0.1"

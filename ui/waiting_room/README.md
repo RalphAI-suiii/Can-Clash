@@ -46,8 +46,8 @@ Godot Inspector; adjust `RoomAmbient`'s Color for the baseline brightness.
   Start opens the shared map roulette, then the chosen match arena.
   Guests keep the full-width Ready button and do not see Start.
 - The roster starts with one member and grows only when players join. Departures
-  remove the member and their actor. The footer room-code button copies the LAN
-  code; its tooltip also contains the host IP address.
+  remove the member and their actor. The footer room-code button shows the LAN
+  code and current host IP, and copies the code when clicked.
 - Leave / Escape closes your connection and returns to the main menu.
 
 `Player` instances the complete `scenes/Thrower Hat Thrower.tscn` with its original

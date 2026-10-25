@@ -11,6 +11,9 @@ current online compatibility is `canclash-rules-8`.
 
 One PC hosts and plays. Four other PCs join, for five players total.
 Godot 4.7.2 ENet uses UDP port 54652, with four remote peers plus the host.
+The LAN host binds explicitly to all IPv4 interfaces (`0.0.0.0`); on one
+Windows PC, Godot's default `*` wildcard failed to create an ENet host even
+though an explicit IPv4 bind succeeded.
 LanSession owns connection setup, real member roster, readiness, room codes,
 map selection, tutorial acknowledgments, shared transitions, and results.
 
@@ -63,6 +66,16 @@ A seven-character room code reversibly encodes the host's LAN IPv4 address; the
 Join field also accepts the IP itself. Codes are LAN addresses, not passwords or
 internet matchmaking. The host-address tooltip is available for PCs with multiple
 network adapters. A failed connection times out after ten seconds.
+On Windows, the host now chooses the IPv4 address on the lowest-metric default
+route before considering other local adapters. This avoids advertising a
+VirtualBox host-only address when Wi-Fi is the active LAN. If a VPN or unusual
+router setup still selects the wrong address, joiners can enter the host's
+active LAN IPv4 address directly in the Join field.
+On 2026-10-25, the explicit IPv4 bind passed a two-process host/client probe
+using the active Ethernet address `192.168.18.21`, and a five-process local LAN
+smoke test passed registration, roster, movement, ready/start, match phases,
+projectile feedback, results, and disconnect handling. A separate physical PC
+and its firewall/router path were not tested.
 
 Departing clients leave the roster and active world. Host loss returns clients
 to the menu with a notice. If Taya leaves during preparation or active play, a remaining member

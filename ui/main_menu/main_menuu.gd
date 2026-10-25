@@ -70,10 +70,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _open_host() -> void:
 	_save_name()
-	if LanSession.host_room() == OK:
+	var host_error := LanSession.host_room()
+	if host_error == OK:
 		get_tree().change_scene_to_file("res://ui/waiting_room/waiting_room.tscn")
 	else:
-		var notice = UI.modal(self, "COULDN'T HOST", "Another room may be open on this PC. Close it and try again.")
+		var notice = UI.modal(self, "COULDN'T HOST", "Could not open LAN port %d (error %d). Check whether another app is using it." % [LanSession.PORT, host_error])
 		notice.content.add_child(UI.button("Okay", notice.layer.queue_free))
 
 
