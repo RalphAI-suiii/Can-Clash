@@ -31,6 +31,7 @@ var network_controlled := false
 var network_input: Dictionary = {}
 var network_edges: Dictionary = {}
 var movement_min_x := -INF
+var movement_locked := false
 
 
 func apply_network_input(packet: Dictionary) -> void:
@@ -51,6 +52,8 @@ func _action_just_pressed(action: String) -> bool:
 
 
 func _movement_input() -> Vector2:
+	if movement_locked:
+		return Vector2.ZERO
 	return network_input.get("move", Vector2.ZERO) if network_controlled else Input.get_vector("left", "right", "up", "down")
 
 

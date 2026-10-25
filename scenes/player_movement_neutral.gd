@@ -5,6 +5,7 @@ signal tag_requested(thrower: Node2D)
 @export var charge_duration: float = 2.5 # Complete out-and-back meter cycle.
 const THROW_METER = preload("res://scenes/throw_meter.gd")
 @export var accept_local_input: bool = true
+var throwoff_locked := false
 @export var is_taya: bool = false
 @export var carry_speed: float = 68.0
 @export var can_path: NodePath
@@ -14,6 +15,7 @@ const THROW_METER = preload("res://scenes/throw_meter.gd")
 @export var safe_strip_rect: Rect2
 @export var allowed_throw_rect: Rect2
 @export var throw_speed_multiplier := 1.0
+@export var throw_grunt: AudioStream
 @export var show_player_ring := true
 var taya_min_x := -INF
 @export var arena_bounds: Rect2
@@ -22,6 +24,7 @@ var taya_min_x := -INF
 const SLIPPER_VISUAL = preload("res://scenes/slipper_visual.gd")
 const SPRINT_DUST = preload("res://scenes/sprint_dust.gd")
 const THROW_BURST = preload("res://scenes/throw_burst.gd")
+const SKILL_FONT = preload("res://assets/fonts/TitanOne-Regular.ttf")
 const THROW_ORIGIN: Vector2 = Vector2(0.0, -103.0)
 const TAG_DISTANCE: float = 132.0
 const PLAYER_CLEARANCE: float = 134.0
@@ -51,6 +54,8 @@ var feedback_until := 0.0
 var release_spread := 0.0
 var slipper_spawned: bool = false
 var active_slipper: Node2D
+var throw_grunt_player: AudioStreamPlayer2D
+var last_grunt_charge_id := -1
 var dust_cooldown: float = 0.0
 var next_foot_left: bool = false
 var can_node
@@ -67,8 +72,10 @@ var lunge_landed: bool = false
 var next_lunge_time: float = 0.0
 var last_tagged_target: Node2D
 var name_label: Label
+var role_label: Label
+var skill_charge := 0
 const THROWER_NAME_COLOR := Color("65e37b")
-const TAYA_NAME_COLOR := Color("ff6b65")
+const TAYA_NAME_COLOR := Color("ff3030")
 var throw_status: Label
 var predicted_path := PackedVector2Array()
 var hit_flash_remaining := 0.0
@@ -77,6 +84,12 @@ var lan_processed_input_sequence := 0
 
 func _ready() -> void:
 	super._ready()
+	if throw_grunt != null:
+		throw_grunt_player = AudioStreamPlayer2D.new()
+		throw_grunt_player.stream = throw_grunt
+		throw_grunt_player.position = Vector2(0, -90)
+		throw_grunt_player.volume_db = 0.0
+		add_child(throw_grunt_player)
 	attack_sprite.animation_finished.connect(_on_attack_finished)
 	attack_sprite.frame_changed.connect(_on_attack_frame_changed)
 	attack_sprite.hide()
@@ -437,10 +450,18 @@ func set_taya_role(enabled: bool) -> void:
 func update_name_color() -> void:
 	if is_instance_valid(name_label):
 		name_label.add_theme_color_override("font_color", TAYA_NAME_COLOR if is_taya else THROWER_NAME_COLOR)
+	if is_instance_valid(role_label):
+		role_label.visible = is_taya
+
+func set_skill_charge(value: int) -> void:
+	var next_charge := clampi(value, 0, 3)
+	if skill_charge != next_charge:
+		skill_charge = next_charge
+		queue_redraw()
 
 
 func can_throw_here() -> bool:
-	return not is_taya and accept_local_input and (not allowed_throw_rect.has_area() or allowed_throw_rect.has_point(global_position))
+	return not is_taya and not throwoff_locked and accept_local_input and (not allowed_throw_rect.has_area() or allowed_throw_rect.has_point(global_position))
 
 
 func _start_charge() -> void:
@@ -526,6 +547,7 @@ func _on_attack_frame_changed() -> void:
 		set_taya_role(is_taya)
 		return
 	slipper_spawned = true
+	play_throw_grunt()
 	var release_point: Vector2 = get_throw_origin() + attack_direction * minf(48.0, aim_distance * 0.5)
 	var burst = THROW_BURST.new()
 	get_parent().add_child(burst)
@@ -538,6 +560,13 @@ func _on_attack_frame_changed() -> void:
 	slipper.arena_bounds = arena_bounds
 	slipper.outline_color = player_color
 	active_slipper = slipper
+
+
+func play_throw_grunt() -> void:
+	if is_taya or throw_grunt_player == null or last_grunt_charge_id == charge_id:
+		return
+	last_grunt_charge_id = charge_id
+	throw_grunt_player.play()
 
 
 func get_throw_origin() -> Vector2:
@@ -587,6 +616,7 @@ func flash_hit() -> void:
 func _update_throw_status() -> void:
 	if throw_status == null:
 		return
+	throw_status.position.y = -405 if is_taya else -312
 	throw_status.add_theme_color_override("font_color", player_color.lightened(0.4))
 	if is_taya:
 		throw_status.text = "TAYA • LUNGE READY" if can_lunge() else "TAYA • GUARD THE CAN"
@@ -612,6 +642,19 @@ func _update_trajectory() -> void:
 func _draw() -> void:
 	if show_player_ring:
 		draw_arc(Vector2(0, 5), 43.0, 0, TAU, 32, Color(player_color, 0.8), 4.0, true)
+	for orb in range(3):
+		var center := Vector2((orb - 1) * 58.0, 91.0)
+		draw_circle(center, 23.0, Color("241a17"))
+		draw_circle(center, 17.0, Color("49372c"))
+		if orb < skill_charge:
+			draw_circle(center, 15.0, Color("ffba32"))
+			draw_circle(center + Vector2(-5, -5), 5.0, Color("fff1b1"))
+			draw_arc(center, 21.0, 0.0, TAU, 32, Color("fff1b1"), 3.0, true)
+		else:
+			draw_arc(center, 20.0, 0.0, TAU, 32, Color("b2a08a"), 2.0, true)
+	if skill_charge == 3:
+		draw_rect(Rect2(-95, 122, 190, 34), Color("241a17"))
+		draw_string(SKILL_FONT, Vector2(-90, 149), "RMB  SPECIAL", HORIZONTAL_ALIGNMENT_CENTER, 180, 22, Color("fff1b1"))
 	if attack_state != AttackState.CHARGING or predicted_path.is_empty():
 		return
 	var spread: float = throw_quality().spread

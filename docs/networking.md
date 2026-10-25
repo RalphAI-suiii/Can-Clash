@@ -2,6 +2,12 @@
 
 Status: implemented for the active 2D menu, waiting room, and match flow.
 
+The match host also owns each participant's three-hit special meter. World snapshots
+replicate `skill_charge`; a reliable right-click request only asks the host to
+activate a full meter. Character-specific effects are placeholders and do not
+change match state yet. Current LAN compatibility is `canclash-lan-skill-1`;
+current online compatibility is `canclash-rules-5`.
+
 One PC hosts and plays. Four other PCs join, for five players total.
 Godot 4.7.2 ENet uses UDP port 54652, with four remote peers plus the host.
 LanSession owns connection setup, real member roster, readiness, room codes,
@@ -29,9 +35,9 @@ Client prediction never decides hits, tags, pickup, role transfers, or scores.
 Online keeps its existing 30 Hz input and 20 Hz replica path. Both modes use bounded
 Zstandard-compressed Godot Variant snapshots on an unreliable ordered channel.
 Registration, readiness, map selection, automatic scene-load acknowledgements,
-events, and results use reliable delivery. LAN compatibility is now
-`canclash-lan-motion-1`; both PCs must run the updated build. Online compatibility
-and its adapter are unchanged.
+events, and results use reliable delivery. Current LAN compatibility is
+`canclash-lan-skill-1`; both PCs must run the updated build. Online protocol
+is `canclash-rules-5`; its adapter is unchanged.
 
 Only the host accepts registered peer input. Movement is limited to unit length,
 aim must be finite and bounded, action keys are explicitly selected, and stale
@@ -48,7 +54,7 @@ Departing clients leave the roster and active world. Host loss returns clients
 to the menu with a notice. If Taya leaves during preparation or active play, a remaining member
 takes over and the can resets at its base, including when it was being carried.
 There is no host migration or late match joining. Play Online now uses a
-GD-Sync relay adapter with four-player rooms; see [online setup](online_setup.md). The concept's powered throw and opening throw-off remain future work;
+GD-Sync relay adapter with four-player rooms; see [online setup](online_setup.md). The concept's powered throw remains future work. The opening throw-off is implemented but has not yet been playtested;
 LAN movement prediction and smoothing are implemented as described above.
 
 Verified using five separate processes on one PC. A physical five-PC LAN test,
@@ -78,10 +84,9 @@ latency (40 ms host / 80 ms clients) and 10% dropped unreliable sends. These are
 local integration checks; real cloud keys and a physical cross-network playtest
 are still required before internet connectivity can be marked verified.
 
-## Gameplay rules protocol 3
+## Gameplay rules protocol 4
 
-The host chooses initial Taya from every registered participant after automatic scene-load
-acknowledgements. Seven seconds of preparation unlock only Taya's movement;
+After automatic scene-load acknowledgements, the host runs the opening banner and moves each actor to the toe-line. All players get one throw; the host measures settled slippers from the can base, treating no throw or out-of-bounds as a forfeit. The farthest selects Taya, with lowest roster slot breaking ties. A result notice precedes seven seconds of preparation, which unlocks only Taya's movement;
 throwers' movement/action requests are rejected until the 600-second match starts.
 Snapshots include the phase deadline against synchronized host time. Clients
 clamp the displayed timer to its phase duration.
@@ -116,6 +121,6 @@ action locks, role/spawn changes, stale-network cutoff and bounded history.
 On 2026-10-25, LAN host snapshots increased to 30 Hz, remote visual extrapolation
 was capped at 50 ms, and acknowledged inputs are removed without filtering a new
 history array. The same two-process ENet check with 120 ms snapshot delay and 10%
-loss passed: 6.695 ms first local movement, 61/61 local moving frames, 52/61
+loss passed: 7.965 ms first local movement, 62/62 local moving frames, 47/62
 remote moving frames, and 0 px settled drift. This remains a one-PC check; five
 physical PCs and different Wi-Fi conditions need a playtest.

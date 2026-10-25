@@ -6,11 +6,12 @@ signal room_joined
 signal room_closed(reason: String)
 signal input_received(peer_id: int, packet: Dictionary)
 signal throw_input_received(peer_id: int, pressed: bool, charge: int, at_time: float, aim: Vector2)
+signal skill_requested(peer_id: int)
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
-const PROTOCOL := "canclash-rules-3"
-const LAN_PROTOCOL := "canclash-lan-motion-1"
+const PROTOCOL := "canclash-rules-5"
+const LAN_PROTOCOL := "canclash-lan-skill-1"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5
@@ -158,7 +159,7 @@ func _sender_id() -> int:
 	return online_sender if mode == "online" else multiplayer.get_remote_sender_id()
 
 func _online_message(sender: int, method: String, arguments: Array) -> void:
-	var requests := {"_register": 3, "_request_ready": 1, "_tutorial_ack": 0, "_submit_input": 1, "_throw_edge": 5, "_clock_ping": 1}
+	var requests := {"_register": 3, "_request_ready": 1, "_tutorial_ack": 0, "_submit_input": 1, "_throw_edge": 5, "_request_skill": 0, "_clock_ping": 1}
 	var updates := {"_sync_roster": 2, "_begin_selection": 3, "_world_state": 2, "_match_event": 1, "_show_results": 1, "_reject": 1, "_clock_pong": 2}
 	if is_host():
 		if sender <= 1 or not requests.has(method) or arguments.size() != requests[method]: return
@@ -166,7 +167,7 @@ func _online_message(sender: int, method: String, arguments: Array) -> void:
 		if sender != 1 or not updates.has(method) or arguments.size() != updates[method]: return
 	var expected := {
 		"_register": [TYPE_STRING, TYPE_INT, TYPE_STRING], "_request_ready": [TYPE_BOOL],
-		"_tutorial_ack": [], "_submit_input": [TYPE_DICTIONARY],
+		"_tutorial_ack": [], "_submit_input": [TYPE_DICTIONARY], "_request_skill": [],
 		"_throw_edge": [TYPE_BOOL, TYPE_INT, TYPE_INT, TYPE_FLOAT, TYPE_VECTOR2],
 		"_clock_ping": [TYPE_FLOAT], "_clock_pong": [TYPE_FLOAT, TYPE_FLOAT],
 		"_sync_roster": [TYPE_ARRAY, TYPE_STRING], "_begin_selection": [TYPE_INT, TYPE_INT, TYPE_STRING],
@@ -358,6 +359,16 @@ func send_input(packet: Dictionary) -> void:
 		throw_sequence += 1
 		_send("_throw_edge", [pressed, throw_sequence, int(packet.get("charge_id", 0)), clock_time(), packet.get("aim", Vector2.ZERO)], 1)
 	_send("_submit_input", [packet], 1, false)
+
+func request_skill() -> void:
+	if is_networked() and not is_host() and phase == "match":
+		_send("_request_skill", [], 1)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_skill() -> void:
+	var sender := _sender_id()
+	if is_host() and phase == "match" and not member(sender).is_empty():
+		skill_requested.emit(sender)
 
 @rpc("any_peer", "call_remote", "reliable")
 func _throw_edge(pressed: bool, sequence: int, charge: int, at_time: float, aim: Vector2) -> void:

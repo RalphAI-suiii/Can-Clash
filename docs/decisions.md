@@ -4,7 +4,41 @@
 
 - Keep the 1920×1080 design canvas centered and scale it uniformly to the available window. On screens with a different aspect ratio, use bars in the spare space so menus, HUD, and camera framing are not cropped or stretched.
 - Send host LAN snapshots at 30 Hz while keeping online at 20 Hz. Retain physics-rate client input and host-owned outcomes. Bound remote visual extrapolation to 50 ms and smooth toward the newer snapshots over 35 ms; discard acknowledged input commands in place to avoid rebuilding the prediction history each snapshot.
-- Godot 4.7.2 loaded the game headlessly with this setting. The existing two-process ENet responsiveness check passed from a clean main checkout with 120 ms delayed snapshots and 10% dropped snapshots: 6.695 ms first local movement, 61/61 local moving frames, 52/61 remote moving frames, and 0 px settled drift. A rendered resolution check and physical five-PC LAN latency check are still needed. The earlier 2026-10-24 measurements below predate this tuning.
+- Godot 4.7.2 loaded the game headlessly with this setting. The existing two-process ENet responsiveness check passed with 120 ms delayed snapshots and 10% dropped snapshots: 7.965 ms first local movement, 62/62 local moving frames, 47/62 remote moving frames, and 0 px settled drift. A rendered resolution check and physical five-PC LAN latency check are still needed. The earlier 2026-10-24 measurements below predate this tuning.
+
+## Match scoreboard placement and layout — 2026-10-25
+
+- Keep the existing orange panel, dark outline, and shadow, but anchor it 24 pixels from the top and right edges of the game viewport. This removes it from the left play area shown in the user's screenshot.
+- Draw the map name as the header, a small court-center line motif, clear player and points columns, alternating dark-orange rows, roster-color markers, and a red Taya badge. Put developer mode information in one quiet footer line. The board updates from the same host-owned scores and role snapshot as before; this is presentation only.
+- This change has had static inspection only; check the rendered panel at different window sizes and with five player names before treating the layout as final.
+
+## Three-hit character special placeholder — 2026-10-25
+
+- Each participant has an individual three-orb special meter below their character. It starts empty and gains one orb only when the host confirms that player's slipper struck and toppled a standing can during active play. Each slipper can award at most one orb. The meter stays with the participant through Taya transfers and is capped at three.
+- At three orbs, show `RMB SPECIAL` below the meter and accept a reliable right-click request. The host validates the active match, player identity, and full meter, then broadcasts a `SPECIAL ABILITY IS COMING SOON` notice. No effect or charge consumption occurs until the five character abilities are specified; this prevents players from losing earned charge to a nonfunctional placeholder.
+- This three-hit character special is separate from the draft concept's two-hit powered next throw. That earlier rule still needs implementation and a design decision about how the two meters should coexist.
+- LAN and online protocol identifiers advance because older builds do not carry the orb state or right-click request. This pass has static inspection only; live input, can-hit count, layout, and multi-process replication remain unverified.
+
+## Taya tag announcement — 2026-10-25
+
+- The host alone changes the Taya role after a valid tag. It sends a numbered tag announcement with the new Taya's ID, impact position, and expiry in match snapshots; clients show each red burst once and use the shared clock for the centered notice.
+- Keep a bright red `TAYA` label above the current Taya's name throughout play. On a tag, show a short red impact burst and a centered `%PLAYER% IS NOW TAYA!` card with a brief red screen tint. The card does not pause movement or change tag rules.
+- This pass has static inspection only; rendered layout and a multi-process tag handoff still need review.
+
+## Opening throw-off and camera — 2026-10-25
+
+- After all human scenes load, place the roster characters near midcourt, show a sliding THROW OFF!! banner over a dimmed screen, and have the host run them through the clear center lane to their own toe-line slots. The host then allows one charged throw per player, with movement locked until it resolves. Bots throw automatically.
+- The host compares each slipper's final ground position to the standing can's base. The farthest landing becomes the first Taya. An unthrown or out-of-bounds slipper counts as a forfeit and is ranked farthest; ties use the lowest roster slot. This follows the current player request, which supersedes the draft concept note's proposed toe-line distance. The can stays standing and an accurate slipper stops on contact during the throw-off. No score is awarded for these opening throws.
+- A winner card shows the selected player's name, character, and idle portrait before the existing seven-second Taya preparation. Developer-only Play As remains an explicit local override for role testing; LAN and online always use the host's landing-distance result.
+- Each client frames its own character and the can in a wider view. Charging widens the view further without moving the camera in response to the cursor. Both throw-off and regular match throws move that client's camera with their own slipper, hold its landing spot for one second, then return to their character. Camera motion and zoom are presentation only; the host still owns throw outcomes.
+- Bump LAN and online compatibility identifiers because older clients do not understand this opening sequence. This change has had static inspection only; rendered timing, obstacle pathing, input, and multi-process synchronization still need a playtest.
+
+## Character throw grunts — 2026-10-25
+
+- Use the five English child-voice grunt samples in `assets/audio/voices/`, one per character.
+- Play a grunt once when the slipper actually leaves the hand, not when charging starts or the button is released. Host playback follows the release animation frame; clients play when a fresh slipper appears in the authoritative snapshot.
+- Keep these as local positional audio. They do not affect host-owned throw rules.
+- The 2026-10-25 energy pass keeps the original child voice performances, trims excess silence, speeds each by 10%, compresses gently, and matches their levels. Unprocessed takes remain in `../voice_line_samples/english_cartoon_kids/`.
 
 ## Distinct Eskinita and Dusty Yard — 2026-10-24
 
@@ -212,5 +246,6 @@ Record each resolved decision here with its date and rationale.
 ## Character role scenes — 2026-10-19
 
 - Each of the five characters has a separate `Thrower <Character>` and `Taya <Character>` scene for choosing a starting role. They share one local mechanic controller, collider size, and feet origin. The controller's `set_taya_role()` remains available for a later authoritative role swap.
+- On 2026-10-25, Head Band, Glasses Thrower, and Curly Haired use the existing empty-hand release recovery frame for their normal idle. Their supplied `idle_throw` sheets are aiming poses, so those remain exclusive to charging. Bullcap and Hat Thrower keep their existing neutral idle art. This reuses current full-body drawings; dedicated multi-frame neutral idles for the other three are still an art task.
 - The older character animation atlases were preserved as reusable SpriteFrames resources. Head Band, Glasses, and Curly use existing empty-hand release poses for Taya so no character visibly carries a slipper in that role. These are temporary visual coverage until dedicated Taya motion sheets exist; Bullcap's existing directional walk art likewise times its throw release until authored throw frames exist.
 - The old prototype scenes were removed after the level, character selection, and compatibility Player scene were updated to use named role scenes. The combined local preview is for visual and mechanic review only; its R can shortcut is outside match rules.

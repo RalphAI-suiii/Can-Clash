@@ -81,6 +81,20 @@ func _sync_actors() -> void:
 		name_label.add_theme_constant_override("outline_size", 6)
 		actor.add_child(name_label)
 		actor.name_label = name_label
+		var role_label := Label.new()
+		role_label.position = Vector2(-70 / player_scale, -345)
+		role_label.scale = Vector2.ONE / player_scale
+		role_label.size = Vector2(140, 30)
+		role_label.text = "TAYA"
+		role_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		role_label.add_theme_font_override("font", PLAYER_FONT)
+		role_label.add_theme_font_size_override("font_size", 31)
+		role_label.add_theme_color_override("font_color", Color("ff3030"))
+		role_label.add_theme_color_override("font_outline_color", Color("290d0b"))
+		role_label.add_theme_constant_override("outline_size", 8)
+		role_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		actor.add_child(role_label)
+		actor.role_label = role_label
 		actor.update_name_color()
 		actors[entry.id] = actor
 		_actor_added(actor)
@@ -124,7 +138,7 @@ func _physics_process(delta: float) -> void:
 			var active: Node2D = actors.get(LanSession.local_id())
 			if active != null:
 				var enabled := _local_inputs_enabled() and _actor_inputs_enabled(active)
-				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled else Vector2.ZERO, "aim": active.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": active.charge_id})
+				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled and not active.movement_locked else Vector2.ZERO, "aim": active.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": active.charge_id})
 
 func _publish_lan_snapshot() -> void:
 	if LanSession.mode == "lan" and LanSession.is_host(): LanSession.publish_world(_snapshot())
@@ -133,7 +147,7 @@ func _update_lan_client(delta: float) -> void:
 	var actor: CharacterBody2D = actors.get(LanSession.local_id())
 	if actor == null or lan_movement == null: return
 	var enabled: bool = _local_inputs_enabled() and _actor_inputs_enabled(actor) and lan_movement.fresh()
-	var packet := {"move": Input.get_vector("left", "right", "up", "down") if enabled else Vector2.ZERO, "aim": actor.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": actor.charge_id}
+	var packet := {"move": Input.get_vector("left", "right", "up", "down") if enabled and not actor.movement_locked else Vector2.ZERO, "aim": actor.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": actor.charge_id}
 	LanSession.send_input(packet)
 	var movable: bool = enabled and actor.attack_state == actor.AttackState.FREE and actor.taya_action == &""
 	if not actor.is_taya and packet["throw"] and not is_instance_valid(actor.active_slipper): movable = false
@@ -222,7 +236,7 @@ func _snapshot() -> Dictionary:
 	var state := {"actors": [], "cans": [], "extra": _extra_snapshot()}
 	for id in actors:
 		var actor: CharacterBody2D = actors[id]
-		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "carrying": actor.carrying_can, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}}
+		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "skill_charge": actor.skill_charge, "carrying": actor.carrying_can, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}}
 		if is_instance_valid(actor.active_slipper):
 			var slipper: Node2D = actor.active_slipper
 			data.slipper = {"position": slipper.position, "velocity": slipper.velocity, "height": slipper.height, "spin": slipper.spin_angle, "charge": slipper.charge_ratio, "resting": slipper.resting, "bounces": slipper.floor_bounces, "lost": slipper.lost_remaining, "age": slipper.age}
@@ -254,6 +268,7 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		actor.velocity = data.velocity
 		if actor.is_taya != data.taya:
 			actor.set_taya_role(data.taya)
+		actor.set_skill_charge(int(data.get("skill_charge", 0)))
 		actor.carrying_can = data.carrying
 		actor.facing = data.facing
 		actor.attack_state = data.attack
@@ -300,6 +315,8 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 				actor.active_slipper = SLIPPER.new()
 				add_child(actor.active_slipper)
 				actor.active_slipper.set_physics_process(false)
+				if data.slipper.age < 0.5 and not data.slipper.resting:
+					actor.play_throw_grunt()
 			var slipper: Node2D = actor.active_slipper
 			slipper.throw_owner = actor
 			slipper.outline_color = actor.player_color

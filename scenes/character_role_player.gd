@@ -38,7 +38,12 @@ func _normalized_frames(source: SpriteFrames) -> SpriteFrames:
 		var release_source: StringName = StringName(prefix + "throw_" + lookup)
 		if art_kind == &"bullcap":
 			release_source = walk_source
-		_copy_frames(result, source, StringName("idle_" + direction), idle_source, true, 5.0)
+		if art_kind == &"bullcap":
+			_copy_frames(result, source, StringName("idle_" + direction), idle_source, true, 5.0)
+		else:
+			# The supplied idle sheets are aiming poses. Rest on the empty-hand
+			# recovery drawing and reserve those sheets for the charge animation.
+			_copy_empty_hand(result, source, StringName("idle_" + direction), release_source, false)
 		_copy_frames(result, source, StringName("walk_" + direction), walk_source, true, 8.0)
 		_copy_frames(result, source, StringName("sprint_" + direction), walk_source, true, 11.0)
 		_copy_frames(result, source, StringName("aim_" + direction), idle_source, true, 5.0)

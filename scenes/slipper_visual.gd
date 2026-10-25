@@ -32,6 +32,7 @@ var arena_bounds: Rect2
 var outline_color := Color("329dff")
 var lost_remaining := 0.0
 var hit_registered := false
+var throwoff_stop_at_can := false
 
 
 func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float, origin: Vector2, speed_multiplier: float = 1.0) -> void:
@@ -105,6 +106,14 @@ func _physics_process(delta: float) -> void:
 			hit_can = candidate
 			hit_point = point
 
+	if hit_can != null and throwoff_stop_at_can:
+		global_position = hit_point
+		velocity = Vector2.ZERO
+		vertical_speed = 0.0
+		height = 0.0
+		resting = true
+		queue_redraw()
+		return
 	if hit_can != null and velocity.length() >= 55.0 and hit_can.receive_slipper_hit(velocity, charge_ratio, hit_point):
 		if not hit_registered:
 			hit_registered = true
