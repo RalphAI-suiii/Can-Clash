@@ -157,17 +157,17 @@ func _roster_changed() -> void:
 		ready_button.tooltip_text = "Choose a character first" if character < 0 else "Change your ready status"
 		ready_status.text = "CHOOSE A CHARACTER FIRST" if character < 0 else "YOU ARE READY" if own.ready else "YOU ARE NOT READY"
 		if character_button != null:
-			character_button.text = "CHOOSE CHARACTER" if character < 0 else "CHANGE: %s" % LanSession.CHARACTERS[character].to_upper()
+			character_button.text = "CHOOSE CHARACTER" if character < 0 else "CHANGE CHARACTER"
 	_refresh_start_button()
 
 func _build_character_button() -> void:
 	character_button = Button.new()
 	character_button.name = "ChooseCharacter"
-	character_button.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	character_button.offset_left = -260
-	character_button.offset_right = 260
-	character_button.offset_top = -142
-	character_button.offset_bottom = -56
+	character_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	character_button.offset_left = -440
+	character_button.offset_right = -48
+	character_button.offset_top = 600
+	character_button.offset_bottom = 674
 	character_button.add_theme_font_size_override("font_size", 30)
 	for state in ["normal", "hover", "pressed", "focus"]:
 		character_button.add_theme_stylebox_override(state, start_button.get_theme_stylebox(state))

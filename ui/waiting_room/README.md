@@ -37,7 +37,7 @@ Godot Inspector; adjust `RoomAmbient`'s Color for the baseline brightness.
   clears the practice hit counter. All three cans reset together with this button.
 - The bottom-right Ready button toggles only the local player's status. Player
   rows display status only. Movement and practice remain available while ready.
-- Choose Character sits along the bottom of the room. Players claim a free
+- Choose Character sits beneath the player roster. Players claim a free
   character before Ready becomes available. The host prevents duplicate picks;
   changing a character clears that player's Ready status. The roster shows each
   player's character, and developer bots receive the remaining characters.
