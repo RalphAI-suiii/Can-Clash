@@ -1,5 +1,12 @@
 # Design decisions
 
+## Integrated customization, abilities and possession UI — 2026-10-25
+
+- Merge the new lobby character claims, customization and five specials with the relaxed movement artwork, large possession badges, three-second tag delay, manual 15% slower carrying, private aim guides, clean podium and selection sound. Preserve both ability and possession fields in host snapshots.
+- Stun and cast locks now suspend LAN prediction and reset its history on state changes. Reaction/cast animation aliases remain available, while item-bearing wind-up/carry artwork stays hidden behind possession badges. Bullcap retains the newer eight-direction release sheet.
+- Combined compatibility is `canclash-lan-abilities-4` for LAN and `canclash-rules-8` for online, rejecting either pre-merge build.
+- Merge verification passed: Godot import; all-five-character animation, possession, pickup, timing-meter and LAN prediction checks; all-map rules and podium checks; map-selection sound; full five-process localhost LAN character selection/ready/start/match/results/disconnect flow; and two-process special-projectile, steering and stun replication. Physical multi-PC and real internet play remain unverified.
+
 ## Map-selection spinning sound — 2026-10-25
 
 - Reuse the user's named spinning-wheel MP3 from the soundtrack Drive folder. Keep the original file intact, skip its silent lead-in during playback and align the final cue with the existing five-second map shuffle. Selection duration, host map choice and networking stay unchanged.
@@ -21,6 +28,21 @@
 - Held-slipper visibility and movement selection update on both host state and replicated snapshots, including the locally predicted LAN actor. Updated animation names require the current LAN/online compatibility versions; old builds are rejected at registration.
 - `tests/role_animation_smoke.gd` exercises both starting roles for every character, eight directions, idle/walk/sprint, held/empty/Taya selection, charge interruption and can actions. Pickup and five-process LAN checks verify the live transition paths.
 
+## Five thrower specials and Taya stun — 2026-10-25
+
+- The existing three-orb meter is the sole thrower power system. Retire the draft concept's unimplemented two-hit powered-throw rule. The host fills one orb per confirmed can hit, caps it at three, and spends all three when an armed special slipper actually launches. RMB toggles arming without cost; becoming Taya disarms but preserves the meter. A down or carried can pauses all new thrower shots.
+- Character order maps to Rapid Fire (Hat Thrower), Ricochet (Head Band), Self-Returning (Glasses Thrower), Stunning (Curly Haired), and Mind-Controlled (Bullcap Head). Rapid Fire schedules two more shots at 0.25-second intervals, cancels pending shots if the can falls, returns all three automatically, and resolves one hit or miss for the burst. Ricochet redirects within 75 degrees after its first wall bounce. Self-Returning comes home after impact, rest, or timeout; safe-return scoring still requires leaving and recrossing safety. Stunning stops Taya on direct contact. Mind-Controlled turns toward the current host-received cursor at up to 150 degrees per second for two seconds without increasing speed.
+- Any Taya has a separate aimed stun slipper on held/released RMB. Its 120-second launch cooldown stays with the player through role swaps, uses no orbs, and works while carrying or when the can is down. It stuns one thrower outside the safe strip for three seconds; any recovered player has five seconds of stun immunity. Space remains the lunge.
+- The host simulates special projectiles, validates the request and match state, awards points, and applies stun. Snapshots replicate armed state, cooldowns, stun timers, the main slipper, two bounded Rapid Fire extras, and the Taya projectile. LAN compatibility is `canclash-lan-abilities-3`; online compatibility is `canclash-rules-7`.
+- The current animation pass creates eight-direction cast and reaction animation states from each character's existing clean art. Activation glow, colored projectile trails, stun stars, and cooldown arc distinguish them. A generated replacement sheet was rejected because it changed cell transparency and alignment. Dedicated newly drawn action and reaction poses remain an art task, especially Bullcap's throw; the existing Bullcap walk drawings are still the casting source. Do not describe the current aliases as new hand-drawn frames.
+- Godot 4.7.2 loaded the match and passed `tests/ability_smoke.tscn`: all five special launches and meter spending, eight-direction state availability, one-score Rapid Fire cap, pending-burst cancellation, cursor turn without speed gain, stun immunity, Taya's carried-can case, and cooldown persistence. Two localhost ENet processes passed `tests/ability_lan_probe.tscn`: the joiner armed by reliable RMB request and saw Rapid Fire extras, Bullcap cursor steering, stun state, and Taya projectile/cooldown. Eight direction contact sheets were saved under `tests/ability_visual/` and inspected at the match's 0.576 actor scale; the repeated cast art and static reaction poses remain visible limitations. Physical five-PC play, real scoring under chained collisions, and full manual input play are still unverified.
+
+## Player customization and lobby character claims — 2026-10-25
+
+- The main menu's former Avatar entry opens player customization for the saved display name and one of five marker colors. Fixed character sprite art is unchanged by the color choice.
+- Choose a character in the waiting room before pressing Ready. The host reserves each of the five characters for one player at a time, rejects competing claims, and clears Ready when a player switches. Start rechecks every choice for validity and uniqueness. The waiting-room roster shows each choice and developer bots use the remaining characters.
+- A character change replaces that player's waiting-room practice actor while preserving its position. The match uses the host-confirmed roster choice. LAN and online compatibility identifiers advance because registration and character-claim messages changed. This pass has static review only; visual layout, live character switching, and multi-process claim races remain to be reviewed in Godot.
+
 ## Screen fit and LAN presentation — 2026-10-25
 
 - Keep the 1920×1080 design canvas centered and scale it uniformly to the available window. On screens with a different aspect ratio, use bars in the spare space so menus, HUD, and camera framing are not cropped or stretched.
@@ -33,11 +55,11 @@
 - Draw the map name as the header, a small court-center line motif, clear player and points columns, alternating dark-orange rows, roster-color markers, and a red Taya badge. Put developer mode information in one quiet footer line. The board updates from the same host-owned scores and role snapshot as before; this is presentation only.
 - This change has had static inspection only; check the rendered panel at different window sizes and with five player names before treating the layout as final.
 
-## Three-hit character special placeholder — 2026-10-25
+## Three-hit character special placeholder (superseded) — 2026-10-25
 
 - Each participant has an individual three-orb special meter below their character. It starts empty and gains one orb only when the host confirms that player's slipper struck and toppled a standing can during active play. Each slipper can award at most one orb. The meter stays with the participant through Taya transfers and is capped at three.
 - At three orbs, show `RMB SPECIAL` below the meter and accept a reliable right-click request. The host validates the active match, player identity, and full meter, then broadcasts a `SPECIAL ABILITY IS COMING SOON` notice. No effect or charge consumption occurs until the five character abilities are specified; this prevents players from losing earned charge to a nonfunctional placeholder.
-- This three-hit character special is separate from the draft concept's two-hit powered next throw. That earlier rule still needs implementation and a design decision about how the two meters should coexist.
+- The later five-special decision above retired the two-hit powered throw and replaced this placeholder.
 - LAN and online protocol identifiers advance because older builds do not carry the orb state or right-click request. This pass has static inspection only; live input, can-hit count, layout, and multi-process replication remain unverified.
 
 ## Taya tag announcement — 2026-10-25
@@ -270,3 +292,13 @@ Record each resolved decision here with its date and rationale.
 - On 2026-10-25, Head Band, Glasses Thrower, and Curly Haired use the existing empty-hand release recovery frame for their normal idle. Their supplied `idle_throw` sheets are aiming poses, so those remain exclusive to charging. Bullcap and Hat Thrower keep their existing neutral idle art. This reuses current full-body drawings; dedicated multi-frame neutral idles for the other three are still an art task.
 - The older character animation atlases were preserved as reusable SpriteFrames resources. Head Band, Glasses, and Curly use existing empty-hand release poses for Taya so no character visibly carries a slipper in that role. These are temporary visual coverage until dedicated Taya motion sheets exist; Bullcap's existing directional walk art likewise times its throw release until authored throw frames exist.
 - The old prototype scenes were removed after the level, character selection, and compatibility Player scene were updated to use named role scenes. The combined local preview is for visual and mechanic review only; its R can shortcut is outside match rules.
+
+## Player customization — 2026-10-25
+
+- Main-menu Customize now opens a full-screen live preview. Players can set their name and marker color, and equip a duck hat plus either a bow or scarf (or neither). The five character models in the preview are visual samples; character claims remain exclusive in the lobby.
+- Cosmetic choices are saved locally for the customization demo only. They are absent from registration, roster replication, and all lobby/match actors. Name and marker color retain their existing gameplay behavior. The LAN/online protocol remains at the character-claim version.
+- The preview holds one fixed pose per character: neutral art for Hat Thrower and Bullcap Head, a menu pose for Head Band and Glasses Thrower, and an existing idle pose for Curly Haired. Hat Thrower and Bullcap Head use a preview-only masked frame when the duck hat is chosen so their baked-in hats do not stack with it. The duck, bow, and scarf fit to alpha-thresholded painted bounds and character-specific size ratios. Match animation atlases and gameplay sprites remain untouched.
+
+## Can-down throw pause — 2026-10-25
+
+- In a match, throwers may start or release a slipper throw only while the can is standing. Toppled and carried states block new throws until Taya resets the can at its base. A charge in progress cancels if the can falls; slippers already in flight continue normally. The opening throw-off remains one throw per player, and standalone movement demos keep their prior behavior. The host applies the rule; clients use the replicated can state for the local status label and movement prediction.

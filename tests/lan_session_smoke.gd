@@ -38,9 +38,11 @@ func _run() -> void:
 	profile.display_name = "LAN " + role
 	var character_index := 0 if role == "host" else int(role.trim_prefix("client"))
 	profile.selected_character_scene = "res://scenes/Thrower %s.tscn" % session.CHARACTERS[character_index]
+	profile.player_color_index = character_index
 	profile.tutorial_seen = false
 	if role == "host":
 		assert(session.host_room() == OK)
+		assert(session.select_character(character_index))
 		_room()
 		assert(session.players.size() == 1 and current_scene.ready_panel.players.size() == 1)
 		assert(current_scene.start_button.visible and current_scene.start_button.disabled)
@@ -148,6 +150,9 @@ func _run() -> void:
 		session.room_joined.connect(_room)
 		assert(session.join_room(session.encode_address("127.0.0.1")) == OK)
 		while current_scene == null or current_scene.scene_file_path != "res://ui/waiting_room/waiting_room.tscn":
+			await process_frame
+		assert(session.select_character(character_index))
+		while int(session.member(session.local_id()).character) != character_index:
 			await process_frame
 		assert(not current_scene.start_button.visible)
 		while session.players.size() < 5:

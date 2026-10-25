@@ -1,17 +1,18 @@
 extends Node
 
 signal roster_changed
+signal character_claim_result(index: int, accepted: bool)
 signal connection_status_changed(message: String)
 signal room_joined
 signal room_closed(reason: String)
 signal input_received(peer_id: int, packet: Dictionary)
 signal throw_input_received(peer_id: int, pressed: bool, charge: int, at_time: float, aim: Vector2)
-signal skill_requested(peer_id: int)
+signal skill_requested(peer_id: int, pressed: bool, aim: Vector2)
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
-const PROTOCOL := "canclash-rules-7"
-const LAN_PROTOCOL := "canclash-lan-items-3"
+const PROTOCOL := "canclash-rules-8"
+const LAN_PROTOCOL := "canclash-lan-abilities-4"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5
@@ -82,8 +83,7 @@ func member(id: int) -> Dictionary:
 	return {}
 
 func _own_member(id: int, slot: int) -> Dictionary:
-	var character := CHARACTERS.find(UserSettings.selected_character_scene.get_file().trim_prefix("Thrower ").trim_suffix(".tscn"))
-	return {"id": id, "name": UserSettings.display_name, "ready": false, "slot": slot, "character": maxi(0, character), "color": COLORS[slot], "bot": false}
+	return {"id": id, "name": UserSettings.display_name, "ready": false, "slot": slot, "character": -1, "color": COLORS[UserSettings.player_color_index], "bot": false}
 
 func close_room() -> void:
 	online.stop()
@@ -159,18 +159,18 @@ func _sender_id() -> int:
 	return online_sender if mode == "online" else multiplayer.get_remote_sender_id()
 
 func _online_message(sender: int, method: String, arguments: Array) -> void:
-	var requests := {"_register": 3, "_request_ready": 1, "_tutorial_ack": 0, "_submit_input": 1, "_throw_edge": 5, "_request_skill": 0, "_clock_ping": 1}
-	var updates := {"_sync_roster": 2, "_begin_selection": 3, "_world_state": 2, "_match_event": 1, "_show_results": 1, "_reject": 1, "_clock_pong": 2}
+	var requests := {"_register": 3, "_request_ready": 1, "_request_character": 1, "_tutorial_ack": 0, "_submit_input": 1, "_throw_edge": 5, "_request_skill": 2, "_clock_ping": 1}
+	var updates := {"_sync_roster": 2, "_character_result": 2, "_begin_selection": 3, "_world_state": 2, "_match_event": 1, "_show_results": 1, "_reject": 1, "_clock_pong": 2}
 	if is_host():
 		if sender <= 1 or not requests.has(method) or arguments.size() != requests[method]: return
 	else:
 		if sender != 1 or not updates.has(method) or arguments.size() != updates[method]: return
 	var expected := {
-		"_register": [TYPE_STRING, TYPE_INT, TYPE_STRING], "_request_ready": [TYPE_BOOL],
-		"_tutorial_ack": [], "_submit_input": [TYPE_DICTIONARY], "_request_skill": [],
+		"_register": [TYPE_STRING, TYPE_INT, TYPE_STRING], "_request_ready": [TYPE_BOOL], "_request_character": [TYPE_INT],
+		"_tutorial_ack": [], "_submit_input": [TYPE_DICTIONARY], "_request_skill": [TYPE_BOOL, TYPE_VECTOR2],
 		"_throw_edge": [TYPE_BOOL, TYPE_INT, TYPE_INT, TYPE_FLOAT, TYPE_VECTOR2],
 		"_clock_ping": [TYPE_FLOAT], "_clock_pong": [TYPE_FLOAT, TYPE_FLOAT],
-		"_sync_roster": [TYPE_ARRAY, TYPE_STRING], "_begin_selection": [TYPE_INT, TYPE_INT, TYPE_STRING],
+		"_sync_roster": [TYPE_ARRAY, TYPE_STRING], "_character_result": [TYPE_INT, TYPE_BOOL], "_begin_selection": [TYPE_INT, TYPE_INT, TYPE_STRING],
 		"_world_state": [TYPE_PACKED_BYTE_ARRAY, TYPE_INT], "_match_event": [TYPE_DICTIONARY],
 		"_show_results": [TYPE_ARRAY], "_reject": [TYPE_STRING],
 	}
@@ -229,11 +229,11 @@ func join_room(address_or_code: String) -> Error:
 	return OK
 
 func _connected() -> void:
-	_send("_register", [UserSettings.display_name, _own_member(local_id(), 0).character, LAN_PROTOCOL if mode == "lan" else PROTOCOL], 1)
+	_send("_register", [UserSettings.display_name, UserSettings.player_color_index, LAN_PROTOCOL if mode == "lan" else PROTOCOL], 1)
 	_request_clock()
 
 @rpc("any_peer", "call_remote", "reliable")
-func _register(player_name: String, character: int, protocol: String = "") -> void:
+func _register(player_name: String, color_index: int, protocol: String = "") -> void:
 	if not is_host(): return
 	var sender := _sender_id()
 	if protocol != (LAN_PROTOCOL if mode == "lan" else PROTOCOL):
@@ -247,12 +247,15 @@ func _register(player_name: String, character: int, protocol: String = "") -> vo
 	if players.size() >= capacity():
 		_send("_reject", ["This room is full (%d players)." % capacity()], sender)
 		return
+	if color_index < 0 or color_index >= COLORS.size():
+		_send("_reject", ["Invalid player color. Update your game and try again."], sender)
+		return
 	var used: Array = players.map(func(entry: Dictionary) -> int: return entry.slot)
 	var slot := 0
 	while used.has(slot):
 		slot += 1
 	var clean := UserSettings.clean_name(player_name)
-	players.append({"id": sender, "name": clean if not clean.is_empty() else "Player", "ready": false, "slot": slot, "character": clampi(character, 0, 4), "color": COLORS[slot], "bot": false})
+	players.append({"id": sender, "name": clean if not clean.is_empty() else "Player", "ready": false, "slot": slot, "character": -1, "color": COLORS[color_index], "bot": false})
 	_publish_roster()
 
 func _publish_roster() -> void:
@@ -279,6 +282,38 @@ func set_ready(value: bool) -> void:
 	else:
 		_send("_request_ready", [value], 1)
 
+func select_character(index: int) -> bool:
+	if is_host():
+		return _apply_character(local_id(), index)
+	if phase != "waiting" or index < 0 or index >= CHARACTERS.size():
+		return false
+	_send("_request_character", [index], 1)
+	return true
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_character(index: int) -> void:
+	if is_host():
+		var sender := _sender_id()
+		if sender <= 1 or member(sender).is_empty():
+			return
+		_send("_character_result", [index, _apply_character(sender, index)], sender)
+
+@rpc("authority", "call_remote", "reliable")
+func _character_result(index: int, accepted: bool) -> void:
+	character_claim_result.emit(index, accepted)
+
+func _apply_character(id: int, index: int) -> bool:
+	var entry := member(id)
+	if phase != "waiting" or entry.is_empty() or index < 0 or index >= CHARACTERS.size():
+		return false
+	for other in players:
+		if other.id != id and other.character == index:
+			return false
+	entry.character = index
+	entry.ready = false
+	_publish_roster()
+	return true
+
 @rpc("any_peer", "call_remote", "reliable")
 func _request_ready(value: bool) -> void:
 	if is_host():
@@ -288,11 +323,20 @@ func _apply_ready(id: int, value: bool) -> void:
 	var entry := member(id)
 	if phase != "waiting" or entry.is_empty():
 		return
+	if value and (entry.character < 0 or entry.character >= CHARACTERS.size()):
+		return
 	entry.ready = value
 	_publish_roster()
 
 func all_ready() -> bool:
-	return not players.is_empty() and players.all(func(entry: Dictionary) -> bool: return entry.ready)
+	if players.is_empty():
+		return false
+	var chosen := []
+	for entry in players:
+		if not entry.ready or entry.character < 0 or entry.character >= CHARACTERS.size() or chosen.has(entry.character):
+			return false
+		chosen.append(entry.character)
+	return true
 
 func can_start() -> bool:
 	return is_host() and phase == "waiting" and all_ready() and (mode == "developer" or players.size() >= 2)
@@ -318,9 +362,12 @@ func start_match() -> bool:
 func add_developer_bots() -> void:
 	if mode != "developer":
 		return
+	var available := range(CHARACTERS.size())
+	for entry in players:
+		available.erase(entry.character)
 	for slot in range(1, developer_bot_count + 1):
 		if member(-slot).is_empty():
-			players.append({"id": -slot, "name": "Bot %d" % slot, "ready": true, "slot": slot, "character": slot, "color": COLORS[slot], "bot": true})
+			players.append({"id": -slot, "name": "Bot %d" % slot, "ready": true, "slot": slot, "character": available.pop_front(), "color": COLORS[slot], "bot": true})
 
 @rpc("authority", "call_remote", "reliable")
 func _begin_selection(map_index: int, seed_value: int, id: String) -> void:
@@ -360,15 +407,15 @@ func send_input(packet: Dictionary) -> void:
 		_send("_throw_edge", [pressed, throw_sequence, int(packet.get("charge_id", 0)), clock_time(), packet.get("aim", Vector2.ZERO)], 1)
 	_send("_submit_input", [packet], 1, false)
 
-func request_skill() -> void:
+func request_skill(pressed: bool, aim: Vector2) -> void:
 	if is_networked() and not is_host() and phase == "match":
-		_send("_request_skill", [], 1)
+		_send("_request_skill", [pressed, aim], 1)
 
 @rpc("any_peer", "call_remote", "reliable")
-func _request_skill() -> void:
+func _request_skill(pressed: bool, aim: Vector2) -> void:
 	var sender := _sender_id()
-	if is_host() and phase == "match" and not member(sender).is_empty():
-		skill_requested.emit(sender)
+	if is_host() and phase == "match" and not member(sender).is_empty() and aim.is_finite():
+		skill_requested.emit(sender, pressed, aim.clamp(Vector2(-10000, -10000), Vector2(10000, 10000)))
 
 @rpc("any_peer", "call_remote", "reliable")
 func _throw_edge(pressed: bool, sequence: int, charge: int, at_time: float, aim: Vector2) -> void:

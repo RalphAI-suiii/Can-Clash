@@ -2,6 +2,9 @@ extends Node
 
 var selected_character_scene := "res://scenes/Thrower Hat Thrower.tscn"
 var display_name := "Player"
+var player_color_index := 0
+var headwear_index := 0
+var accessory_index := 0
 var tutorial_seen := false
 var statistics := {"wins": 0, "losses": 0, "successful_throws": 0, "can_knockdowns": 0}
 var completed_matches: Array = []
@@ -22,6 +25,15 @@ func set_display_name(value: String) -> void:
 		display_name = "Player"
 	save_profile()
 
+func set_player_color_index(value: int) -> void:
+	player_color_index = clampi(value, 0, 4)
+	save_profile()
+
+func set_cosmetics(new_headwear: int, new_accessory: int) -> void:
+	headwear_index = clampi(new_headwear, 0, 1)
+	accessory_index = clampi(new_accessory, 0, 2)
+	save_profile()
+
 func load_profile() -> void:
 	var config := ConfigFile.new()
 	if config.load(profile_path()) != OK:
@@ -30,6 +42,9 @@ func load_profile() -> void:
 	if display_name.is_empty():
 		display_name = "Player"
 	selected_character_scene = str(config.get_value("player", "character", selected_character_scene))
+	player_color_index = clampi(int(config.get_value("player", "color_index", 0)), 0, 4)
+	headwear_index = clampi(int(config.get_value("player", "headwear", 0)), 0, 1)
+	accessory_index = clampi(int(config.get_value("player", "accessory", 0)), 0, 2)
 	tutorial_seen = bool(config.get_value("player", "tutorial_seen", false))
 	for key in statistics:
 		statistics[key] = maxi(0, int(config.get_value("statistics", key, 0)))
@@ -39,6 +54,9 @@ func save_profile() -> Error:
 	var config := ConfigFile.new()
 	config.set_value("player", "name", display_name)
 	config.set_value("player", "character", selected_character_scene)
+	config.set_value("player", "color_index", player_color_index)
+	config.set_value("player", "headwear", headwear_index)
+	config.set_value("player", "accessory", accessory_index)
 	config.set_value("player", "tutorial_seen", tutorial_seen)
 	for key in statistics:
 		config.set_value("statistics", key, statistics[key])

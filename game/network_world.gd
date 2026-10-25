@@ -9,6 +9,8 @@ var actors: Dictionary = {}
 var world_tick := 0.0
 var send_tick := 0.0
 var observed_slippers: Dictionary = {}
+var observed_extra_slippers: Dictionary = {}
+var observed_taya_slippers: Dictionary = {}
 var lan_movement: RefCounted
 var lan_remote_motion: Dictionary = {}
 var lan_phase := ""
@@ -33,25 +35,36 @@ func _spawn_point(slot: int) -> Vector2:
 	return Vector2(1140 + (slot % 2) * 230, 450 + int(slot / 2) * 250)
 
 func _sync_actors() -> void:
+	var previous_positions := {}
 	for id in actors.keys():
-		if LanSession.member(id).is_empty():
+		var entry := LanSession.member(id)
+		if entry.is_empty() or int(actors[id].get_meta("character_index", -2)) != int(entry.character):
+			previous_positions[id] = actors[id].position
 			actors[id].set_taya_role(false)
 			if is_instance_valid(actors[id].active_slipper):
 				actors[id].active_slipper.queue_free()
+			actors[id].collision_layer = 0
+			actors[id].collision_mask = 0
+			actors[id].hide()
+			actors[id].name = "Retiring_%s" % id
 			actors[id].queue_free()
 			actors.erase(id)
+			observed_slippers.erase(id)
+			lan_remote_motion.erase(id)
 	for entry in LanSession.players:
 		if actors.has(entry.id):
 			continue
-		var path := "res://scenes/Thrower %s.tscn" % LanSession.CHARACTERS[entry.character]
+		var character_index: int = maxi(0, int(entry.character))
+		var path := "res://scenes/Thrower %s.tscn" % LanSession.CHARACTERS[character_index]
 		var actor: CharacterBody2D = load(path).instantiate()
 		actor.name = "Player" if entry.id == 1 else "Player_%s" % entry.id
-		actor.position = _spawn_point(entry.slot)
+		actor.position = previous_positions.get(entry.id, _spawn_point(entry.slot))
 		actor.scale = Vector2.ONE * player_scale
 		actor.walk_speed = 240.0
 		actor.sprint_speed = 340.0
 		actor.player_color = entry.color
 		actor.set_meta("peer_id", entry.id)
+		actor.set_meta("character_index", entry.character)
 		actor.set_meta("bot", entry.bot)
 		actor.network_controlled = entry.id != LanSession.local_id() or entry.bot
 		actor.accept_local_input = LanSession.is_host()
@@ -123,6 +136,13 @@ func _physics_process(delta: float) -> void:
 			if is_instance_valid(actor.active_slipper) and observed_slippers.get(id) != actor.active_slipper.get_instance_id():
 				observed_slippers[id] = actor.active_slipper.get_instance_id()
 				_slipper_spawned(actor, actor.active_slipper)
+			for shot in actor.rapid_slippers:
+				if is_instance_valid(shot) and not observed_extra_slippers.has(shot.get_instance_id()):
+					observed_extra_slippers[shot.get_instance_id()] = true
+					_slipper_spawned(actor, shot)
+			if is_instance_valid(actor.taya_stun_projectile) and observed_taya_slippers.get(id) != actor.taya_stun_projectile.get_instance_id():
+				observed_taya_slippers[id] = actor.taya_stun_projectile.get_instance_id()
+				_taya_stun_spawned(actor, actor.taya_stun_projectile)
 		world_tick += delta
 		var snapshot_interval := LAN_SNAPSHOT_INTERVAL if LanSession.mode == "lan" else ONLINE_SNAPSHOT_INTERVAL
 		if world_tick >= snapshot_interval:
@@ -149,8 +169,8 @@ func _update_lan_client(delta: float) -> void:
 	var enabled: bool = _local_inputs_enabled() and _actor_inputs_enabled(actor) and lan_movement.fresh()
 	var packet := {"move": Input.get_vector("left", "right", "up", "down") if enabled and not actor.movement_locked else Vector2.ZERO, "aim": actor.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": actor.charge_id}
 	LanSession.send_input(packet)
-	var movable: bool = enabled and actor.attack_state == actor.AttackState.FREE and actor.taya_action == &""
-	if not actor.is_taya and packet["throw"] and not is_instance_valid(actor.active_slipper): movable = false
+	var movable: bool = enabled and not actor.is_stunned() and not actor.taya_stun_aiming and LanSession.clock_time() >= actor.taya_stun_cast_until and actor.attack_state == actor.AttackState.FREE and actor.taya_action == &""
+	if not actor.is_taya and packet["throw"] and actor.throw_target_ready() and not is_instance_valid(actor.active_slipper): movable = false
 	lan_movement.step(delta, LanSession.send_sequence, packet, movable)
 
 func _process(delta: float) -> void:
@@ -187,6 +207,9 @@ func _receive_throw(id: int, pressed: bool, charge: int, at_time: float, aim: Ve
 			actor.set_taya_role(actor.is_taya)
 
 func _slipper_spawned(_actor: CharacterBody2D, _slipper: Node2D) -> void:
+	pass
+
+func _taya_stun_spawned(_actor: CharacterBody2D, _slipper: Node2D) -> void:
 	pass
 
 func _update_bot(actor: CharacterBody2D) -> void:
@@ -236,15 +259,20 @@ func _snapshot() -> Dictionary:
 	var state := {"actors": [], "cans": [], "extra": _extra_snapshot()}
 	for id in actors:
 		var actor: CharacterBody2D = actors[id]
-		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "skill_charge": actor.skill_charge, "carrying": actor.carrying_can, "tag_ready_at": actor.tag_ready_at, "released": actor.slipper_spawned, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}}
+		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "skill_charge": actor.skill_charge, "special_armed": actor.special_armed, "stunned_until": actor.stunned_until, "stun_started_at": actor.stun_started_at, "stun_immune_until": actor.stun_immune_until, "taya_stun_ready_at": actor.taya_stun_ready_at, "taya_stun_aiming": actor.taya_stun_aiming, "taya_stun_cast_until": actor.taya_stun_cast_until, "glow_until": actor.ability_glow_until, "carrying": actor.carrying_can, "tag_ready_at": actor.tag_ready_at, "released": actor.slipper_spawned, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}, "rapid": [], "taya_stun": {}}
 		if is_instance_valid(actor.active_slipper):
-			var slipper: Node2D = actor.active_slipper
-			data.slipper = {"position": slipper.position, "velocity": slipper.velocity, "height": slipper.height, "spin": slipper.spin_angle, "charge": slipper.charge_ratio, "resting": slipper.resting, "bounces": slipper.floor_bounces, "lost": slipper.lost_remaining, "age": slipper.age}
+			data.slipper = _slipper_snapshot(actor.active_slipper)
+		for shot in actor.rapid_slippers:
+			if is_instance_valid(shot): data.rapid.append(_slipper_snapshot(shot))
+		if is_instance_valid(actor.taya_stun_projectile): data.taya_stun = _slipper_snapshot(actor.taya_stun_projectile)
 		if LanSession.mode == "lan": data["lan_ack"] = actor.lan_processed_input_sequence
 		state.actors.append(data)
 	for can in get_tree().get_nodes_in_group("can_targets"):
 		state.cans.append({"name": String(can.name), "position": can.position, "state": can.state, "height": can.height, "tilt": can.tilt_angle, "settled": can.settled, "flash": can.hit_flash_remaining, "squash": can.squash, "auto_stand": can.auto_stand_pending, "base": can.base.global_position if can.base != null else can.global_position})
 	return state
+
+func _slipper_snapshot(slipper: Node2D) -> Dictionary:
+	return {"position": slipper.position, "velocity": slipper.velocity, "height": slipper.height, "spin": slipper.spin_angle, "charge": slipper.charge_ratio, "resting": slipper.resting, "bounces": slipper.floor_bounces, "lost": slipper.lost_remaining, "age": slipper.age, "kind": String(slipper.special_kind), "returning": slipper.returning, "visible": slipper.visible}
 
 func _apply_snapshot(snapshot: Dictionary) -> void:
 	if LanSession.is_host():
@@ -259,7 +287,8 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		var actor: CharacterBody2D = actors[data.id]
 		var lan_client := LanSession.mode == "lan"
 		var own: bool = lan_client and data.id == LanSession.local_id() and lan_movement != null
-		var reset: bool = phase_changed or actor.is_taya != data.taya or actor.attack_state != data.attack or actor.carrying_can != data.carrying or String(actor.taya_action) != data.taya_action
+		var ability_changed: bool = actor.is_stunned() != (float(data.get("stunned_until", 0.0)) > LanSession.clock_time()) or actor.taya_stun_aiming != bool(data.get("taya_stun_aiming", false)) or (LanSession.clock_time() < actor.taya_stun_cast_until) != (LanSession.clock_time() < float(data.get("taya_stun_cast_until", 0.0)))
+		var reset: bool = phase_changed or ability_changed or actor.is_taya != data.taya or actor.attack_state != data.attack or actor.carrying_can != data.carrying or String(actor.taya_action) != data.taya_action
 		if not lan_client:
 			actor.position = data.position
 		elif not own:
@@ -269,6 +298,14 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		if actor.is_taya != data.taya:
 			actor.set_taya_role(data.taya)
 		actor.set_skill_charge(int(data.get("skill_charge", 0)))
+		actor.special_armed = bool(data.get("special_armed", false))
+		actor.stunned_until = float(data.get("stunned_until", 0.0))
+		actor.stun_started_at = float(data.get("stun_started_at", 0.0))
+		actor.stun_immune_until = float(data.get("stun_immune_until", 0.0))
+		actor.taya_stun_ready_at = float(data.get("taya_stun_ready_at", 0.0))
+		actor.taya_stun_aiming = bool(data.get("taya_stun_aiming", false))
+		actor.taya_stun_cast_until = float(data.get("taya_stun_cast_until", 0.0))
+		actor.ability_glow_until = float(data.get("glow_until", 0.0))
 		actor.carrying_can = data.carrying
 		actor.tag_ready_at = float(data.get("tag_ready_at", 0.0))
 		actor.facing = data.facing
@@ -284,22 +321,25 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		actor.charge_bar.target_center = actor.sweet_spot
 		actor.charge_bar.value = data.charge
 		actor.charge_bar.visible = data.attack == actor.AttackState.CHARGING and actor.is_local_view()
-		if not own or data.attack != actor.AttackState.FREE or data.carrying or data.taya_action != "":
+		if not own or actor.is_stunned() or actor.taya_stun_aiming or LanSession.clock_time() < actor.taya_stun_cast_until or data.attack != actor.AttackState.FREE or data.carrying or data.taya_action != "":
 			actor.sprite.animation = data.sprite
 			actor.sprite.frame = data.frame
 			actor.sprite.flip_h = data.flip
 			actor.sprite.position = data.sprite_pos
 			actor.sprite.scale = data.sprite_scale
 			actor.sprite.rotation = data.rotation
-		actor.sprite.visible = data.attack == actor.AttackState.FREE and not data.carrying and data.taya_action == ""
-		actor.attack_sprite.visible = data.attack != actor.AttackState.FREE
+		var stun_cast: bool = data.taya_stun_aiming or LanSession.clock_time() < actor.taya_stun_cast_until
+		actor.sprite.visible = data.attack == actor.AttackState.FREE and not data.carrying and data.taya_action == "" and not stun_cast
+		actor.attack_sprite.visible = data.attack != actor.AttackState.FREE or stun_cast and not data.carrying
 		actor.attack_sprite.animation = data.attack_sprite
 		actor.attack_sprite.frame = data.attack_frame
 		actor.attack_sprite.position = data.attack_pos
 		actor.attack_sprite.scale = data.attack_scale
 		actor.attack_sprite.flip_h = data.attack_flip
-		actor.modulate = Color(1.8, 1.35, 0.9) if data.flash > 0.0 else Color.WHITE
-		if data.carrying and data.taya_action == "":
+		actor.modulate = Color(1.8, 1.35, 0.9) if data.flash > 0.0 else Color(1.35, 1.15, 1.8) if actor.is_stunned() else Color.WHITE
+		if stun_cast and not data.carrying:
+			actor.taya_visual.hide()
+		elif data.carrying and data.taya_action == "":
 			actor.taya_visual.show_carry(actor._facing_sector(), data.velocity.length() > 10.0)
 		elif not data.taya_action.is_empty():
 			if String(actor.taya_action) != data.taya_action:
@@ -319,19 +359,26 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 				if data.slipper.age < 0.5 and not data.slipper.resting:
 					actor.play_throw_grunt()
 			var slipper: Node2D = actor.active_slipper
-			slipper.throw_owner = actor
-			slipper.outline_color = actor.player_color
-			slipper.position = data.slipper.position
-			slipper.velocity = data.slipper.velocity
-			slipper.height = data.slipper.height
-			slipper.spin_angle = data.slipper.spin
-			slipper.charge_ratio = data.slipper.charge
-			slipper.resting = data.slipper.resting
-			slipper.floor_bounces = data.slipper.bounces
-			slipper.lost_remaining = data.slipper.lost
-			slipper.visible = data.slipper.lost <= 0.0
-			slipper.age = data.slipper.age
-			slipper.queue_redraw()
+			_apply_slipper_snapshot(slipper, actor, data.slipper)
+		while actor.rapid_slippers.size() > data.rapid.size():
+			var old: Node2D = actor.rapid_slippers.pop_back()
+			if is_instance_valid(old): old.queue_free()
+		while actor.rapid_slippers.size() < data.rapid.size():
+			var extra := SLIPPER.new()
+			add_child(extra)
+			extra.set_physics_process(false)
+			actor.rapid_slippers.append(extra)
+		for index in range(data.rapid.size()):
+			_apply_slipper_snapshot(actor.rapid_slippers[index], actor, data.rapid[index])
+		if data.taya_stun.is_empty():
+			if is_instance_valid(actor.taya_stun_projectile): actor.taya_stun_projectile.queue_free()
+			actor.taya_stun_projectile = null
+		else:
+			if not is_instance_valid(actor.taya_stun_projectile):
+				actor.taya_stun_projectile = SLIPPER.new()
+				add_child(actor.taya_stun_projectile)
+				actor.taya_stun_projectile.set_physics_process(false)
+			_apply_slipper_snapshot(actor.taya_stun_projectile, actor, data.taya_stun)
 		if own: lan_movement.receive(data, reset)
 		actor._refresh_possession_visual()
 		actor._update_throw_status()
@@ -353,6 +400,23 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 				queue_redraw()
 			can.can_sprite.modulate = Color(2.0, 1.8, 1.1) if data.flash > 0.0 else Color.WHITE
 			can._refresh_visual()
+
+func _apply_slipper_snapshot(slipper: Node2D, actor: CharacterBody2D, data: Dictionary) -> void:
+	slipper.throw_owner = actor
+	slipper.outline_color = actor.player_color
+	slipper.position = data.position
+	slipper.velocity = data.velocity
+	slipper.height = data.height
+	slipper.spin_angle = data.spin
+	slipper.charge_ratio = data.charge
+	slipper.resting = data.resting
+	slipper.floor_bounces = data.bounces
+	slipper.lost_remaining = data.lost
+	slipper.visible = data.visible
+	slipper.age = data.age
+	slipper.special_kind = StringName(data.kind)
+	slipper.returning = data.returning
+	slipper.queue_redraw()
 
 func _extra_snapshot() -> Dictionary:
 	return {}
