@@ -6,8 +6,9 @@ The match host owns each participant's three-hit special meter, equipped thrower
 special, Taya stun cooldown, and stun/immunity timers. Reliable RMB press/release
 requests include a finite bounded cursor target. Host snapshots carry the armed
 state, timers, the main slipper, up to two extra Rapid Fire slippers, and Taya's
-stun projectile. Current LAN compatibility is `canclash-lan-abilities-5`;
-current online compatibility is `canclash-rules-9`.
+stun projectile. Current LAN compatibility is `canclash-lan-abilities-6`;
+current online compatibility is `canclash-rules-10`. These identifiers require
+all connected PCs to run the seven-character roster build.
 
 One PC hosts and plays. Four other PCs join, for five players total.
 Godot 4.7.2 ENet uses UDP port 54652, with four remote peers plus the host.
@@ -121,7 +122,7 @@ are still required before internet connectivity can be marked verified.
 ## Gameplay rules protocol 4
 
 After automatic scene-load acknowledgements, the host runs the opening banner and moves each actor to the toe-line. All players get one throw; the host measures settled slippers from the can base, treating no throw or out-of-bounds as a forfeit. The farthest selects Taya, with lowest roster slot breaking ties. A result notice precedes seven seconds of preparation, which unlocks only Taya's movement;
-throwers' movement/action requests are rejected until the 600-second match starts.
+throwers' movement/action requests are rejected until the 300-second match starts.
 Snapshots include the phase deadline against synchronized host time. Clients
 clamp the displayed timer to its phase duration.
 

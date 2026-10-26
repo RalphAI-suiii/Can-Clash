@@ -118,7 +118,7 @@ func is_settled() -> bool:
 
 
 func can_pick_up(actor: Node2D) -> bool:
-	return state == State.TOPPLED and settled and not auto_stand_pending and actor.global_position.distance_to(global_position) <= pickup_radius
+	return state == State.TOPPLED and height <= 12.0 and not auto_stand_pending and actor.global_position.distance_to(global_position) <= pickup_radius
 
 
 func pick_up(actor: Node2D) -> bool:

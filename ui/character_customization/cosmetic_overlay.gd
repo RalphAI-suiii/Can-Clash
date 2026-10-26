@@ -5,9 +5,9 @@ extends Node2D
 const DUCK := preload("res://assets/ui/cosmetics/duck_hat.svg")
 const BOW := preload("res://assets/ui/cosmetics/bow.svg")
 const SCARF := preload("res://assets/ui/cosmetics/scarf.svg")
-const DUCK_WIDTH := [1.03, 0.70, 0.70, 0.72, 0.72]
-const DUCK_HEIGHT := [0.35, 0.35, 0.34, 0.35, 0.34]
-const NECK_Y := [0.52, 0.58, 0.56, 0.58, 0.50]
+const DUCK_WIDTH := [1.03, 0.70, 0.70, 0.72, 0.72, 0.72, 0.75]
+const DUCK_HEIGHT := [0.35, 0.35, 0.34, 0.35, 0.34, 0.33, 0.31]
+const NECK_Y := [0.52, 0.58, 0.56, 0.58, 0.50, 0.50, 0.52]
 
 var body_sprite: AnimatedSprite2D
 var reference_texture: Texture2D
@@ -32,7 +32,7 @@ func set_items(new_headwear: int, new_accessory: int) -> void:
 		update_fit()
 
 func set_character_index(index: int) -> void:
-	character_index = clampi(index, 0, 4)
+	character_index = clampi(index, 0, DUCK_WIDTH.size() - 1)
 
 func set_reference_texture(texture: Texture2D) -> void:
 	reference_texture = texture

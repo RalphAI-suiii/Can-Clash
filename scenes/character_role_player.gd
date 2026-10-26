@@ -61,22 +61,23 @@ func _normalized_frames(source: SpriteFrames) -> SpriteFrames:
 			_copy_empty_hand(result, source, StringName("taya_sprint_" + direction), release_source, true)
 		if relaxed_cardinal != null and relaxed_diagonal != null:
 			var sheet := relaxed_diagonal if diagonal else relaxed_cardinal
-			# Cardinal rows face down, left, up, right; diagonal rows DR, UL, UR, DL.
-			var row := ["down_right", "up_left", "up_right", "down_left"].find(lookup) if diagonal else ["down", "left", "up", "right"].find(lookup)
-			for action in ["idle", "walk", "sprint"]:
-				var name := StringName(action + "_" + direction)
-				result.clear(name)
-				result.set_animation_speed(name, 1.0 if action == "idle" else 11.0 if action == "sprint" else 8.0)
-				for frame in ([0] if action == "idle" else [0, 1, 2, 3]):
-					var texture := AtlasTexture.new()
-					texture.atlas = sheet
-					var cell := Vector2(sheet.get_width() / 4.0, sheet.get_height() / 5.0)
-					texture.region = Rect2(Vector2(frame, row) * cell + Vector2(0, 12), cell - Vector2(0, 12))
-					texture.margin = Rect2(0, 12, 0, 12)
-					texture.filter_clip = true
-					result.add_frame(name, texture)
+			# These sheets use the same row order as the authored release frames.
+			var row := ["down_left", "up_left", "up_right", "down_right"].find(lookup) if diagonal else ["down", "left", "up", "right"].find(lookup)
+			for name_prefix in ["", "taya_"]:
+				for action in (["idle", "walk", "sprint"] if name_prefix == "" else ["walk", "sprint"]):
+					var name := StringName(name_prefix + action + "_" + direction)
+					result.clear(name)
+					result.set_animation_speed(name, 1.0 if action == "idle" else 11.0 if action == "sprint" else 8.0)
+					for frame in ([0] if action == "idle" else [0, 1, 2, 3]):
+						var texture := AtlasTexture.new()
+						texture.atlas = sheet
+						var cell := Vector2(sheet.get_width() / 4.0, sheet.get_height() / 5.0)
+						texture.region = Rect2(Vector2(frame, row) * cell + Vector2(0, 12), cell - Vector2(0, 12))
+						texture.margin = Rect2(0, 12, 0, 12)
+						texture.filter_clip = true
+						result.add_frame(name, texture)
 		if release_sheet != null:
-			var row := ["down", "down_right", "right", "up_right", "up", "up_left", "left", "down_left"].find(direction)
+			var row := ["down", "down_left", "left", "up_left", "up", "up_right", "right", "down_right"].find(direction)
 			var cell := Vector2(release_sheet.get_width() / 4.0, release_sheet.get_height() / 8.0)
 			for action in ["aim", "throw"]:
 				var name := StringName(action + "_" + direction)

@@ -174,7 +174,7 @@ func _run() -> void:
 			await process_frame
 		while current_scene.stage != "active":
 			await process_frame
-		assert(current_scene.remaining > 595.0 and current_scene.remaining <= 600.0, "Replicated match timer: %s" % current_scene.remaining)
+		assert(current_scene.remaining > 295.0 and current_scene.remaining <= 300.0, "Replicated match timer: %s" % current_scene.remaining)
 		assert(current_scene.actors.size() == 5)
 		# Exercise the replica path with charging snapshots: only this PC's actor gets guides.
 		var saved: Dictionary = current_scene._snapshot()

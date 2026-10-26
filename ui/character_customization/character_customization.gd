@@ -4,13 +4,15 @@ signal closed
 
 const UI = preload("res://ui/game_ui.gd")
 const OVERLAY = preload("res://ui/character_customization/cosmetic_overlay.gd")
-const HEADWEAR_MASK := [0.35, 0.0, 0.0, 0.0, 0.32]
+const HEADWEAR_MASK := [0.35, 0.0, 0.0, 0.0, 0.32, 0.0, 0.0]
 const FRAMES := [
 	preload("res://scenes/player_movement_neutral_frames.tres"),
 	preload("res://ui/main_menu/menu_idle_band_gesture.tres"),
 	preload("res://ui/main_menu/menu_idle_glasses_gesture.tres"),
 	preload("res://scenes/Curly_haired_frames.tres"),
 	preload("res://scenes/Bullcap_Head_frames.tres"),
+	preload("res://scenes/leonardo_preview_frames.tres"),
+	preload("res://scenes/kay_preview_frames.tres"),
 ]
 const COLOR_NAMES := ["BLUE", "ORANGE", "GREEN", "PURPLE", "PINK"]
 
@@ -188,7 +190,7 @@ func _choose_preview(index: int) -> void:
 	else:
 		base_preview_texture = source.get_frame_texture(&"idle_down", 0)
 	preview_sprite.position = Vector2(0, -99 if preview_index == 0 else -104)
-	var preview_scale := 0.7 if preview_index == 0 else (0.64 if preview_index == 1 or preview_index == 2 else 0.85)
+	var preview_scale := 0.7 if preview_index == 0 else (0.64 if preview_index == 1 or preview_index == 2 else 0.5 if preview_index >= 5 else 0.85)
 	preview_sprite.scale = Vector2.ONE * preview_scale
 	_update_preview_image()
 	preview_label.text = LanSession.CHARACTERS[preview_index]

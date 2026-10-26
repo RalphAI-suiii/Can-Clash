@@ -4,12 +4,13 @@ const UI = preload("res://ui/game_ui.gd")
 const CATALOG = preload("res://game/maps/map_catalog.gd")
 const TAG_BURST = preload("res://game/match/tag_burst.gd")
 const SCOREBOARD = preload("res://game/match/scoreboard.gd")
+const SCORE_TOGGLE = preload("res://game/match/score_toggle.gd")
 # Inner fence edges; shared by slipper limits and camera framing.
 const ARENA := Rect2(153, 49, 1568, 1023)
 # Cover the visible floor to the fence/curb, not only the inset movement bounds.
 const SAFE := Rect2(140, 0, 390, 1072)
 const PREPARATION_SECONDS := 7.0
-const MATCH_SECONDS := 600.0
+const MATCH_SECONDS := 300.0
 const INTRO_SECONDS := 2.8
 const RUN_TO_LINE_SECONDS := 5.0
 const THROW_OFF_SECONDS := 26.0
@@ -32,6 +33,8 @@ var role_status_label: Label
 var phase_label: Label
 var score_panel: PanelContainer
 var scoreboard
+var score_toggle: Button
+var score_open := true
 var notice_label: Label
 var notice_remaining := 0.0
 var tag_notice_id := 0
@@ -380,7 +383,8 @@ func _can_hit(_target: Node2D, actor: CharacterBody2D, slipper: Node2D) -> void:
 	slipper.set_meta("outcome", true)
 	var id: int = actor.get_meta("peer_id")
 	_add_point(id)
-	actor.set_skill_charge(actor.skill_charge + 1)
+	if actor.has_thrower_special():
+		actor.set_skill_charge(actor.skill_charge + 1)
 	LanSession.publish_event({"kind": "hit", "player": id, "match_id": LanSession.match_id})
 	var player_name: String = LanSession.member(id).get("name", "Player")
 	if actor.skill_charge == 3:
@@ -422,7 +426,7 @@ func _skill_requested(id: int, pressed: bool, aim: Vector2) -> void:
 	if actor.is_taya:
 		if pressed: actor.begin_taya_stun_aim()
 		else: actor.release_taya_stun(aim)
-	elif pressed and (actor.special_armed or actor.skill_charge == 3 and actor.throw_target_ready()):
+	elif pressed and actor.has_thrower_special() and (actor.special_armed or actor.skill_charge == 3 and actor.throw_target_ready()):
 		actor.special_armed = not actor.special_armed
 		actor.queue_redraw()
 
@@ -569,6 +573,24 @@ func _build_hud() -> void:
 	screen.add_child(score_panel)
 	scoreboard = SCOREBOARD.new()
 	score_panel.add_child(scoreboard)
+	score_toggle = SCORE_TOGGLE.new()
+	score_toggle.name = "ScoreToggle"
+	score_toggle.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	score_toggle.offset_left = -80
+	score_toggle.offset_right = -28
+	score_toggle.offset_top = 30
+	score_toggle.offset_bottom = 82
+	score_toggle.focus_mode = Control.FOCUS_ALL
+	score_toggle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	score_toggle.add_theme_stylebox_override("normal", UI.panel(Color("ba500d"), 4))
+	score_toggle.add_theme_stylebox_override("hover", UI.panel(Color("d46a18"), 4))
+	score_toggle.add_theme_stylebox_override("pressed", UI.panel(Color("93400e"), 4))
+	var score_focus := UI.panel(Color.TRANSPARENT, 3)
+	score_focus.border_color = Color("fff0a8")
+	score_toggle.add_theme_stylebox_override("focus", score_focus)
+	score_toggle.pressed.connect(_toggle_scoreboard)
+	score_toggle.hide()
+	screen.add_child(score_toggle)
 	notice_label = UI.label("", 30)
 	notice_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	notice_label.position = Vector2(-700, -65)
@@ -613,7 +635,7 @@ func _update_hud() -> void:
 	var time_text := "%d:%02d" % [int(ceil(remaining)) / 60, int(ceil(remaining)) % 60]
 	phase_label.text = "WAITING FOR PLAYERS TO LOAD" if stage == "loading" else "THROW OFF INCOMING" if stage in ["intro", "run_to_line"] else "WAITING FOR SLIPPERS" if stage == "throw_off" and remaining <= 0.0 else "THROW OFF  " + time_text if stage == "throw_off" else "INITIAL TAYA" if stage == "throw_off_result" else "TAYA PREPARATION  " + time_text if stage == "preparation" else "MATCH  " + time_text
 	phase_label.visible = stage != "intro" and stage != "throw_off_result"
-	score_panel.visible = stage in ["preparation", "active"]
+	_refresh_scoreboard_visibility()
 	var own: Node2D = actors.get(LanSession.local_id())
 	var tag_wait: float = own.tag_delay_remaining() if own != null else 0.0
 	role_status_label.visible = stage == "active" and own != null and own.is_taya and tag_wait > 0.0
@@ -622,6 +644,17 @@ func _update_hud() -> void:
 		opening_label.text = "%s IS TAYA\n%d" % [LanSession.member(taya_id).get("name", "Player"), ceili(remaining)] if stage == "preparation" else "THROW!" if stage == "active" and remaining > MATCH_SECONDS - 2.0 else ""
 	_update_intro_visual()
 	scoreboard.set_score_state(CATALOG.MAPS[LanSession.selected_map].name, LanSession.players, scores, taya_id, LanSession.mode == "developer")
+
+func _toggle_scoreboard() -> void:
+	score_open = not score_open
+	_refresh_scoreboard_visibility()
+
+func _refresh_scoreboard_visibility() -> void:
+	var score_available := stage in ["preparation", "active"]
+	score_panel.visible = score_available and score_open
+	score_toggle.visible = score_available
+	score_toggle.set("expanded", score_open)
+	score_toggle.tooltip_text = "Hide match score" if score_open else "Show match score"
 
 func _notice(message: String) -> void:
 	notice_label.text = message

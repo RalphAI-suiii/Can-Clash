@@ -1,8 +1,8 @@
 extends Resource
 class_name MatchRules
 
-# Three minutes of scoring after the separate 30-second grace period.
-@export var match_duration_seconds: float = 180.0
+# Match scoring lasts five minutes.
+@export var match_duration_seconds: float = 300.0
 @export var lunge_cooldown_seconds: float = 10.0
 @export var hits_for_power_up: int = 2
 @export var can_hit_points: int = 1

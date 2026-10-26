@@ -311,15 +311,6 @@ func _taya_physics_process(delta: float) -> void:
 	if _action_just_pressed("lunge") and can_lunge():
 		_start_lunge()
 		return
-	if can_node != null and _action_just_pressed("interact"):
-		if carrying_can and can_node.can_reset(self):
-			_start_taya_action(&"place")
-			return
-		if not carrying_can and can_node.pick_up(self):
-			carrying_can = true
-			_start_taya_action(&"pickup")
-			return
-
 	var original_walk: float = walk_speed
 	var original_sprint: float = sprint_speed
 	if carrying_can:
@@ -328,6 +319,14 @@ func _taya_physics_process(delta: float) -> void:
 	super._physics_process(delta)
 	walk_speed = original_walk
 	sprint_speed = original_sprint
+	if can_node != null and LanSession.is_host():
+		if carrying_can:
+			if can_node.reset_at_base(self):
+				carrying_can = false
+				_refresh_possession_visual()
+		elif can_node.pick_up(self):
+			carrying_can = true
+			_refresh_possession_visual()
 	if carrying_can:
 		dust_cooldown = 0.0
 		sprite.show()
@@ -500,10 +499,7 @@ func _try_tag() -> void:
 			tag_requested.emit(current_target)
 
 
-func _on_taya_action_finished(completed: StringName) -> void:
-	if completed == &"place" and can_node != null and LanSession.is_host():
-		if can_node.reset_at_base(self):
-			carrying_can = false
+func _on_taya_action_finished(_completed: StringName) -> void:
 	taya_action = &""
 	taya_visual.hide()
 	sprite.show()
@@ -517,9 +513,7 @@ func _update_taya_prompt() -> void:
 	if not is_taya or can_node == null or taya_action != &"":
 		return
 	if carrying_can:
-		interact_prompt.text = "E  Stand can up" if can_node.can_reset(self) else "Carry can to base"
-	elif can_node.can_pick_up(self):
-		interact_prompt.text = "E  Pick up can"
+		interact_prompt.text = "Carry can to base"
 	else:
 		return
 	interact_prompt.show()
@@ -593,10 +587,14 @@ func update_name_color() -> void:
 		role_label.visible = is_taya
 
 func set_skill_charge(value: int) -> void:
-	var next_charge := clampi(value, 0, 3)
+	var next_charge := clampi(value, 0, 3) if has_thrower_special() else 0
 	if skill_charge != next_charge:
 		skill_charge = next_charge
 		queue_redraw()
+
+
+func has_thrower_special() -> bool:
+	return true
 
 
 func is_stunned() -> bool:
@@ -835,7 +833,7 @@ func _on_attack_frame_changed() -> void:
 	slipper.launch(self, release_point, attack_direction, charge_ratio, get_throw_origin(), throw_speed_multiplier)
 	slipper.arena_bounds = arena_bounds
 	slipper.outline_color = player_color
-	if special_armed and skill_charge == 3 and not is_taya and throw_target_ready():
+	if has_thrower_special() and special_armed and skill_charge == 3 and not is_taya and throw_target_ready():
 		var kinds := [&"rapid", &"ricochet", &"self_return", &"stun", &"mind_control"]
 		var index := clampi(int(get_meta("character_index", 0)), 0, kinds.size() - 1)
 		slipper.special_kind = kinds[index]
@@ -964,17 +962,18 @@ func _draw() -> void:
 		for ray_index in range(4):
 			var ray := Vector2.RIGHT.rotated(ray_index * PI * 0.5 + LanSession.clock_time() * 1.2)
 			draw_line(center + ray * 28.0, center + ray * 36.0, Color(aura, 0.65), 3.0, true)
-	for orb in range(3):
-		var center := Vector2((orb - 1) * 58.0, 91.0)
-		draw_circle(center, 23.0, Color("241a17"))
-		draw_circle(center, 17.0, Color("49372c"))
-		if orb < skill_charge:
-			draw_circle(center, 15.0, Color("ffba32"))
-			draw_circle(center + Vector2(-5, -5), 5.0, Color("fff1b1"))
-			draw_arc(center, 21.0, 0.0, TAU, 32, Color("fff1b1"), 3.0, true)
-		else:
-			draw_arc(center, 20.0, 0.0, TAU, 32, Color("b2a08a"), 2.0, true)
-	if skill_charge == 3:
+	if has_thrower_special():
+		for orb in range(3):
+			var center := Vector2((orb - 1) * 58.0, 91.0)
+			draw_circle(center, 23.0, Color("241a17"))
+			draw_circle(center, 17.0, Color("49372c"))
+			if orb < skill_charge:
+				draw_circle(center, 15.0, Color("ffba32"))
+				draw_circle(center + Vector2(-5, -5), 5.0, Color("fff1b1"))
+				draw_arc(center, 21.0, 0.0, TAU, 32, Color("fff1b1"), 3.0, true)
+			else:
+				draw_arc(center, 20.0, 0.0, TAU, 32, Color("b2a08a"), 2.0, true)
+	if has_thrower_special() and skill_charge == 3:
 		draw_rect(Rect2(-95, 122, 190, 34), Color("241a17"))
 		draw_string(SKILL_FONT, Vector2(-90, 149), "ARMED" if special_armed else "RMB  SPECIAL", HORIZONTAL_ALIGNMENT_CENTER, 180, 22, Color("fff1b1"))
 	if LanSession.clock_time() < ability_glow_until:

@@ -1,5 +1,10 @@
 # Design decisions
 
+## Automatic Taya can handling and directional art — 2026-10-25
+
+- The host picks up a toppled can when Taya enters its existing pickup radius and the can is near the ground, without waiting for it to finish sliding or spinning. A carried can resets immediately when Taya reaches the base radius. Neither action needs E or waits for the old 0.68-second action animation; carrying still slows movement. This supersedes the manual can interaction described below. Thrower slipper retrieval is unchanged.
+- Head Band, Glasses Thrower, and Curly Haired use the correct down-left/down-right rows from their empty-hand movement sheets for both thrower and Taya movement. Taya walking/sprinting uses those four-frame sheets instead of alternating two throw-recovery poses. Bullcap's release rows now follow the direction order in its authored eight-direction atlas. The original Hat Thrower art stays as the reference.
+
 ## Integrated customization, abilities and possession UI — 2026-10-25
 
 - Merge the new lobby character claims, customization and five specials with the relaxed movement artwork, large possession badges, three-second tag delay, manual 15% slower carrying, private aim guides, clean podium and selection sound. Preserve both ability and possession fields in host snapshots.
@@ -211,7 +216,7 @@ The original concept note is the current design reference.
 ## Open decisions
 
 - Confirm Godot 4 and the exact engine version.
-- Match duration and ranking tie-break rule.
+- Ranking tie-break rule.
 - Opening throw-off ties and the precise distance measurement.
 - Arena setting, visual style, layout, and camera implementation.
 - Input bindings, charge times, throw speeds, and power-up balance.
@@ -221,6 +226,12 @@ The original concept note is the current design reference.
 - Miss scoring when the can is already toppled.
 
 Record each resolved decision here with its date and rationale.
+
+## Match timer — 2026-10-26
+
+- The user set active match scoring to five minutes (300 seconds). The separate
+  opening throw-off and seven-second Taya preparation remain outside this timer.
+  This supersedes the earlier three-minute and ten-minute durations below.
 
 ## Adjustments implementation — 2026-10-21
 
@@ -302,3 +313,9 @@ Record each resolved decision here with its date and rationale.
 ## Can-down throw pause — 2026-10-25
 
 - In a match, throwers may start or release a slipper throw only while the can is standing. Toppled and carried states block new throws until Taya resets the can at its base. A charge in progress cancels if the can falls; slippers already in flight continue normally. The opening throw-off remains one throw per player, and standalone movement demos keep their prior behavior. The host applies the rule; clients use the replicated can state for the local status label and movement prediction.
+
+## Leonardo and Kay roster — 2026-10-26
+
+- Leonardo and Kay are selectable in the lobby, with both Thrower and Taya scenes. The match remains capped at five PCs; seven characters are choices, not seven players. Repeated choices remain allowed under the current lobby rule.
+- Their thrower roles use ordinary charged slippers. They do not show or fill three-orb meters and cannot arm a character special until their abilities are designed. Their Taya roles retain the common stun slipper, cooldown, lunge, can and tag rules.
+- All eight directions have character-specific idle, walk, sprint, aim and throw poses; Taya uses the same movement bank plus dedicated can pickup/place and lunge poses. The common stun/reaction effects remain shared. The game protocol identifiers advance for the new roster.

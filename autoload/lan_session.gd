@@ -11,14 +11,14 @@ signal skill_requested(peer_id: int, pressed: bool, aim: Vector2)
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
-const PROTOCOL := "canclash-rules-9"
-const LAN_PROTOCOL := "canclash-lan-abilities-5"
+const PROTOCOL := "canclash-rules-10"
+const LAN_PROTOCOL := "canclash-lan-abilities-6"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5
 const CODE_ALPHABET := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 const COLORS := [Color("329dff"), Color("ff7344"), Color("51c878"), Color("bf83ff"), Color("ff6fae")]
-const CHARACTERS := ["Hat Thrower", "Head Band", "Glasses Thrower", "Curly Haired", "Bullcap Head"]
+const CHARACTERS := ["Hat Thrower", "Head Band", "Glasses Thrower", "Curly Haired", "Bullcap Head", "Leonardo", "Kay"]
 
 var players: Array[Dictionary] = []
 var mode := "menu"

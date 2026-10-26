@@ -79,7 +79,7 @@ Three arena variants reuse the existing level art with different prop layouts
 and palettes: Courtyard, Eskinita, and Dusty Yard. The host chooses once; every
 member sees the same decelerating map carousel and loads the chosen variant.
 Matches begin seven seconds of Taya preparation once everyone loads the map; no rules popup is shown.
-Scoring then lasts ten minutes and results rank individual scores.
+Scoring then lasts five minutes and results rank individual scores.
 
 Developer mode offers minus/plus controls below the roster for zero to four bots
 (four by default). Bots join on Start, throw, retrieve, return to the safe strip,

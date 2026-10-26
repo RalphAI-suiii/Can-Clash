@@ -1,0 +1,91 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/new_roster_player.gd" id="1_script"]
+[ext_resource type="SpriteFrames" path="res://scenes/kay_preview_frames.tres" id="2_frames"]
+[ext_resource type="SpriteFrames" path="res://scenes/kay_preview_frames.tres" id="3_throw_frames"]
+[ext_resource type="Script" path="res://scenes/new_roster_taya_visual.gd" id="4_taya_visual"]
+[ext_resource type="AudioStream" path="res://assets/audio/voices/head_band_throw_grunt.mp3" id="5_throw_grunt"]
+
+
+
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/new_roster/kay/lunge.png" id="lunge_sheet"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_charge_background"]
+bg_color = Color(0.26, 0.16, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.08, 0.05, 0.04, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_charge_fill"]
+bg_color = Color(1, 0.62, 0.12, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 65.0
+
+[node name="Thrower Kay" type="CharacterBody2D" unique_id=920485240]
+collision_layer = 2
+collision_mask = 3
+motion_mode = 1
+script = ExtResource("1_script")
+throw_grunt = ExtResource("5_throw_grunt")
+art_name = "kay"
+idle_sprite_y = -104.0
+walk_sprite_y = -104.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1813916401]
+position = Vector2(0, -104)
+scale = Vector2(0.5, 0.5)
+sprite_frames = ExtResource("2_frames")
+animation = &"idle_down"
+
+[node name="AttackSprite" type="AnimatedSprite2D" parent="." unique_id=774505656]
+visible = false
+position = Vector2(0, -104)
+scale = Vector2(0.5, 0.5)
+sprite_frames = ExtResource("3_throw_frames")
+animation = &"idle_down"
+
+[node name="TayaVisual" type="Node2D" parent="."]
+visible = false
+script = ExtResource("4_taya_visual")
+lunge_sheet = ExtResource("lunge_sheet")
+art_name = "kay"
+
+[node name="InteractPrompt" type="Label" parent="."]
+visible = false
+offset_left = -115.0
+offset_top = -236.0
+offset_right = 115.0
+offset_bottom = -205.0
+theme_override_colors/font_color = Color(1, 0.96, 0.76, 1)
+theme_override_colors/font_shadow_color = Color(0.17, 0.1, 0.05, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="ChargeBar" type="ProgressBar" parent="." unique_id=644987708]
+visible = false
+offset_left = -72.0
+offset_top = -229.0
+offset_right = 72.0
+offset_bottom = -214.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_charge_background")
+theme_override_styles/fill = SubResource("StyleBoxFlat_charge_fill")
+max_value = 1.0
+show_percentage = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=439443505]
+position = Vector2(0, -23)
+shape = SubResource("CircleShape2D_body")
