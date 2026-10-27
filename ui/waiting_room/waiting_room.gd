@@ -24,7 +24,6 @@ var fewer_bots: Button
 var more_bots: Button
 var developer_map_picker: OptionButton
 var developer_role_picker: OptionButton
-var character_button: Button
 var selection_overlay: Control
 
 
@@ -51,7 +50,6 @@ func _ready() -> void:
 	_on_ready_toggled(false)
 	_build_room_code()
 	_build_bot_controls()
-	_build_character_button()
 	_roster_changed()
 	_refresh_start_button()
 	if LanSession.mode == "practice":
@@ -62,6 +60,15 @@ func _ready() -> void:
 		$HUD/Screen/Title.text = "FREE PRACTICE"
 	$HUD/Screen/ResetPractice.visible = LanSession.is_host()
 	$HUD/Screen/ResetFrame.visible = LanSession.is_host()
+	_open_character_select()
+
+
+func _open_character_select() -> void:
+	if int(LanSession.member(local_player_id).get("character", -1)) >= 0:
+		return
+	selection_overlay = CHARACTER_SELECT.instantiate() as Control
+	selection_overlay.popup_mode = true
+	$HUD/Screen.add_child(selection_overlay)
 
 
 func _is_local_host() -> bool:
@@ -131,8 +138,6 @@ func _on_ready_toggled(is_ready: bool) -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if is_instance_valid(selection_overlay):
-			selection_overlay.queue_free()
-			get_viewport().set_input_as_handled()
 			return
 		_leave()
 
@@ -156,30 +161,7 @@ func _roster_changed() -> void:
 		ready_button.disabled = character < 0
 		ready_button.tooltip_text = "Choose a character first" if character < 0 else "Change your ready status"
 		ready_status.text = "CHOOSE A CHARACTER FIRST" if character < 0 else "YOU ARE READY" if own.ready else "YOU ARE NOT READY"
-		if character_button != null:
-			character_button.text = "CHOOSE CHARACTER" if character < 0 else "CHANGE CHARACTER"
 	_refresh_start_button()
-
-func _build_character_button() -> void:
-	character_button = Button.new()
-	character_button.name = "ChooseCharacter"
-	character_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	character_button.offset_left = -440
-	character_button.offset_right = -48
-	character_button.offset_top = 600
-	character_button.offset_bottom = 674
-	character_button.add_theme_font_size_override("font_size", 30)
-	for state in ["normal", "hover", "pressed", "focus"]:
-		character_button.add_theme_stylebox_override(state, start_button.get_theme_stylebox(state))
-	character_button.pressed.connect(_open_character_select)
-	$HUD/Screen.add_child(character_button)
-
-func _open_character_select() -> void:
-	if is_instance_valid(selection_overlay):
-		return
-	selection_overlay = CHARACTER_SELECT.instantiate() as Control
-	selection_overlay.set("lobby_mode", true)
-	$HUD/Screen.add_child(selection_overlay)
 
 
 func _build_room_code() -> void:
@@ -188,18 +170,18 @@ func _build_room_code() -> void:
 	room_code_button.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	room_code_button.offset_left = -825
 	room_code_button.offset_right = -630
-	room_code_button.offset_top = -145
+	room_code_button.offset_top = -171 if LanSession.mode == "lan" else -145
 	room_code_button.offset_bottom = -55
 	room_code_button.add_theme_font_size_override("font_size", 20 if LanSession.mode == "lan" else 23)
 	if LanSession.mode == "lan":
-		room_code_button.text = "ROOM %s\n%s" % [LanSession.room_code, LanSession.host_address]
+		room_code_button.text = "ROOM %s\n%s\nBUILD %s" % [LanSession.room_code, LanSession.host_address, LanSession.LAN_PROTOCOL.get_slice("-", 3)]
 	elif LanSession.mode == "online":
 		room_code_button.text = "ROOM CODE\n" + LanSession.room_code
 	elif LanSession.mode == "developer":
 		room_code_button.text = "DEVELOPER\n%d BOTS" % LanSession.developer_bot_count
 	else:
 		room_code_button.text = "PRACTICE"
-	room_code_button.tooltip_text = "Copy online room code • Up to 4 players" if LanSession.mode == "online" else "Copy room code • Host IP: " + LanSession.host_address if LanSession.mode in ["lan", "online"] else "Developer games and practice do not change saved statistics."
+	room_code_button.tooltip_text = "Copy online room code • Up to 4 players" if LanSession.mode == "online" else "Copy room code • UDP %d • Friends need the same game update" % LanSession.PORT if LanSession.mode == "lan" else "Developer games and practice do not change saved statistics."
 	room_code_button.pressed.connect(func() -> void:
 		if LanSession.mode in ["lan", "online"]:
 			DisplayServer.clipboard_set(LanSession.room_code)

@@ -4,6 +4,7 @@ const PLAYER_FONT = preload("res://assets/fonts/TitanOne-Regular.ttf")
 const SLIPPER = preload("res://scenes/slipper_visual.gd")
 const LAN_SNAPSHOT_INTERVAL := 1.0 / 30.0
 const ONLINE_SNAPSHOT_INTERVAL := 1.0 / 20.0
+const LAN_SMOOTHING_SECONDS := 0.025
 @export_range(0.5, 1.0, 0.001) var player_scale := 0.576
 var actors: Dictionary = {}
 var world_tick := 0.0
@@ -206,8 +207,13 @@ func _process(delta: float) -> void:
 			continue
 		var motion: Dictionary = lan_remote_motion[id]
 		motion.age += delta
-		var target: Vector2 = motion.position + motion.velocity * minf(motion.age, 0.05)
-		actors[id].position = actors[id].position.lerp(target, 1.0 - exp(-delta / 0.035))
+		# Ease out a remote actor's velocity if packets pause, instead of freezing
+		# exactly at the extrapolation cap and jumping on the next packet.
+		var lead: float = minf(motion.age, 0.06)
+		if motion.age > 0.06:
+			lead += 0.06 * (1.0 - exp(-(motion.age - 0.06) / 0.06))
+		var target: Vector2 = motion.position + motion.velocity * lead
+		actors[id].position = actors[id].position.lerp(target, 1.0 - exp(-delta / LAN_SMOOTHING_SECONDS))
 
 func _receive_input(id: int, packet: Dictionary) -> void:
 	if LanSession.is_host() and actors.has(id):
@@ -284,7 +290,7 @@ func _snapshot() -> Dictionary:
 	var state := {"actors": [], "cans": [], "extra": _extra_snapshot()}
 	for id in actors:
 		var actor: CharacterBody2D = actors[id]
-		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "skill_charge": actor.skill_charge, "special_armed": actor.special_armed, "stunned_until": actor.stunned_until, "stun_started_at": actor.stun_started_at, "stun_immune_until": actor.stun_immune_until, "taya_stun_ready_at": actor.taya_stun_ready_at, "taya_stun_aiming": actor.taya_stun_aiming, "taya_stun_cast_until": actor.taya_stun_cast_until, "glow_until": actor.ability_glow_until, "carrying": actor.carrying_can, "tag_ready_at": actor.tag_ready_at, "released": actor.slipper_spawned, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}, "rapid": [], "taya_stun": {}}
+		var data := {"id": id, "position": actor.position, "velocity": actor.velocity, "taya": actor.is_taya, "skill_charge": actor.skill_charge, "special_armed": actor.special_armed, "stunned_until": actor.stunned_until, "stun_started_at": actor.stun_started_at, "stun_immune_until": actor.stun_immune_until, "taya_stun_ready_at": actor.taya_stun_ready_at, "taya_stun_aiming": actor.taya_stun_aiming, "taya_stun_cast_until": actor.taya_stun_cast_until, "glow_until": actor.ability_glow_until, "carrying": actor.carrying_can, "tag_ready_at": actor.tag_ready_at, "released": actor.slipper_spawned, "taya_action": String(actor.taya_action), "facing": actor.facing, "attack": actor.attack_state, "aim": actor.attack_direction, "distance": actor.aim_distance, "charge": actor.charge_bar.value, "charge_id": actor.charge_id, "charge_started": actor.charge_started, "sweet_spot": actor.sweet_spot, "feedback": actor.throw_feedback, "feedback_until": actor.feedback_until, "sprite": actor.sprite.animation, "frame": actor.sprite.frame, "sprite_speed": actor.sprite.speed_scale, "flip": actor.sprite.flip_h, "sprite_pos": actor.sprite.position, "sprite_scale": actor.sprite.scale, "rotation": actor.sprite.rotation, "attack_sprite": actor.attack_sprite.animation, "attack_frame": actor.attack_sprite.frame, "attack_pos": actor.attack_sprite.position, "attack_scale": actor.attack_sprite.scale, "attack_flip": actor.attack_sprite.flip_h, "flash": actor.hit_flash_remaining, "slipper": {}, "rapid": [], "taya_stun": {}}
 		if is_instance_valid(actor.active_slipper):
 			data.slipper = _slipper_snapshot(actor.active_slipper)
 		for shot in actor.rapid_slippers:
@@ -347,8 +353,16 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 		actor.charge_bar.value = data.charge
 		actor.charge_bar.visible = data.attack == actor.AttackState.CHARGING and actor.is_local_view()
 		if not own or actor.is_stunned() or actor.taya_stun_aiming or LanSession.clock_time() < actor.taya_stun_cast_until or data.attack != actor.AttackState.FREE or data.carrying or data.taya_action != "":
-			actor.sprite.animation = data.sprite
-			actor.sprite.frame = data.frame
+			var changed_animation: bool = actor.sprite.animation != data.sprite
+			if changed_animation:
+				actor.sprite.play(data.sprite)
+			# Remote locomotion runs locally between packets. Replacing its frame on
+			# every snapshot made walking visibly stutter when packets arrived unevenly.
+			var animation_name := String(data.sprite)
+			var locomotion_loop := animation_name.contains("idle_") or animation_name.contains("walk_") or animation_name.contains("sprint_")
+			if own or reset or changed_animation or not locomotion_loop:
+				actor.sprite.frame = data.frame
+			actor.sprite.speed_scale = float(data.get("sprite_speed", 1.0))
 			actor.sprite.flip_h = data.flip
 			actor.sprite.position = data.sprite_pos
 			actor.sprite.scale = data.sprite_scale
@@ -406,7 +420,7 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 			_apply_slipper_snapshot(actor.taya_stun_projectile, actor, data.taya_stun)
 		if own: lan_movement.receive(data, reset)
 		actor._refresh_possession_visual()
-		actor._update_throw_status()
+		if actor.throw_status.visible: actor._update_throw_status()
 		if not lan_client and data.id == LanSession.local_id() and actor.attack_state == actor.AttackState.CHARGING:
 			actor._update_trajectory()
 		actor.queue_redraw()

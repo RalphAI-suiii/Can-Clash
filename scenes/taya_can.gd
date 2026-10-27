@@ -197,13 +197,14 @@ func receive_slipper_hit(incoming_velocity: Vector2, charge: float, impact_point
 	rest_elapsed = 0.0
 	var power: float = clampf(charge, 0.0, 1.0)
 	if incoming_velocity.length() > 1.0:
-		velocity = incoming_velocity * lerpf(0.32, 0.58, power)
-		vertical_speed = lerpf(90.0, 190.0, power)
+		var impact_speed := incoming_velocity.length()
+		velocity = incoming_velocity * lerpf(0.32, 0.66, power)
+		vertical_speed = clampf(impact_speed * lerpf(0.17, 0.26, power), 90.0, 280.0)
 		var side: float = signf(incoming_velocity.x)
 		if side == 0.0:
 			side = -1.0
 		target_tilt = side * PI / 2.0
-		angular_speed = side * lerpf(12.0, 22.0, power) + clampf((impact_point.x - global_position.x) * 0.04, -1.5, 1.5)
+		angular_speed = side * clampf(impact_speed * lerpf(0.022, 0.035, power), 10.0, 34.0) + clampf((impact_point.x - global_position.x) * 0.04, -1.5, 1.5)
 	else:
 		velocity = Vector2.ZERO
 		vertical_speed = 0.0
@@ -228,7 +229,9 @@ func _clear_motion() -> void:
 
 func _refresh_visual() -> void:
 	can_sprite.visible = state != State.CARRIED
-	body_shape.set_deferred("disabled", state == State.CARRIED)
+	var carried := state == State.CARRIED
+	if body_shape.disabled != carried:
+		body_shape.set_deferred("disabled", carried)
 	var half_height: float = 28.0 * absf(cos(tilt_angle)) + 21.0 * absf(sin(tilt_angle))
 	can_sprite.position = Vector2(0, -half_height - height * 0.75)
 	can_sprite.rotation = tilt_angle
@@ -239,7 +242,7 @@ func _refresh_visual() -> void:
 func _draw() -> void:
 	if state == State.CARRIED:
 		return
-	if show_target_ring:
+	if show_target_ring and state == State.STANDING:
 		draw_arc(can_sprite.position, 48.0, 0, TAU, 40, Color("ffdb77"), 4.0, true)
 	var alpha: float = 0.24 / (1.0 + height * 0.025)
 	draw_set_transform(Vector2(7, 6), 0.0, Vector2(1.0, 0.38))

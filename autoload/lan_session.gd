@@ -11,20 +11,27 @@ signal skill_requested(peer_id: int, pressed: bool, aim: Vector2)
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
-const PROTOCOL := "canclash-rules-10"
-const LAN_PROTOCOL := "canclash-lan-abilities-6"
+const PROTOCOL := "canclash-rules-13"
+const LAN_PROTOCOL := "canclash-lan-abilities-9"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5
 const CODE_ALPHABET := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 const COLORS := [Color("329dff"), Color("ff7344"), Color("51c878"), Color("bf83ff"), Color("ff6fae")]
 const CHARACTERS := ["Hat Thrower", "Head Band", "Glasses Thrower", "Curly Haired", "Bullcap Head", "Leonardo", "Kay"]
+const CHARACTER_SCENES := [
+	"res://scenes/Thrower Hat Thrower.tscn", "res://scenes/Thrower Head Band.tscn",
+	"res://scenes/Thrower Glasses Thrower.tscn", "res://scenes/Thrower Curly Haired.tscn",
+	"res://scenes/Thrower Bullcap Head.tscn", "res://scenes/Thrower Leonardo.tscn",
+	"res://scenes/Thrower Kay.tscn",
+]
 
 var players: Array[Dictionary] = []
 var mode := "menu"
 var phase := "menu"
 var room_code := ""
 var host_address := ""
+var join_target := ""
 var selected_map := 0
 var selection_seed := 0
 var match_id := ""
@@ -82,6 +89,9 @@ func member(id: int) -> Dictionary:
 			return entry
 	return {}
 
+func chosen_character() -> int:
+	return CHARACTER_SCENES.find(UserSettings.selected_character_scene)
+
 func _own_member(id: int, slot: int) -> Dictionary:
 	return {"id": id, "name": UserSettings.display_name, "ready": false, "slot": slot, "character": -1, "color": COLORS[UserSettings.player_color_index], "bot": false}
 
@@ -97,6 +107,8 @@ func close_room() -> void:
 	mode = "menu"
 	phase = "menu"
 	room_code = ""
+	host_address = ""
+	join_target = ""
 	join_deadline = 0.0
 	held_throws.clear()
 	received_inputs.clear()
@@ -225,6 +237,7 @@ func join_room(address_or_code: String) -> Error:
 	multiplayer.multiplayer_peer = peer
 	mode = "lan"
 	phase = "joining"
+	join_target = target
 	join_deadline = Time.get_ticks_msec() / 1000.0 + 10.0
 	connection_status_changed.emit("Connecting to %s:%d..." % [target, PORT])
 	return OK
@@ -234,7 +247,7 @@ func _connected() -> void:
 	_request_clock()
 
 @rpc("any_peer", "call_remote", "reliable")
-func _register(player_name: String, color_index: int, protocol: String = "") -> void:
+func _register(player_name: String, color_index: int, protocol: String) -> void:
 	if not is_host(): return
 	var sender := _sender_id()
 	if protocol != (LAN_PROTOCOL if mode == "lan" else PROTOCOL):
@@ -531,7 +544,7 @@ func _process(_delta: float) -> void:
 			clock_tick = 0.0
 			_request_clock()
 	if join_deadline > 0.0 and Time.get_ticks_msec() / 1000.0 > join_deadline:
-		_failed("Connection timed out. Check your internet connection and online code." if mode == "online" else "Connection timed out. Check the room code, LAN connection, and firewall.")
+		_failed("Connection timed out. Check your internet connection and online code." if mode == "online" else "Could not reach %s:%d. Use the host's current IP, allow UDP %d on Private networks, and check that both PCs have the same game update." % [join_target, PORT, PORT])
 	if is_host():
 		var now := Time.get_ticks_msec() / 1000.0
 		for id in input_deadline.keys():

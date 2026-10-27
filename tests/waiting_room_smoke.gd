@@ -13,6 +13,10 @@ func _initialize() -> void:
 func _run() -> void:
 	var scene: Node2D = load("res://ui/waiting_room/waiting_room.tscn").instantiate()
 	root.add_child(scene)
+	await _frames(2)
+	assert(is_instance_valid(scene.selection_overlay))
+	scene.selection_overlay._select(0)
+	scene.selection_overlay._confirm()
 	await _frames(3)
 	var panel: Control = scene.get_node("ReadyPanel/Player_ready")
 	var button: Button = scene.get_node("HUD/Screen/ReadyButton")

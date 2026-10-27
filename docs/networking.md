@@ -136,6 +136,10 @@ Result entries now include the member's character index for podium art. Builds
 with a different protocol are rejected during registration; all peers must update.
 
 
+## Tag handoff snapshot — 2026-10-27
+
+After a host-validated tag, `tag_reset` freezes input and match scoring for 2.6 seconds. The host removes owned projectiles without awarding outcome points, moves the new Taya near the standing can and all four throwers to their toe-line slots, and resumes the paused match timer. Existing world snapshots carry phase, deadline, player positions, roles, scores, and the tag notice; clients clear LAN prediction on the phase transition. LAN/online compatibility identifiers are `canclash-lan-abilities-9` / `canclash-rules-13`. A two-process localhost ENet host/joiner probe passed; physical cross-PC play remains unverified.
+
 ## LAN responsiveness check — 2026-10-24
 
 `tests/lan_responsiveness_smoke.gd` runs as a host/client pair with arguments
@@ -159,3 +163,58 @@ history array. The same two-process ENet check with 120 ms snapshot delay and 10
 loss passed: 7.965 ms first local movement, 62/62 local moving frames, 47/62
 remote moving frames, and 0 px settled drift. This remains a one-PC check; five
 physical PCs and different Wi-Fi conditions need a playtest.
+
+## LAN diagnosis and packet-gap tuning — 2026-10-27
+
+This PC's active default route is Ethernet `192.168.18.21`; VirtualBox and hotspot
+adapters are also present. Hosting advertises `192.168.18.21` and its room code.
+A separate Godot process joined that actual adapter address and selected Kay.
+Windows reports the active Ethernet profile as Private and has enabled inbound
+UDP 54652 rules limited to LocalSubnet. This verifies the host PC's local route,
+not reachability from a friend's PC or their firewall/router.
+
+The working tree uses LAN protocol `canclash-lan-abilities-9`, while the current
+checked-in `origin/main` uses `canclash-lan-abilities-6`. A friend who pulled
+only that older main build cannot join this version; both machines need the same
+updated files and an editor reimport. Keep the version rejection because match
+snapshots and rules changed. The host lobby now displays the LAN build number,
+and Join timeouts show the attempted IP and UDP port.
+
+`tests/lan_snapshot_profile.gd` measured five-actor snapshots at 761 bytes
+compressed in the lobby and 880 bytes in the match (6,872 and 6,704 bytes raw).
+Build, encode, and ZSTD compression took about 0.09–0.14 ms per snapshot on
+this PC. At 30 Hz for four joiners, the match snapshot payload is roughly
+106 KB/s total before transport overhead; snapshot serialization was not a
+measured bottleneck. The LAN input path remains 60 Hz for responsiveness.
+
+Client prediction now begins at the shared roster spawn before the first world
+packet and tolerates a 0.65-second snapshot gap instead of 0.35 seconds. It still
+stops predicting after the gap and reconciles to the host on the next snapshot.
+The responsiveness probe was updated for the new character-select overlay and
+waits for ten world packets before measuring, so shader/startup stalls do not
+masquerade as steady-state network loss. A two-process check with 120 ms delayed
+snapshots and one dropped packet in ten passed: 20.624 ms first visible movement,
+61/61 local moving frames, 49/61 remote moving frames, and 0 px settled drift.
+The LAN prediction unit check and two-process tag-reset match probe also passed.
+Physical cross-PC connectivity and real Wi-Fi jitter remain unverified.
+
+## Joiner visual smoothness — 2026-10-27
+
+The joiner used to overwrite every remote actor's walking sprite frame on each
+world snapshot. Uneven packet arrival could rewind or skip the walk cycle even
+while position interpolation was smooth. Remote idle/walk/sprint animations now
+advance locally between snapshots at the host's replicated animation speed;
+animation changes and action poses still synchronize from the host. Remote
+position extrapolation now eases to a stop over a bounded 120 ms lead instead
+of stopping abruptly at a fixed 50 ms cap. These changes affect presentation
+only; host positions and collisions remain authoritative.
+
+Snapshot application no longer updates hidden throw-status labels for every
+remote actor, and the can only schedules a collision-shape change when its
+carried state actually changes. In the two-actor headless probe, mean snapshot
+application fell from about 0.52 ms to 0.35–0.40 ms. A host/joiner test with
+120 ms delayed snapshots and 10% dropped packets passed 61/61 local moving
+frames, 51/61 remote moving frames, and negligible settled drift. A separate
+stress run with 160 ms delay and 20% loss also settled correctly. The probe
+asserts that an incoming snapshot does not reset a remote walk frame. A full
+physical hotspot playtest and rendered visual review are still needed.

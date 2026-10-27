@@ -33,6 +33,7 @@ const SKILL_FONT = preload("res://assets/fonts/TitanOne-Regular.ttf")
 const THROW_ORIGIN: Vector2 = Vector2(0.0, -103.0)
 const TAG_DISTANCE: float = 132.0
 const PLAYER_CLEARANCE: float = 134.0
+const CAN_GUARD_CLEARANCE: float = 100.0
 const LUNGE_WINDUP: float = 0.13
 const LUNGE_TRAVEL_TIME: float = 0.30
 # Order matches DIRECTIONS in player_movement_base.gd.
@@ -191,6 +192,29 @@ func _physics_process(delta: float) -> void:
 			_start_throw()
 
 
+func _move_character() -> void:
+	super._move_character()
+	_keep_out_of_can_circle()
+
+
+func _move_character_delta(delta: float) -> void:
+	super._move_character_delta(delta)
+	_keep_out_of_can_circle()
+
+
+func _keep_out_of_can_circle() -> void:
+	if not is_taya or carrying_can or not require_standing_can or can_node == null or not can_node.is_standing() or can_node.base == null:
+		return
+	var center: Vector2 = can_node.base.global_position + Vector2(0, -27)
+	var outward: Vector2 = global_position - center
+	if outward.length_squared() >= CAN_GUARD_CLEARANCE * CAN_GUARD_CLEARANCE:
+		return
+	outward = outward.normalized() if not outward.is_zero_approx() else Vector2.LEFT
+	global_position = center + outward * CAN_GUARD_CLEARANCE
+	if velocity.dot(outward) < 0.0:
+		velocity -= outward * velocity.dot(outward)
+
+
 func _process(_delta: float) -> void:
 	_refresh_possession_visual()
 	# Replicas do not simulate physics, but their timing marker must animate smoothly.
@@ -324,6 +348,7 @@ func _taya_physics_process(delta: float) -> void:
 			if can_node.reset_at_base(self):
 				carrying_can = false
 				_refresh_possession_visual()
+				_keep_out_of_can_circle()
 		elif can_node.pick_up(self):
 			carrying_can = true
 			_refresh_possession_visual()
@@ -443,6 +468,7 @@ func _restore_lunge_collision(separate: bool) -> void:
 		var direction: Vector2 = away.normalized() if not away.is_zero_approx() else -lunge_direction
 		if away.length() < PLAYER_CLEARANCE:
 			global_position = lunge_target.global_position + direction * PLAYER_CLEARANCE
+	_keep_out_of_can_circle()
 	if is_instance_valid(lunge_collision_exception):
 		remove_collision_exception_with(lunge_collision_exception)
 	lunge_collision_exception = null
@@ -550,6 +576,7 @@ func set_taya_role(enabled: bool) -> void:
 	update_name_color()
 	movement_min_x = taya_min_x if enabled else -INF
 	global_position.x = maxf(global_position.x, movement_min_x)
+	_keep_out_of_can_circle()
 	velocity = Vector2.ZERO
 	attack_sprite.stop()
 	charge_elapsed = 0.0
@@ -941,6 +968,8 @@ func _update_trajectory() -> void:
 	var origin := get_throw_origin()
 	var release := origin + attack_direction * minf(48.0, aim_distance * 0.5)
 	predicted_path = SLIPPER_VISUAL.predict_path(get_world_2d(), origin, release, attack_direction, float(throw_quality().power), get_tree().get_nodes_in_group("can_targets"), throw_speed_multiplier)
+	if predicted_path.size() > 8:
+		predicted_path.resize(8)
 	queue_redraw()
 
 
@@ -995,7 +1024,3 @@ func _draw() -> void:
 		draw_line(origin, right, Color(player_color, 0.5), 2.0, true)
 	for point in predicted_path:
 		draw_circle(to_local(point), 3.5, Color(player_color.lightened(0.3), 0.8))
-	var landing := to_local(predicted_path[-1])
-	draw_arc(landing, 20.0, 0, TAU, 32, player_color.lightened(0.3), 3.0, true)
-	draw_line(landing - Vector2(9, 0), landing + Vector2(9, 0), player_color, 2.0, true)
-	draw_line(landing - Vector2(0, 9), landing + Vector2(0, 9), player_color, 2.0, true)

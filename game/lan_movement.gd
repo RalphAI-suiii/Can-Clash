@@ -2,7 +2,7 @@ extends RefCounted
 
 ## Presentation-only LAN prediction. The host still decides every game outcome.
 const MAX_PENDING := 64
-const STALE_SECONDS := 0.35
+const STALE_SECONDS := 0.65
 var actor: CharacterBody2D
 var ready := false
 var position := Vector2.ZERO
@@ -14,6 +14,13 @@ var pending: Array[Dictionary] = []
 
 func _init(player: CharacterBody2D) -> void:
 	actor = player
+	# The world creates the same initial spawn on both peers, so movement responds before
+	# the first world packet arrives. The first authoritative packet reconciles it.
+	position = actor.position
+	velocity = actor.velocity
+	last_authority = actor.position
+	last_snapshot = Time.get_ticks_msec() / 1000.0
+	ready = true
 
 func fresh() -> bool:
 	return ready and Time.get_ticks_msec() / 1000.0 - last_snapshot < STALE_SECONDS

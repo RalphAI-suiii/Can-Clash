@@ -1,7 +1,7 @@
 extends SceneTree
 
 const DIRECTIONS := ["right", "down_right", "down", "down_left", "left", "up_left", "up", "up_right"]
-const ACTIONS := {"idle": 4, "walk": 8, "sprint": 8, "aim": 1, "throw": 4}
+const ACTIONS := {"idle": 4, "walk": 8, "sprint": 8, "aim": 1, "throw": 4, "hit": 1, "stunned": 2, "recover": 1}
 
 
 func _initialize() -> void:
@@ -27,17 +27,37 @@ func _run() -> void:
 				for action in ACTIONS:
 					var animation := StringName(action + "_" + direction)
 					var frames := attack.sprite_frames if action in ["aim", "throw"] else body.sprite_frames
-					if not frames.has_animation(animation) or frames.get_frame_count(animation) != ACTIONS[action]:
+					var expected_count: int = 4 if (direction.contains("_") or direction in ["left", "right"]) and action in ["walk", "sprint"] else ACTIONS[action]
+					if not frames.has_animation(animation) or frames.get_frame_count(animation) != expected_count:
 						problems.append("%s: %s" % [path, animation])
 						continue
 					for frame in range(frames.get_frame_count(animation)):
 						var texture := frames.get_frame_texture(animation, frame)
 						if texture == null or texture.get_image().get_used_rect().size == Vector2i.ZERO:
 							problems.append("Empty %s %s frame %d" % [path, animation, frame])
+						if action in ["idle", "walk", "sprint", "hit", "stunned", "recover"]:
+							body.play(animation)
+							body.frame = frame
+							actor._align_current_motion_frame()
+							var geometry: Dictionary = actor.motion_geometry[String(animation)]
+							var visible_height: float = body.scale.y * float(geometry["heights"][frame])
+							var foot_y: float = body.position.y + body.scale.y * float(geometry["canvas_height"]) * 0.5
+							if absf(visible_height - 200.0) > 0.2 or absf(foot_y) > 0.2:
+								problems.append("Size/ground %s %s frame %d" % [path, animation, frame])
 				for action in ["idle", "walk", "sprint"]:
 					var taya_animation := StringName("taya_" + action + "_" + direction)
 					if not body.sprite_frames.has_animation(taya_animation):
 						problems.append("%s: %s" % [path, taya_animation])
+				for action in ["idle", "walk"]:
+					var carry := StringName("carry_" + action + "_" + direction)
+					var count := 1 if action == "idle" else 4
+					if not body.sprite_frames.has_animation(carry) or body.sprite_frames.get_frame_count(carry) != count:
+						problems.append("%s: %s" % [path, carry])
+				for action in ["aim", "throw"]:
+					var cast := StringName("taya_stun_" + action + "_" + direction)
+					var count := 1 if action == "aim" else 4
+					if not attack.sprite_frames.has_animation(cast) or attack.sprite_frames.get_frame_count(cast) != count:
+						problems.append("%s: %s" % [path, cast])
 			var visual = actor.get_node("TayaVisual")
 			for can_action in [&"can_pickup", &"can_place"]:
 				if not visual.body.sprite_frames.has_animation(can_action) or visual.body.sprite_frames.get_frame_count(can_action) != 4:
@@ -51,7 +71,7 @@ func _run() -> void:
 			actor.queue_free()
 			await process_frame
 	if problems.is_empty():
-		print("NEW ROSTER: four scenes, eight directions, movement/throw/Taya/lunge frames OK")
+		print("NEW ROSTER: four scenes, eight directions, movement/throw/reaction/carry/Taya cast/lunge frames OK")
 	else:
 		for problem in problems:
 			push_error(problem)

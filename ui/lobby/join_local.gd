@@ -17,7 +17,7 @@ func _ready() -> void:
 	status.add_theme_font_size_override("font_size", 22)
 	LanSession.connection_status_changed.connect(_set_status)
 	LanSession.room_joined.connect(_joined)
-	status.text = "Join a host on the same local network."
+	status.text = "Use the host's current LAN IP or room code. Both PCs need the same game update."
 
 
 func _join_pressed() -> void:

@@ -36,7 +36,7 @@ func _run() -> void:
 		prediction.receive({"position": Vector2(900, 400), "velocity": Vector2.ZERO, "lan_ack": 50}, true)
 		prediction.step(1.0 / 60.0, 51, {"move": Vector2.RIGHT, "sprint": true}, false)
 		assert(prediction.position == Vector2(900, 400), "Preparation/charge/action locks do not predict movement")
-		prediction.last_snapshot = Time.get_ticks_msec() / 1000.0 - 0.4
+		prediction.last_snapshot = Time.get_ticks_msec() / 1000.0 - 0.7
 		prediction.step(1.0 / 60.0, 52, {"move": Vector2.RIGHT, "sprint": true}, true)
 		assert(prediction.position == Vector2(900, 400) and prediction.pending.size() == 1, "Prediction stops when host updates are stale")
 		prediction.receive({"position": Vector2(900, 400), "velocity": Vector2.ZERO, "lan_ack": 52}, true)

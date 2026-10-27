@@ -37,6 +37,13 @@ func _run() -> void:
 			push_error("Taya can pickup did not trigger its visual")
 			get_tree().quit(1)
 			return
+		actor.can_transition_until = 0.0
+		actor.taya_visual.action = &""
+		actor._play("walk", Vector2.DOWN)
+		if actor.sprite.animation != &"carry_walk_down":
+			push_error("Taya can carry did not use the character's own walking art")
+			get_tree().quit(1)
+			return
 		actor.carrying_can = false
 		actor._process(1.0 / 60.0)
 		if actor.taya_visual.action != &"place":

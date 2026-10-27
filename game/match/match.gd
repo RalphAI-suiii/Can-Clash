@@ -16,8 +16,10 @@ const RUN_TO_LINE_SECONDS := 5.0
 const THROW_OFF_SECONDS := 26.0
 const RESULT_SECONDS := 3.5
 const TAG_NOTICE_SECONDS := 2.6
+const TAG_RESET_SECONDS := TAG_NOTICE_SECONDS
 const CAN_START := Vector2(1450, 610)
 const TAYA_START := CAN_START + Vector2(-180, 0)
+const TAG_RESET_TAYA_START := CAN_START + Vector2(-115, 0)
 
 var stage := "loading"
 var remaining := 7.0
@@ -41,6 +43,7 @@ var tag_notice_id := 0
 var tag_notice_until := 0.0
 var tag_notice_serial := 0
 var tag_notice_position := Vector2.ZERO
+var tag_reset_repositioned := false
 var tag_shade: ColorRect
 var tag_panel: PanelContainer
 var tag_title: Label
@@ -87,7 +90,7 @@ func _ready() -> void:
 	can.position = base.position
 	can.starts_toppled = false
 	can.auto_stand_up = false
-	can.show_target_ring = true
+	can.show_target_ring = false
 	can.base_path = NodePath("../CanBase")
 	can.collision_mask = 1 | 16
 	add_child(can)
@@ -112,7 +115,7 @@ func _sync_actors() -> void:
 		if not actors.has(id): throwoff_distances.erase(id)
 	if stage == "throw_off_result" and not actors.has(taya_id) and not actors.is_empty():
 		taya_id = int(actors.keys()[0])
-	if LanSession.is_host() and stage in ["preparation", "active"] and taya_id != 0 and not actors.has(taya_id) and not actors.is_empty():
+	if LanSession.is_host() and stage in ["preparation", "active", "tag_reset"] and taya_id != 0 and not actors.has(taya_id) and not actors.is_empty():
 		taya_id = int(LanSession.players[0].id)
 		var replacement: CharacterBody2D = actors[taya_id]
 		if is_instance_valid(replacement.active_slipper):
@@ -121,6 +124,7 @@ func _sync_actors() -> void:
 		replacement.set_meta("returning", false)
 		replacement.position = TAYA_START
 		replacement.set_taya_role(true)
+		if stage == "tag_reset": replacement.accept_local_input = false
 		can.reset_for_preview(can.base.position)
 		tag_immunity = 1.0
 		if notice_label != null:
@@ -212,6 +216,11 @@ func _physics_process(delta: float) -> void:
 		remaining = maxf(0.0, remaining - delta)
 		if remaining <= 0.0:
 			_start_scoring()
+	elif stage == "tag_reset":
+		if not tag_reset_repositioned and LanSession.clock_time() >= phase_deadline - TAG_RESET_SECONDS * 0.5:
+			_place_tag_reset_players()
+		if LanSession.clock_time() >= phase_deadline:
+			_resume_after_tag()
 	elif stage == "active":
 		remaining = maxf(0.0, remaining - delta)
 		for actor in actors.values():
@@ -452,19 +461,61 @@ func _tag_requested(thrower: Node2D, guard: CharacterBody2D) -> void:
 			guard.move_and_collide(-direction * remaining_gap)
 		thrower.remove_collision_exception_with(guard)
 		guard.remove_collision_exception_with(thrower)
-	guard.set_taya_role(false)
-	if is_instance_valid(thrower.active_slipper):
-		thrower.active_slipper.queue_free()
-	thrower.active_slipper = null
-	thrower.set_taya_role(true)
-	thrower.set_meta("returning", false)
-	thrower.set_meta("rapid_complete", false)
-	for shot in thrower.rapid_slippers:
-		if is_instance_valid(shot): shot.queue_free()
-	thrower.rapid_slippers.clear()
+	var tag_position: Vector2 = thrower.global_position
 	taya_id = thrower.get_meta("peer_id")
+	stage = "tag_reset"
+	phase_deadline = LanSession.clock_time() + TAG_RESET_SECONDS
+	tag_reset_repositioned = false
+	for id in actors:
+		var actor: CharacterBody2D = actors[id]
+		_clear_for_tag_reset(actor)
+		actor.set_taya_role(id == taya_id)
+		actor.accept_local_input = false
+		actor.movement_locked = true
 	tag_immunity = 1.0
-	_announce_new_taya(taya_id, thrower.global_position)
+	_announce_new_taya(taya_id, tag_position)
+
+func _clear_for_tag_reset(actor: CharacterBody2D) -> void:
+	if is_instance_valid(actor.active_slipper):
+		actor.active_slipper.set_physics_process(false)
+		actor.active_slipper.queue_free()
+	actor.active_slipper = null
+	for shot in actor.rapid_slippers:
+		if is_instance_valid(shot):
+			shot.set_physics_process(false)
+			shot.queue_free()
+	actor.rapid_slippers.clear()
+	if is_instance_valid(actor.taya_stun_projectile):
+		actor.taya_stun_projectile.set_physics_process(false)
+		actor.taya_stun_projectile.queue_free()
+	actor.taya_stun_projectile = null
+	actor.rapid_remaining = 0
+	actor.set_meta("returning", false)
+	actor.set_meta("left_safe", false)
+	actor.set_meta("retrieved", false)
+	actor.set_meta("rapid_complete", false)
+	actor.set_meta("rapid_hit", false)
+	actor.network_input = {}
+	actor.network_edges.clear()
+	actor.velocity = Vector2.ZERO
+
+func _place_tag_reset_players() -> void:
+	tag_reset_repositioned = true
+	for id in actors:
+		var actor: CharacterBody2D = actors[id]
+		actor.position = TAG_RESET_TAYA_START if id == taya_id else _line_point(int(LanSession.member(id).get("slot", 0)))
+		actor.velocity = Vector2.ZERO
+		actor._keep_out_of_can_circle()
+
+func _resume_after_tag() -> void:
+	if not tag_reset_repositioned: _place_tag_reset_players()
+	stage = "active"
+	phase_deadline = LanSession.clock_time() + remaining
+	for actor in actors.values():
+		actor.movement_locked = false
+		actor.network_input = {}
+		actor.network_edges.clear()
+	_notice("THROW!")
 
 func _announce_new_taya(id: int, position: Vector2) -> void:
 	tag_notice_id = id
@@ -633,7 +684,7 @@ func _update_hud() -> void:
 	if phase_label == null:
 		return
 	var time_text := "%d:%02d" % [int(ceil(remaining)) / 60, int(ceil(remaining)) % 60]
-	phase_label.text = "WAITING FOR PLAYERS TO LOAD" if stage == "loading" else "THROW OFF INCOMING" if stage in ["intro", "run_to_line"] else "WAITING FOR SLIPPERS" if stage == "throw_off" and remaining <= 0.0 else "THROW OFF  " + time_text if stage == "throw_off" else "INITIAL TAYA" if stage == "throw_off_result" else "TAYA PREPARATION  " + time_text if stage == "preparation" else "MATCH  " + time_text
+	phase_label.text = "WAITING FOR PLAYERS TO LOAD" if stage == "loading" else "THROW OFF INCOMING" if stage in ["intro", "run_to_line"] else "WAITING FOR SLIPPERS" if stage == "throw_off" and remaining <= 0.0 else "THROW OFF  " + time_text if stage == "throw_off" else "INITIAL TAYA" if stage == "throw_off_result" else "TAYA PREPARATION  " + time_text if stage == "preparation" else "RETURN TO THE LINE" if stage == "tag_reset" else "MATCH  " + time_text
 	phase_label.visible = stage != "intro" and stage != "throw_off_result"
 	_refresh_scoreboard_visibility()
 	var own: Node2D = actors.get(LanSession.local_id())
@@ -650,7 +701,7 @@ func _toggle_scoreboard() -> void:
 	_refresh_scoreboard_visibility()
 
 func _refresh_scoreboard_visibility() -> void:
-	var score_available := stage in ["preparation", "active"]
+	var score_available := stage in ["preparation", "active", "tag_reset"]
 	score_panel.visible = score_available and score_open
 	score_toggle.visible = score_available
 	score_toggle.set("expanded", score_open)
@@ -679,7 +730,7 @@ func _apply_extra_snapshot(data: Dictionary) -> void:
 			if tag_notice_until > LanSession.clock_time():
 				_spawn_tag_burst(tag_notice_position)
 	for actor in actors.values():
-		actor.movement_locked = stage == "throw_off"
+		actor.movement_locked = stage in ["throw_off", "tag_reset"]
 	if notice_label != null:
 		notice_label.text = data.get("notice", "")
 
@@ -689,7 +740,7 @@ func _leave_match() -> void:
 
 func _draw() -> void:
 	if is_instance_valid(can) and can.base != null:
-		draw_arc(can.base.position + Vector2(0, -27), 48.0, 0, TAU, 48, Color("fff5dc"), 3.0, true)
+		draw_arc(can.base.position + Vector2(0, -27), 48.0, 0, TAU, 48, Color("ffdb77"), 4.0, true)
 	draw_rect(SAFE, Color(0.1, 0.48, 0.9, 0.14))
 	draw_line(Vector2(SAFE.end.x, SAFE.position.y), Vector2(SAFE.end.x, SAFE.end.y), Color("80c9ff"), 5.0)
 
@@ -712,7 +763,7 @@ func _update_tag_announcement() -> void:
 	if tag_panel == null:
 		return
 	var time_left := tag_notice_until - LanSession.clock_time()
-	var visible := stage == "active" and tag_notice_id != 0 and time_left > 0.0
+	var visible := stage in ["active", "tag_reset"] and tag_notice_id != 0 and time_left > 0.0
 	tag_panel.visible = visible
 	tag_shade.visible = visible
 	if not visible:
@@ -721,7 +772,7 @@ func _update_tag_announcement() -> void:
 	var opacity := minf(1.0, minf(progress / 0.15, time_left / 0.35))
 	tag_panel.modulate.a = opacity
 	tag_panel.scale = Vector2.ONE * lerpf(0.9, 1.0, smoothstep(0.0, 0.28, progress))
-	tag_shade.color.a = 0.24 * opacity
+	tag_shade.color.a = (0.24 + 0.7 * sin(PI * progress) if stage == "tag_reset" else 0.24) * opacity
 	tag_title.text = "%s\nIS NOW TAYA!" % str(LanSession.member(tag_notice_id).get("name", "Player")).to_upper()
 
 func _update_camera(delta: float) -> void:

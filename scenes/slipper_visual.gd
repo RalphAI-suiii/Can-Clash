@@ -13,7 +13,7 @@ const AIR_DRAG: float = 0.18
 const GROUND_FRICTION: float = 330.0
 const FLOOR_BOUNCE: float = 0.34
 const WALL_BOUNCE: float = 0.55
-const CAN_HIT_RADIUS: float = 35.0
+const CAN_HIT_RADIUS: float = 24.0
 const WALL_COLLISION_MASK: int = 1 | 8 # World and slipper-only dividers.
 
 @export var pickup_radius: float = 72.0
@@ -46,10 +46,16 @@ func launch(thrower: Node2D, release_point: Vector2, aim: Vector2, charge: float
 	global_position = release_point
 	launch_origin = origin
 	charge_ratio = clampf(charge, 0.0, 1.0)
-	velocity = aim.normalized() * lerpf(MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED, charge_ratio) * speed_multiplier
+	velocity = aim.normalized() * launch_speed(charge_ratio, speed_multiplier)
 	vertical_speed = lerpf(190.0, 305.0, charge_ratio)
-	angular_speed = lerpf(TAU * 1.7, TAU * 3.0, charge_ratio)
+	spin_angle = aim.angle() + PI * 0.5
+	angular_speed = lerpf(TAU * 0.9, TAU * 1.6, charge_ratio)
 	queue_redraw()
+
+
+static func launch_speed(charge: float, speed_multiplier: float = 1.0) -> float:
+	var power := clampf(charge, 0.0, 1.0)
+	return lerpf(MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED, power) * speed_multiplier * (1.2 if power >= 0.999 else 1.0)
 
 
 func is_resting() -> bool:
@@ -251,41 +257,62 @@ func _draw() -> void:
 			var ray: Vector2 = Vector2.RIGHT.rotated(index * TAU / 8.0)
 			draw_line(ray * 27.0, ray * (36.0 + power * 10.0), Color(1.0, 0.92, 0.58, flash * 0.6), 2.0, true)
 
-	# Keep the original slipper silhouette at one size in every motion state.
+	# One top-down flip-flop silhouette at the same size in flight and at rest.
 	draw_set_transform(Vector2(0, -height * 0.55), spin_angle, Vector2.ONE)
 	draw_footwear(self, outline_color)
 
 
 static func draw_footwear(canvas: CanvasItem, ring_color: Color = Color.TRANSPARENT) -> void:
 	var outline: PackedVector2Array = PackedVector2Array([
-		Vector2(-29, -14), Vector2(-17, -20), Vector2(12, -19),
-		Vector2(28, -12), Vector2(32, -1), Vector2(27, 11),
-		Vector2(10, 17), Vector2(-16, 17), Vector2(-30, 9),
-		Vector2(-33, -1),
+		Vector2(0, -39), Vector2(-12, -38), Vector2(-20, -34),
+		Vector2(-24, -27), Vector2(-25, -18), Vector2(-22, -9),
+		Vector2(-19, 2), Vector2(-16, 14), Vector2(-14, 25),
+		Vector2(-9, 33), Vector2(-3, 37), Vector2(4, 37),
+		Vector2(10, 33), Vector2(15, 25), Vector2(17, 14),
+		Vector2(20, 2), Vector2(23, -9), Vector2(25, -18),
+		Vector2(24, -27), Vector2(20, -34), Vector2(12, -38),
+	])
+	var sole: PackedVector2Array = PackedVector2Array([
+		Vector2(0, -34), Vector2(-11, -33), Vector2(-17, -29),
+		Vector2(-20, -23), Vector2(-21, -17), Vector2(-18, -8),
+		Vector2(-16, 2), Vector2(-13, 14), Vector2(-11, 24),
+		Vector2(-7, 30), Vector2(0, 32), Vector2(7, 30),
+		Vector2(11, 24), Vector2(13, 14), Vector2(16, 2),
+		Vector2(18, -8), Vector2(21, -17), Vector2(20, -23),
+		Vector2(17, -29), Vector2(11, -33),
 	])
 	var footbed: PackedVector2Array = PackedVector2Array([
-		Vector2(-26, -10), Vector2(-16, -16), Vector2(11, -15),
-		Vector2(24, -9), Vector2(28, -1), Vector2(23, 8),
-		Vector2(9, 13), Vector2(-15, 13), Vector2(-27, 6),
+		Vector2(0, -30), Vector2(-10, -29), Vector2(-15, -25),
+		Vector2(-17, -18), Vector2(-15, -8), Vector2(-12, 4),
+		Vector2(-10, 17), Vector2(-8, 25), Vector2(-3, 28),
+		Vector2(3, 28), Vector2(8, 25), Vector2(10, 17),
+		Vector2(12, 4), Vector2(15, -8), Vector2(17, -18),
+		Vector2(15, -25), Vector2(10, -29),
 	])
-	var strap: PackedVector2Array = PackedVector2Array([
-		Vector2(-10, -15), Vector2(2, -18), Vector2(12, -14),
-		Vector2(14, 11), Vector2(3, 14), Vector2(-8, 12),
-	])
-	var colored_outline := outline.duplicate()
-	colored_outline.append(outline[0])
-	canvas.draw_polyline(colored_outline, ring_color, 8.0, true)
+	if ring_color.a > 0.0:
+		var colored_outline := outline.duplicate()
+		colored_outline.append(outline[0])
+		canvas.draw_polyline(colored_outline, ring_color, 7.0, true)
 	canvas.draw_colored_polygon(outline, Color("20130f"))
-	canvas.draw_colored_polygon(footbed, Color("9b653d"))
-	canvas.draw_colored_polygon(strap, Color("63391f"))
-	canvas.draw_line(Vector2(-15, -11), Vector2(8, -12), Color("d1a16d"), 2.0, true)
-	canvas.draw_line(Vector2(-20, 10), Vector2(13, 10), Color("4e2c1b"), 2.0, true)
+	canvas.draw_colored_polygon(sole, Color("8c522f"))
+	canvas.draw_colored_polygon(footbed, Color("d4a16b"))
+	canvas.draw_line(Vector2(-9, -27), Vector2(8, -27), Color("efd0a1"), 2.0, true)
+	canvas.draw_line(Vector2(-7, 23), Vector2(7, 23), Color("b77d4b"), 2.0, true)
+	# The toe post and split V-strap make the projectile read as a flip-flop.
+	var toe_post := Vector2(0, -19)
+	for anchor in [Vector2(-17, 8), Vector2(17, 8)]:
+		canvas.draw_line(anchor, toe_post, Color("2c1a12"), 11.0, true)
+		canvas.draw_line(anchor, toe_post, Color("754526"), 7.0, true)
+		canvas.draw_line(anchor + Vector2(0, -2), toe_post + Vector2(0, -2), Color("b97d48"), 2.0, true)
+		canvas.draw_circle(anchor, 4.0, Color("382116"))
+	canvas.draw_circle(toe_post, 5.0, Color("2c1a12"))
+	canvas.draw_circle(toe_post, 2.5, Color("c88b52"))
 
 
 static func predict_path(world: World2D, origin: Vector2, release: Vector2, aim: Vector2, charge: float, targets: Array, speed_multiplier: float = 1.0) -> PackedVector2Array:
 	var path := PackedVector2Array([release])
 	var point := release
-	var speed := aim.normalized() * lerpf(MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED, charge) * speed_multiplier
+	var speed := aim.normalized() * launch_speed(charge, speed_multiplier)
 	var rise := lerpf(190.0, 305.0, charge)
 	var elevation := 0.0
 	const STEP := 1.0 / 60.0

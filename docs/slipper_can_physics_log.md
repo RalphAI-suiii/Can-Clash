@@ -20,3 +20,17 @@
 Open `scenes/Slipper can demo.tscn` and run that scene. Aim at the silver can, hold M1 for a full charge, then release. Watch the slipper deflect and come to rest while the can tips, travels, bounces, and settles. Walk to the slipper and press E; press R to stand the can back up for another preview. Try a short charge after moving closer. `scenes/Taya can demo.tscn` still exercises Taya pickup, carry, reset, and lunge.
 
 This is a local mechanics pass. No five-player LAN authority, score award, power-up, or role-transfer ownership rule was added. The slipper checks the World layer for ricochets; any new obstacle must use that layer to participate. The rendered preview used a scripted charge and was visually inspected; continuous live mouse-and-keyboard play remains for the user to judge in Godot.
+
+## Slipper silhouette pass — 2026-10-27
+
+The procedural projectile now has a tapered heel, rounded toe, layered sole,
+toe post, and split V-strap instead of the previous broad oval silhouette.
+`draw_footwear` is shared by the thrown projectile and the possession icon,
+so both show the same flip-flop design. Launch orientation points its toe along
+the aim direction, and visual spin is slower so the straps remain readable.
+The visual stays one size through flight, can impact, bouncing, and rest;
+collision/scoring radii and travel physics were not changed by this pass.
+`tests/slipper_shape_render.gd` generated `tests/slipper_shape_preview.png`
+with grounded, flying, and special versions at game size and a 3× close-up.
+The preview was inspected. Godot's slipper pickup and can impact smoke checks
+passed; live input and a physical LAN view remain for in-game review.
