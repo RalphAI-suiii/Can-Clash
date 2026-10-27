@@ -11,6 +11,11 @@ func _capture() -> void:
 	background.size = Vector2(1920, 1080)
 	root.add_child(background)
 	var slipper_script: GDScript = load("res://scenes/slipper_visual.gd")
+	var can: Node2D = load("res://scenes/Taya can.tscn").instantiate()
+	can.set("starts_toppled", false)
+	background.add_child(can)
+	can.position = Vector2(150, 300)
+	can.set_physics_process(false)
 	var positions := [Vector2(430, 300), Vector2(960, 300), Vector2(1490, 300)]
 	for index in range(3):
 		for scale_factor in [1.0, 3.0]:

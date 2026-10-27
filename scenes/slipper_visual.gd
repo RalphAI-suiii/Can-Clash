@@ -14,6 +14,7 @@ const GROUND_FRICTION: float = 330.0
 const FLOOR_BOUNCE: float = 0.34
 const WALL_BOUNCE: float = 0.55
 const CAN_HIT_RADIUS: float = 24.0
+const FOOTWEAR_SCALE: float = 0.55
 const WALL_COLLISION_MASK: int = 1 | 8 # World and slipper-only dividers.
 
 @export var pickup_radius: float = 72.0
@@ -228,11 +229,11 @@ func _draw() -> void:
 	var power: float = charge_ratio
 	if special_kind != &"":
 		var glow := Color("ffb83e") if special_kind == &"rapid" else Color("61d8ff") if special_kind == &"ricochet" else Color("70edb7") if special_kind == &"self_return" else Color("db8aff") if special_kind == &"stun" else Color("ff83ca")
-		draw_arc(Vector2(0, -height * 0.55), 37.0, 0, TAU, 32, Color(glow, 0.7), 5.0, true)
+		draw_arc(Vector2(0, -height * 0.55), 23.0, 0, TAU, 32, Color(glow, 0.7), 4.0, true)
 	var shadow_alpha: float = 0.23 / (1.0 + height * 0.02)
 	draw_set_transform(Vector2(6, 6), 0.0, Vector2(1.0, 0.4))
 	for ring in range(6, 0, -1):
-		draw_circle(Vector2.ZERO, 23.0 + ring * 2.0, Color(0.18, 0.12, 0.08, shadow_alpha / 6.0))
+		draw_circle(Vector2.ZERO, 13.0 + ring * 1.2, Color(0.18, 0.12, 0.08, shadow_alpha / 6.0))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if not resting and velocity.length() > 55.0 and height > 2.0:
 		var trail: Vector2 = -velocity.normalized()
@@ -255,10 +256,10 @@ func _draw() -> void:
 	if flash > 0.0:
 		for index in range(8):
 			var ray: Vector2 = Vector2.RIGHT.rotated(index * TAU / 8.0)
-			draw_line(ray * 27.0, ray * (36.0 + power * 10.0), Color(1.0, 0.92, 0.58, flash * 0.6), 2.0, true)
+			draw_line(ray * 15.0, ray * (22.0 + power * 6.0), Color(1.0, 0.92, 0.58, flash * 0.6), 2.0, true)
 
 	# One top-down flip-flop silhouette at the same size in flight and at rest.
-	draw_set_transform(Vector2(0, -height * 0.55), spin_angle, Vector2.ONE)
+	draw_set_transform(Vector2(0, -height * 0.55), spin_angle, Vector2.ONE * FOOTWEAR_SCALE)
 	draw_footwear(self, outline_color)
 
 

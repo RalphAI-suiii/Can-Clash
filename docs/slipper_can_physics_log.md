@@ -34,3 +34,13 @@ collision/scoring radii and travel physics were not changed by this pass.
 with grounded, flying, and special versions at game size and a 3× close-up.
 The preview was inspected. Godot's slipper pickup and can impact smoke checks
 passed; live input and a physical LAN view remain for in-game review.
+
+## Slipper size correction — 2026-10-27
+
+The projectile's flip-flop silhouette now draws at 55% of its previous size:
+about 28 × 42 pixels, versus the standing can's roughly 41 × 56 pixels.
+Its shadow, special ring, and launch flash were reduced with it. The possession
+icon keeps its existing size; projectile hit detection, travel, and scoring are
+unchanged. The rendered comparison in `tests/slipper_shape_preview.png` places
+the actual can beside grounded, flying, and special slippers. Godot rendered it
+successfully, and pickup and can-impact smoke checks passed.
