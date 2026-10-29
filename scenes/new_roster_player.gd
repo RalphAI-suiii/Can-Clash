@@ -50,6 +50,7 @@ func _ready() -> void:
 	sprite.sprite_frames = frames
 	attack_sprite.sprite_frames = frames
 	idle_sprite_scale = Vector2.ONE * (0.72 if art_name == "leonardo" else 0.68)
+	collision_width_ratio = 0.55
 	walk_scale_multiplier = 0.75 / idle_sprite_scale.x
 	mirror_down_left_walk = false
 	mirror_up_left_walk = false
@@ -215,7 +216,7 @@ func _align_current_motion_frame() -> void:
 	var geometry: Dictionary = motion_geometry[name]
 	var heights: Array = geometry["heights"]
 	var content_height: float = float(heights[mini(sprite.frame, heights.size() - 1)])
-	var scale_factor := 200.0 / content_height
+	var scale_factor := 210.0 / content_height
 	sprite.scale = Vector2.ONE * scale_factor
 	sprite.rotation = 0.0
 	sprite.position = Vector2(0, -float(geometry["canvas_height"]) * scale_factor * 0.5)

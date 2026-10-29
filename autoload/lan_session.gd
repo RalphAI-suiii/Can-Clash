@@ -11,8 +11,8 @@ signal skill_requested(peer_id: int, pressed: bool, aim: Vector2)
 signal world_snapshot_received(snapshot: Dictionary)
 signal match_event_received(event: Dictionary)
 
-const PROTOCOL := "canclash-rules-13"
-const LAN_PROTOCOL := "canclash-lan-abilities-9"
+const PROTOCOL := "canclash-rules-17"
+const LAN_PROTOCOL := "canclash-lan-abilities-13"
 const ONLINE_CAPACITY := 4
 const PORT := 54652
 const MAX_PLAYERS := 5

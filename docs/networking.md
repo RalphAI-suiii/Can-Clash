@@ -218,3 +218,21 @@ frames, 51/61 remote moving frames, and negligible settled drift. A separate
 stress run with 160 ms delay and 20% loss also settled correctly. The probe
 asserts that an incoming snapshot does not reset a remote walk frame. A full
 physical hotspot playtest and rendered visual review are still needed.
+
+## Close-contact collision compatibility — 2026-10-27
+
+The host and client must share the smaller lower-body player collider and 54-pixel tag range so local movement prediction agrees with host collision. A two-process localhost host/joiner tag-reset probe passed after this change. Teammates on older builds must update before joining; physical cross-PC play is still unverified.
+
+Taya's dash now follows facing rather than a target or cursor. LAN and online identifiers advance to `canclash-lan-abilities-11` and `canclash-rules-15` for the combined collider/tag and dash rule changes.
+
+The later player-size pass scales live actors to 0.52, aligns Leonardo and Kay's padded AtlasTexture body colliders with their feet, and reduces contact-tag reach to 49 world pixels. LAN and online identifiers advance to `canclash-lan-abilities-12` and `canclash-rules-16`. A two-process localhost handoff and all three maps' fence checks passed; physical cross-PC play is still pending.
+
+The shared live-actor scale is now 0.52, with contact-tag reach adjusted to 49 world pixels. LAN/online identifiers advance again to `canclash-lan-abilities-12` / `canclash-rules-16` because an older joiner would predict a different player collider. A two-process localhost tag-reset handoff passed on the updated build; physical cross-PC play remains unverified.
+
+On 2026-10-29, the throw-off run holds its full five seconds for a synchronized 3–2–1 count. Can snapshots now include impact-audio strength; clients play the hit cue when the replicated can changes from standing to toppled with a fresh hit flash. LAN/online identifiers advance to `canclash-lan-abilities-13` / `canclash-rules-17`. This adds one scalar per can snapshot and does not change host ownership of the hit. Physical cross-PC sound synchronization remains unverified.
+
+## Joiner can, slipper, and animation smoothing — 2026-10-28
+
+LAN joiners now keep each remote walk/idle/sprint frame's own fitted position and scale while the cycle advances locally. Previously a 30 Hz host snapshot could overwrite a different local frame's foot anchor or size, making the character twitch despite continuous animation. Moving slippers now ease their position, height, and spin toward host snapshots, and the can's drawn sprite eases its position, rotation, and squash scale. The can node's authoritative position and state still update immediately for gameplay; new projectiles and large teleports snap to the host, and can state changes snap rather than trail. The host still decides collisions, hits, tags, and scores. This is presentation-only, so LAN/online compatibility identifiers are unchanged.
+
+The two-process localhost `tests/lan_responsiveness_smoke.gd` check now asserts remote frame/foot-size independence and that a joiner's can and slipper visuals move between snapshots. With 120 ms delayed snapshots and 10% dropped packets, it passed: local response 1.5 ms, 61/61 local moving frames, 47/61 remote moving frames, and 0 px settled drift. A harsher 160 ms/20% run also passed: 5.1 ms response, 61/61 local moving frames, 49/61 remote moving frames, and 0 px settled drift. These frame counts include startup/transport delay and are not a visual smoothness score. A physical cross-PC Wi-Fi/hotspot playtest and actual joiner FPS measurement are still needed; this code cannot remove router jitter or a slow PC's frame drops.

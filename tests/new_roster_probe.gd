@@ -42,7 +42,7 @@ func _run() -> void:
 							var geometry: Dictionary = actor.motion_geometry[String(animation)]
 							var visible_height: float = body.scale.y * float(geometry["heights"][frame])
 							var foot_y: float = body.position.y + body.scale.y * float(geometry["canvas_height"]) * 0.5
-							if absf(visible_height - 200.0) > 0.2 or absf(foot_y) > 0.2:
+							if absf(visible_height - 210.0) > 0.2 or absf(foot_y) > 0.2:
 								problems.append("Size/ground %s %s frame %d" % [path, animation, frame])
 				for action in ["idle", "walk", "sprint"]:
 					var taya_animation := StringName("taya_" + action + "_" + direction)

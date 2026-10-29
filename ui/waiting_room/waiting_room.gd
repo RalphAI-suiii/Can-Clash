@@ -1,6 +1,7 @@
 extends "res://game/network_world.gd"
 
 const CHARACTER_SELECT = preload("res://ui/character_select/character_select.tscn")
+const PRACTICE_TUTORIAL = preload("res://ui/waiting_room/practice_tutorial.gd")
 
 @export var local_player_id: int = 1
 
@@ -25,6 +26,8 @@ var more_bots: Button
 var developer_map_picker: OptionButton
 var developer_role_picker: OptionButton
 var selection_overlay: Control
+var tutorial: Node
+var stage := "waiting"
 
 
 func _ready() -> void:
@@ -57,7 +60,18 @@ func _ready() -> void:
 		$HUD/Screen/ReadyFrame.hide()
 		ready_status.hide()
 		$ReadyPanel.hide()
-		$HUD/Screen/Title.text = "FREE PRACTICE"
+		$HUD/Screen/Title.hide()
+		$HUD/Screen/PracticeTitle.hide()
+		$HUD/Screen/PracticeHits.hide()
+		room_code_button.hide()
+		$HUD/Screen/ResetPractice.text = "Restart"
+		$HUD/Screen/ResetPractice.tooltip_text = "Restart the guided tutorial."
+		$HUD/Screen/ResetFrame.offset_left = 52
+		$HUD/Screen/ResetFrame.offset_right = 274
+		$HUD/Screen/ResetPractice.offset_left = 60
+		$HUD/Screen/ResetPractice.offset_right = 266
+		tutorial = PRACTICE_TUTORIAL.new()
+		add_child(tutorial)
 	$HUD/Screen/ResetPractice.visible = LanSession.is_host()
 	$HUD/Screen/ResetFrame.visible = LanSession.is_host()
 	_open_character_select()
@@ -112,6 +126,9 @@ func _on_can_state_changed(_new_state: int, can: CharacterBody2D) -> void:
 func _reset_practice() -> void:
 	if not LanSession.is_host():
 		return
+	if LanSession.mode == "practice" and is_instance_valid(tutorial):
+		tutorial.restart()
+		return
 	# Keep the full Thrower scene's cancellation and retrieval behavior.
 	player.set_taya_role(false)
 	if is_instance_valid(player.active_slipper):
@@ -140,6 +157,21 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if is_instance_valid(selection_overlay):
 			return
 		_leave()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if LanSession.mode != "practice" or not is_instance_valid(player) or is_instance_valid(selection_overlay) or not event is InputEventMouseButton:
+		return
+	var click := event as InputEventMouseButton
+	if click.button_index != MOUSE_BUTTON_RIGHT or click.pressed and get_viewport().gui_get_hovered_control() != null:
+		return
+	if player.is_taya:
+		if click.pressed: player.begin_taya_stun_aim()
+		else: player.release_taya_stun(get_global_mouse_position())
+	elif click.pressed and player.has_thrower_special() and player.skill_charge == 3:
+		player.special_armed = not player.special_armed
+		player.queue_redraw()
+	get_viewport().set_input_as_handled()
 
 func _local_inputs_enabled() -> bool:
 	return not is_instance_valid(selection_overlay)

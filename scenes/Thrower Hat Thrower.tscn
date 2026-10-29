@@ -46,6 +46,7 @@ up_diagonal_lean_degrees = 2.0
 diagonal_walk_y_offset = -2.0
 sprint_cardinal_scale = 0.435
 sprint_cardinal_y_offset = -3.0
+motion_visible_height = 210.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1813916401]
 position = Vector2(0, -99)

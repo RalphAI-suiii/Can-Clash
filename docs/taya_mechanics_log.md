@@ -92,3 +92,7 @@ Static inspection confirmed four isolated opaque character components in each sh
 ## Later slipper/can physics integration — 2026-10-19
 
 The earlier visual-only slipper and one-tween can fall described above have been replaced in the active `feature/player-movement` checkout. The can now receives a charge-scaled impact, bounces, and must settle before Taya can pick it up; the owner retrieves the persistent slipper after it stops. The prior Taya pickup/reset behavior passed a regression check. Full change details, measured weak/strong hit results, visual review, and remaining LAN limits are in `docs/slipper_can_physics_log.md`.
+
+## Integrated facing dash — 2026-10-27
+
+The current `merge_player_roles/` match supersedes the older automatic-target lunge described above. Space uses Taya's visible eight-way facing direction for a straight dash; neither the nearest thrower nor the cursor changes its course. Only a thrower directly in the dash path can get the temporary pass-through collision exception, and only when the dash can land beyond them. Contact tagging and the cooldown still apply. `tests/taya_facing_lunge_smoke.gd` passed all eight facing/animation sectors, an in-between facing angle, off-path and cursor-away checks, a straight-path tag, and collision restoration in Godot 4.7.2. Human input and physical LAN play remain pending.

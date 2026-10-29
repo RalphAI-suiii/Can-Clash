@@ -17,6 +17,7 @@ extends CharacterBody2D
 @export var diagonal_walk_y_offset: float = 0.0
 @export var sprint_cardinal_scale: float = 1.0
 @export var sprint_cardinal_y_offset: float = 0.0
+@export var motion_visible_height: float = 0.0
 
 const DIRECTIONS: Array[String] = [
 	"right", "down_right", "down", "down_left",
@@ -32,6 +33,7 @@ var network_input: Dictionary = {}
 var network_edges: Dictionary = {}
 var movement_min_x := -INF
 var movement_locked := false
+var motion_bounds: Dictionary = {}
 
 
 func apply_network_input(packet: Dictionary) -> void:
@@ -69,6 +71,8 @@ func _ready() -> void:
 	# Center the character when running this scene directly; keep its origin for level instances.
 	if get_parent() == get_tree().root:
 		global_position = get_viewport_rect().size * 0.5
+	if motion_visible_height > 0.0:
+		sprite.frame_changed.connect(_fit_motion_frame)
 	_play("idle", facing)
 
 
@@ -141,6 +145,27 @@ func _play(action: String, direction: Vector2) -> void:
 		sprite.play(animation_name)
 		if keep_step:
 			sprite.set_frame_and_progress(step_frame, step_progress)
+	_fit_motion_frame()
+
+
+func _fit_motion_frame() -> void:
+	if motion_visible_height <= 0.0 or not sprite.sprite_frames:
+		return
+	var animation_name := String(sprite.animation)
+	if not ("idle_" in animation_name or "walk_" in animation_name or "sprint_" in animation_name):
+		return
+	var texture: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if texture == null:
+		return
+	var id := texture.get_instance_id()
+	if not motion_bounds.has(id):
+		motion_bounds[id] = texture.get_image().get_used_rect()
+	var bounds: Rect2i = motion_bounds[id]
+	if bounds.size.y <= 0:
+		return
+	var fitted_scale := motion_visible_height / float(bounds.size.y)
+	sprite.scale = Vector2.ONE * fitted_scale
+	sprite.position = Vector2(0.0, -(float(bounds.end.y) - texture.get_size().y * 0.5) * fitted_scale)
 
 
 func _movement_animation(action: String, direction_name: String) -> StringName:

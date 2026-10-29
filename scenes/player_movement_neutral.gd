@@ -12,13 +12,13 @@ const TAG_DELAY := 3.0
 var tag_ready_at := 0.0
 @export var can_path: NodePath
 @export var lunge_distance: float = 300.0
-@export var lunge_lock_radius: float = 260.0
 @export var lunge_cooldown_seconds: float = 10.0
 @export var safe_strip_rect: Rect2
 @export var allowed_throw_rect: Rect2
 var require_standing_can := false
 @export var throw_speed_multiplier := 1.0
 @export var throw_grunt: AudioStream
+@export var collision_width_ratio := 0.58
 @export var show_player_ring := true
 @export var show_gameplay_overlays := true
 var taya_min_x := -INF
@@ -31,8 +31,8 @@ const THROW_BURST = preload("res://scenes/throw_burst.gd")
 const TAYA_STUN_SLIPPER = preload("res://scenes/taya_stun_slipper.gd")
 const SKILL_FONT = preload("res://assets/fonts/TitanOne-Regular.ttf")
 const THROW_ORIGIN: Vector2 = Vector2(0.0, -103.0)
-const TAG_DISTANCE: float = 132.0
-const PLAYER_CLEARANCE: float = 134.0
+const TAG_DISTANCE: float = 49.0
+const PLAYER_CLEARANCE: float = 90.0
 const CAN_GUARD_CLEARANCE: float = 100.0
 const LUNGE_WINDUP: float = 0.13
 const LUNGE_TRAVEL_TIME: float = 0.30
@@ -71,7 +71,6 @@ var taya_action: StringName = &""
 var lunge_direction: Vector2 = Vector2.DOWN
 var lunge_target: Node2D
 var lunge_collision_exception: PhysicsBody2D
-var lunge_target_reached: bool = false
 var lunge_elapsed: float = 0.0
 var lunge_travelled: float = 0.0
 var lunge_launched: bool = false
@@ -110,6 +109,7 @@ func _ready() -> void:
 	possession_icon.scale = Vector2.ONE * 1.5
 	add_child(possession_icon)
 	super._ready()
+	_configure_body_collision.call_deferred()
 	_build_reaction_frames()
 	_build_cast_frames()
 	if throw_grunt != null:
@@ -146,6 +146,42 @@ func _ready() -> void:
 	throw_status.add_theme_constant_override("outline_size", 5)
 	throw_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(throw_status)
+
+
+func _configure_body_collision() -> void:
+	var texture: Texture2D = sprite.sprite_frames.get_frame_texture(&"idle_down", 0)
+	if texture == null:
+		return
+	var image: Image = texture.get_image()
+	var bitmap := BitMap.new()
+	bitmap.create_from_image_alpha(image, 0.5)
+	var outlines: Array[PackedVector2Array] = bitmap.opaque_to_polygons(Rect2i(Vector2i.ZERO, image.get_size()), 5.0)
+	if outlines.is_empty():
+		return
+	var visible := Rect2(outlines[0][0], Vector2.ZERO)
+	for point in outlines[0]:
+		visible = visible.expand(point)
+	var half_width: float = visible.size.x * sprite.scale.x * collision_width_ratio * 0.5
+	var half_height: float = minf(visible.size.y * sprite.scale.y * 0.2, 40.0)
+	var canvas_offset := (texture as AtlasTexture).margin.position if texture is AtlasTexture else Vector2.ZERO
+	var foot: Vector2 = sprite.transform * (Vector2(visible.get_center().x, visible.end.y) + canvas_offset - texture.get_size() * 0.5)
+	var center := foot - Vector2(0.0, half_height)
+	var body := ConvexPolygonShape2D.new()
+	var points := PackedVector2Array([
+		Vector2(-half_width, -half_height * 0.55),
+		Vector2(-half_width * 0.55, -half_height),
+		Vector2(half_width * 0.55, -half_height),
+		Vector2(half_width, -half_height * 0.55),
+		Vector2(half_width, half_height * 0.55),
+		Vector2(half_width * 0.55, half_height),
+		Vector2(-half_width * 0.55, half_height),
+		Vector2(-half_width, half_height * 0.55),
+	])
+	for index in range(points.size()):
+		points[index] = (points[index] + center).round()
+	body.points = points
+	$CollisionShape2D.position = Vector2.ZERO
+	$CollisionShape2D.shape = body
 
 
 func _physics_process(delta: float) -> void:
@@ -378,24 +414,22 @@ func _start_taya_action(next_action: StringName) -> void:
 
 func _start_lunge() -> void:
 	_restore_lunge_collision(false)
-	lunge_target = _find_lunge_target()
-	if can_tag() and lunge_target != null and lunge_target.global_position.distance_to(global_position) <= TAG_DISTANCE:
-		_try_tag()
-		return
-	var aim: Vector2 = _aim_position() - global_position
-	if lunge_target != null:
-		aim = lunge_target.global_position - global_position
-	lunge_direction = aim.normalized() if aim.length_squared() > 400.0 else facing.normalized()
-	facing = lunge_direction
+	if facing.is_zero_approx(): facing = Vector2.DOWN
+	lunge_direction = Vector2.RIGHT.rotated(float(_facing_sector()) * PI / 4.0)
 	lunge_elapsed = 0.0
 	lunge_travelled = 0.0
-	lunge_target_reached = false
 	lunge_launched = false
 	lunge_landed = false
-	# Only phase through the locked thrower when the dash can land beyond their body.
-	if lunge_target is PhysicsBody2D and aim.length() + PLAYER_CLEARANCE + 16.0 <= lunge_distance:
+	# A straight dash can pass through a thrower directly ahead if it can land clear.
+	var ray_start: Vector2 = global_position + Vector2(0.0, -20.0 * scale.y)
+	var ray := PhysicsRayQueryParameters2D.create(ray_start, ray_start + lunge_direction * lunge_distance, collision_mask, [get_rid()])
+	var hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(ray)
+	lunge_target = hit.get("collider") as Node2D
+	if lunge_target is PhysicsBody2D and lunge_target.is_in_group("throwers") and _is_eligible_thrower(lunge_target) and global_position.distance_to(lunge_target.global_position) + PLAYER_CLEARANCE * maxf(scale.x, lunge_target.scale.x) + 16.0 <= lunge_distance:
 		lunge_collision_exception = lunge_target
 		add_collision_exception_with(lunge_collision_exception)
+	else:
+		lunge_target = null
 	next_lunge_time = Time.get_ticks_msec() / 1000.0 + lunge_cooldown_seconds
 	_start_taya_action(&"lunge")
 
@@ -415,28 +449,7 @@ func _advance_lunge(delta: float) -> void:
 		_land_lunge()
 		return
 
-	var target_distance: float = INF
-	if is_instance_valid(lunge_target) and _is_eligible_thrower(lunge_target):
-		var toward_target: Vector2 = lunge_target.global_position - global_position
-		target_distance = toward_target.length()
-		if target_distance <= TAG_DISTANCE:
-			_try_tag()
-			if not is_taya or taya_action != &"lunge":
-				return
-			lunge_target_reached = true
-			if lunge_collision_exception == null:
-				_land_lunge()
-				return
-		if not lunge_target_reached:
-			var desired_direction: Vector2 = toward_target / target_distance
-			lunge_direction = lunge_direction.lerp(desired_direction, minf(delta * 15.0, 1.0)).normalized()
-			facing = lunge_direction
-			taya_visual.sector = _facing_sector()
-			taya_visual.queue_redraw()
-
 	var step: float = minf(lunge_distance / LUNGE_TRAVEL_TIME * delta, lunge_distance - lunge_travelled)
-	if target_distance < INF and lunge_collision_exception == null:
-		step = minf(step, maxf(target_distance - TAG_DISTANCE + 2.0, 0.0))
 	var before: Vector2 = global_position
 	velocity = lunge_direction * step / maxf(delta, 0.001)
 	_move_character()
@@ -445,10 +458,7 @@ func _advance_lunge(delta: float) -> void:
 	_try_tag()
 	if not is_taya or taya_action != &"lunge":
 		return
-	if is_instance_valid(lunge_target) and global_position.distance_to(lunge_target.global_position) <= TAG_DISTANCE:
-		lunge_target_reached = true
-	var reached_target: bool = is_instance_valid(lunge_target) and _is_eligible_thrower(lunge_target) and global_position.distance_to(lunge_target.global_position) <= TAG_DISTANCE
-	if moved < step * 0.2 or lunge_travelled >= lunge_distance - 0.5 or (reached_target and lunge_collision_exception == null):
+	if moved < step * 0.2 or lunge_travelled >= lunge_distance - 0.5:
 		_land_lunge()
 
 
@@ -466,8 +476,9 @@ func _restore_lunge_collision(separate: bool) -> void:
 	if separate and is_instance_valid(lunge_target) and lunge_target is PhysicsBody2D:
 		var away: Vector2 = global_position - lunge_target.global_position
 		var direction: Vector2 = away.normalized() if not away.is_zero_approx() else -lunge_direction
-		if away.length() < PLAYER_CLEARANCE:
-			global_position = lunge_target.global_position + direction * PLAYER_CLEARANCE
+		var clearance: float = PLAYER_CLEARANCE * maxf(scale.x, lunge_target.scale.x) + 2.0
+		if away.length() < clearance:
+			global_position = lunge_target.global_position + direction * clearance
 	_keep_out_of_can_circle()
 	if is_instance_valid(lunge_collision_exception):
 		remove_collision_exception_with(lunge_collision_exception)
@@ -486,19 +497,6 @@ func _spawn_lunge_dust(landing: bool) -> void:
 		dust.drift_speed = 82.0 if landing else 64.0
 		dust.lifetime = 0.66 if landing else 0.57
 		dust.scale = Vector2.ONE * (1.35 if landing else 1.12)
-
-
-func _find_lunge_target() -> Node2D:
-	var nearest: Node2D
-	var nearest_distance_squared: float = lunge_lock_radius * lunge_lock_radius
-	for candidate in get_tree().get_nodes_in_group("throwers"):
-		if not candidate is Node2D or not _is_eligible_thrower(candidate):
-			continue
-		var distance_squared: float = global_position.distance_squared_to(candidate.global_position)
-		if distance_squared < nearest_distance_squared:
-			nearest = candidate
-			nearest_distance_squared = distance_squared
-	return nearest
 
 
 func _is_eligible_thrower(candidate: Node2D) -> bool:

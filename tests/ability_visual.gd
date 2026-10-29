@@ -13,7 +13,7 @@ func _ready() -> void:
 			var path := "res://scenes/Thrower %s.tscn" % LanSession.CHARACTERS[column]
 			var actor = load(path).instantiate()
 			actor.position = Vector2(230 + column * 360, 225 + row * 225)
-			actor.scale = Vector2.ONE * 0.576
+			actor.scale = Vector2.ONE * 0.52
 			add_child(actor)
 			actor.set_physics_process(false)
 			actor.show_player_ring = false

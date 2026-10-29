@@ -21,6 +21,10 @@ func _run() -> void:
 		push_error("Leonardo or Kay did not spawn with the selected art")
 		get_tree().quit(1)
 		return
+	if not leonardo.scale.is_equal_approx(Vector2.ONE * arena_match.player_scale) or not kay.scale.is_equal_approx(Vector2.ONE * arena_match.player_scale):
+		push_error("New roster characters have a different match size")
+		get_tree().quit(1)
+		return
 	if leonardo.has_thrower_special() or kay.has_thrower_special():
 		push_error("New characters gained an unassigned thrower special")
 		get_tree().quit(1)

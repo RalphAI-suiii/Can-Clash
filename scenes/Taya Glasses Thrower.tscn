@@ -9,6 +9,9 @@
 [ext_resource type="Texture2D" path="res://assets/characters/sprites/relaxed/glasses_cardinal.png" id="relaxed_cardinal"]
 
 [ext_resource type="Texture2D" path="res://assets/characters/sprites/relaxed/glasses_diagonal.png" id="relaxed_diagonal"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/motion_polish/glasses_idle.png" id="polish_idle"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/motion_polish/glasses_walk_side.png" id="polish_walk"]
+[ext_resource type="Texture2D" path="res://assets/characters/sprites/motion_polish/glasses_sprint_side.png" id="polish_sprint"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_charge_background"]
 bg_color = Color(0.26, 0.16, 0.1, 1)
@@ -41,6 +44,9 @@ throw_grunt = ExtResource("5_throw_grunt")
 art_kind = &"thrower"
 relaxed_cardinal = ExtResource("relaxed_cardinal")
 relaxed_diagonal = ExtResource("relaxed_diagonal")
+neutral_idle_sheet = ExtResource("polish_idle")
+side_walk_sheet = ExtResource("polish_walk")
+side_sprint_sheet = ExtResource("polish_sprint")
 is_taya = true
 idle_sprite_y = -104.0
 walk_sprite_y = -104.0

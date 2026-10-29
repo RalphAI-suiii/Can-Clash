@@ -49,7 +49,7 @@ func _run() -> void:
 		game._physics_process(0.01)
 		assert(game.stage == "preparation")
 		game._physics_process(0.01)
-		assert(game.stage == "active" and game.remaining == 600.0)
+		assert(game.stage == "active" and game.remaining == 300.0)
 		game._physics_process(0.01)
 		for actor in game.actors.values(): actor.network_input = {}
 		guard.position = Vector2(game.SAFE.end.x + 3, 610)
@@ -60,7 +60,10 @@ func _run() -> void:
 		await _frames(45)
 		assert(guard.position.x >= game.SAFE.end.x, "Lunges cannot cross into blue")
 		guard.set_taya_role(true)
+		if guard.taya_action == &"lunge":
+			guard._land_lunge()
 		guard.position = Vector2(1250, 700)
+		guard.velocity = Vector2.ZERO
 		guard.network_input = {}
 		thrower.position = Vector2(700, 610)
 		thrower._start_charge()
@@ -82,24 +85,27 @@ func _run() -> void:
 		var score_before: int = game.scores[game.taya_id]
 		game._tag_requested(thrower, guard)
 		assert(game.scores[game.taya_id] == score_before)
-		# Exercise actual E pickup/place actions, not only direct can setters.
-		game.can.position = game.CAN_START - Vector2(70, 0)
+		# Can pickup and return happen automatically at close range.
+		game.can.position = game.CAN_START - Vector2(200, 0)
 		game.can.topple()
 		await _frames(180)
 		assert(game.can.is_toppled() and game.can.is_settled() and not guard.can_tag())
 		assert(game.can.base.position == game.CAN_START)
-		guard.position = game.can.position + Vector2(55, 0)
-		guard.apply_network_input({"interact": true})
+		var thrower_slot := 0
+		for other in game.actors.values():
+			if other.is_taya:
+				continue
+			other.position = Vector2(600 + thrower_slot * 100, 1000)
+			thrower_slot += 1
+		guard.position = game.can.position + Vector2(35, 0)
 		await _frames(45)
 		assert(guard.carrying_can and game.can.is_carried() and not guard.can_tag())
-		guard.apply_network_input({"interact": false})
-		guard.position = game.CAN_START - Vector2(55, 0)
-		guard.apply_network_input({"interact": true})
+		guard.position = game.CAN_START - Vector2(35, 0)
 		await _frames(45)
 		assert(game.can.is_standing() and game.can.position == game.CAN_START and not guard.carrying_can)
 		for actor in game.actors.values():
 			actor.network_input = {}
-			assert(actor.scale == Vector2.ONE * 0.576)
+			assert(actor.scale == Vector2.ONE * game.player_scale)
 		var world := game.get_child(0).get_node("World")
 		if map_index == 0:
 			assert(world.get_node("Ring 1").position.is_equal_approx(Vector2(668.5, 21)), "Right hoop must retain its authored court position")

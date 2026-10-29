@@ -115,8 +115,17 @@ func _run() -> void:
 			if frame_count < 2: continue
 			var independent_frame: int = (int(data.frame) + 1) % frame_count
 			remote.sprite.frame = independent_frame
-			delayed_world._apply_snapshot(last_world)
+			var local_fit: Vector2 = remote.sprite.scale
+			var local_foot_anchor: Vector2 = remote.sprite.position
+			var altered: Dictionary = last_world.duplicate(true)
+			for entry in altered.actors:
+				if entry.id == 1:
+					entry.sprite_scale = Vector2(9, 9)
+					entry.sprite_pos = Vector2(999, 999)
+			delayed_world._apply_snapshot(altered)
 			assert(remote.sprite.frame == independent_frame, "Remote walking frames must not be reset by each snapshot")
+			assert(remote.sprite.scale == local_fit, "Remote walking frames must retain their own fitted size")
+			assert(remote.sprite.position == local_foot_anchor, "Remote walking frames must retain their own foot anchor")
 			checked_remote_frame = true
 		assert(checked_remote_frame, "Expected a multi-frame remote walking animation")
 		_mark("stopped")
@@ -136,6 +145,29 @@ func _run() -> void:
 			assert(remote_moving > frames * 0.65, "Remote actor movement must be smoothed between snapshots")
 			assert(drift < 3.0, "Prediction must converge back to authoritative position after stopping")
 			assert(remote_drift < 3.0, "Remote smoothing must converge after stopping")
+		# Physics remains at each host snapshot; only the drawn can and slipper
+		# should move partway toward the next visual position on a render frame.
+		session.world_snapshot_received.disconnect(_delayed_snapshot)
+		delayed_world = null
+		var slipper: Node2D = load("res://scenes/slipper_visual.gd").new()
+		current_scene.add_child(slipper)
+		slipper.set_physics_process(false)
+		var shot := {"position": Vector2(100, 100), "velocity": Vector2(300, 0), "height": 0.0, "spin": 0.0, "charge": 0.5, "resting": false, "bounces": 0, "lost": 0.0, "visible": true, "age": 0.1, "kind": "", "returning": false}
+		current_scene._apply_slipper_snapshot(slipper, remote, shot)
+		shot.position = Vector2(130, 100)
+		shot.height = 30.0
+		shot.spin = 1.0
+		current_scene._apply_slipper_snapshot(slipper, remote, shot)
+		assert(slipper.position == Vector2(100, 100) and slipper.height == 0.0)
+		current_scene._process(1.0 / 60.0)
+		assert(slipper.position.x > 100.0 and slipper.position.x < 130.0 and slipper.height > 0.0 and slipper.height < 30.0)
+		var can: Node2D = current_scene.get_node("PracticeCan")
+		var visual_before: Vector2 = can.can_sprite.global_position
+		var can_position: Vector2 = can.position + Vector2(30, 0)
+		current_scene._apply_snapshot({"actors": [], "cans": [{"name": String(can.name), "position": can_position, "state": can.state, "height": can.height, "tilt": can.tilt_angle, "settled": can.settled, "flash": 0.0, "squash": can.squash, "auto_stand": can.auto_stand_pending, "base": can.base.global_position}], "extra": {"stage": "waiting"}})
+		assert(can.position == can_position and can.can_sprite.global_position.distance_to(visual_before) < 1.0)
+		current_scene._process(1.0 / 60.0)
+		assert(can.can_sprite.global_position.x > visual_before.x and can.can_sprite.global_position.x < visual_before.x + 30.0)
 		_mark("checked")
 		print("PASS: LAN responsiveness measurement completed")
 	for player in root.get_node("Music").players: player.stop()

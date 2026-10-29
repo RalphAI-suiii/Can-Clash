@@ -2,8 +2,23 @@
 
 Run the project for the main menu. **Play Local → Host** opens this waiting room;
 **Join** accepts its room code or LAN IP. Enter `developer-mode` in Join for a
-solo test with four bots when the match begins. **Practice** opens free practice.
+solo test with four bots when the match begins. **Practice** opens a guided
+thrower and Taya tutorial in this room; Free practice remains available from
+its guide.
 Running `res://ui/waiting_room/waiting_room.tscn` directly defaults to developer mode.
+
+In Practice, character selection comes first. The guide then checks walking
+to a marked toe-line, sprinting, a can hit, slipper retrieval, and returning
+to safety. Characters with specials fill three orbs, arm with right mouse, and
+launch a special. The player then becomes Taya to recover and reset a displaced
+can, lunge, tag a stationary practice thrower, and land a stun slipper. The
+top-left Restart button starts the course again; Free practice removes the
+guide. Each completed task pauses on a success message until Continue is
+pressed. The guide uses mouse-button diagrams and keycaps for controls. The
+can stands at its base marker and Taya steps aside so the reset is visible.
+The Taya lesson restores the original base even if earlier thrower hits made
+the can stand up at another landing spot.
+This is a solo lesson and does not change saved match statistics.
 
 The directly overhead, orthographic clubhouse has a waiting room on the right and a connected
 slipper-practice bay on the left. Both areas are walkable. The player board and

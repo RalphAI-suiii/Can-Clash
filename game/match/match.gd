@@ -5,8 +5,17 @@ const CATALOG = preload("res://game/maps/map_catalog.gd")
 const TAG_BURST = preload("res://game/match/tag_burst.gd")
 const SCOREBOARD = preload("res://game/match/scoreboard.gd")
 const SCORE_TOGGLE = preload("res://game/match/score_toggle.gd")
-# Inner fence edges; shared by slipper limits and camera framing.
+const THROWOFF_TITLE_SFX = preload("res://assets/audio/sfx/throwoff_title.wav")
+const THROWOFF_TICK_SFX = preload("res://assets/audio/sfx/throwoff_tick.wav")
+const THROWOFF_GO_SFX = preload("res://assets/audio/sfx/throwoff_go.wav")
+const CAN_HIT_SFX = preload("res://assets/audio/sfx/can_hit.wav")
+# Inner fence edges for slipper and player movement limits.
 const ARENA := Rect2(153, 49, 1568, 1023)
+# Camera may show the full court artwork beyond the collision fence.
+const CAMERA_BOUNDS := Rect2(0, 0, 1920, 1080)
+const CAMERA_NORMAL_ZOOM := 1.25
+const CAMERA_AIM_ZOOM := 1.05
+const CAMERA_SLIPPER_ZOOM := 1.18
 # Cover the visible floor to the fence/curb, not only the inset movement bounds.
 const SAFE := Rect2(140, 0, 390, 1072)
 const PREPARATION_SECONDS := 7.0
@@ -59,6 +68,13 @@ var camera_slipper: Node2D
 var camera_landing_point := Vector2.ZERO
 var camera_return_at := 0.0
 var camera_following_slipper := false
+var title_sfx: AudioStreamPlayer
+var tick_sfx: AudioStreamPlayer
+var go_sfx: AudioStreamPlayer
+var can_sfx: AudioStreamPlayer
+var last_sfx_stage := "loading"
+var last_countdown := 4
+var last_can_state := 0
 
 func _ready() -> void:
 	Music.play_music("lobby")
@@ -98,6 +114,7 @@ func _ready() -> void:
 	LanSession.match_event_received.connect(_match_event)
 	LanSession.skill_requested.connect(_skill_requested)
 	_build_hud()
+	_build_sfx()
 	_build_camera()
 	# Automatically acknowledge scene loading; no rules dialog gates the match.
 	LanSession.acknowledge_tutorial()
@@ -180,7 +197,6 @@ func _physics_process(delta: float) -> void:
 			_start_run_to_line()
 	elif stage == "run_to_line":
 		remaining = maxf(0.0, phase_deadline - LanSession.clock_time())
-		var all_arrived := true
 		for id in actors:
 			var actor: CharacterBody2D = actors[id]
 			var slot: int = int(LanSession.member(id).slot)
@@ -190,14 +206,14 @@ func _physics_process(delta: float) -> void:
 				target = Vector2(600.0, _spawn_point(slot).y)
 			var offset: Vector2 = target - actor.position
 			if offset.length() > 12.0:
-				all_arrived = false
 				actor.velocity = actor.get_meta("intro_velocity", Vector2.ZERO)
 				actor.move_from_input(delta, offset.normalized(), true, true, true)
 				actor.set_meta("intro_velocity", actor.velocity)
 			else:
 				actor.set_meta("intro_velocity", Vector2.ZERO)
 				actor._play("idle", actor.facing)
-		if all_arrived or remaining <= 0.0:
+		# Keep the final three seconds for a complete, synchronized countdown.
+		if remaining <= 0.0:
 			_start_throw_off()
 	elif stage == "throw_off":
 		remaining = maxf(0.0, phase_deadline - LanSession.clock_time())
@@ -692,7 +708,10 @@ func _update_hud() -> void:
 	role_status_label.visible = stage == "active" and own != null and own.is_taya and tag_wait > 0.0
 	role_status_label.text = "YOU CAN TAG IN %d" % ceili(tag_wait)
 	if opening_label != null:
-		opening_label.text = "%s IS TAYA\n%d" % [LanSession.member(taya_id).get("name", "Player"), ceili(remaining)] if stage == "preparation" else "THROW!" if stage == "active" and remaining > MATCH_SECONDS - 2.0 else ""
+		opening_label.text = str(ceili(remaining)) if stage == "run_to_line" and remaining > 0.0 and remaining <= 3.0 else "%s IS TAYA\n%d" % [LanSession.member(taya_id).get("name", "Player"), ceili(remaining)] if stage == "preparation" else "THROW!" if stage == "active" and remaining > MATCH_SECONDS - 2.0 else ""
+		var label_size := 96 if stage == "run_to_line" else 48
+		if opening_label.get_theme_font_size("font_size") != label_size:
+			opening_label.add_theme_font_size_override("font_size", label_size)
 	_update_intro_visual()
 	scoreboard.set_score_state(CATALOG.MAPS[LanSession.selected_map].name, LanSession.players, scores, taya_id, LanSession.mode == "developer")
 
@@ -745,9 +764,48 @@ func _draw() -> void:
 	draw_line(Vector2(SAFE.end.x, SAFE.position.y), Vector2(SAFE.end.x, SAFE.end.y), Color("80c9ff"), 5.0)
 
 
+func _build_sfx() -> void:
+	for cue in [["ThrowoffTitle", THROWOFF_TITLE_SFX, -8.0], ["ThrowoffTick", THROWOFF_TICK_SFX, -7.0], ["ThrowoffGo", THROWOFF_GO_SFX, -7.0], ["CanHit", CAN_HIT_SFX, -5.0]]:
+		var sound := AudioStreamPlayer.new()
+		sound.name = cue[0]
+		sound.stream = cue[1]
+		sound.volume_db = cue[2]
+		add_child(sound)
+		match sound.name:
+			"ThrowoffTitle": title_sfx = sound
+			"ThrowoffTick": tick_sfx = sound
+			"ThrowoffGo": go_sfx = sound
+			"CanHit": can_sfx = sound
+	last_can_state = can.state
+
+
+func _update_match_sfx() -> void:
+	if title_sfx == null or can == null:
+		return
+	if stage != last_sfx_stage:
+		match stage:
+			"intro": title_sfx.play()
+			"run_to_line": last_countdown = 4
+			"throw_off": go_sfx.play()
+		last_sfx_stage = stage
+	if stage == "run_to_line" and remaining > 0.0 and remaining <= 3.0:
+		var count := ceili(remaining)
+		if count < last_countdown:
+			tick_sfx.pitch_scale = 1.0 + float(3 - count) * 0.14
+			tick_sfx.play()
+			last_countdown = count
+	if can.state != last_can_state:
+		if last_can_state == can.State.STANDING and can.state == can.State.TOPPLED and can.hit_flash_remaining > 0.0:
+			var strength: float = clampf(can.impact_audio_strength, 0.0, 1.0)
+			can_sfx.volume_db = lerpf(-7.0, -2.0, strength)
+			can_sfx.pitch_scale = lerpf(0.9, 1.08, strength)
+			can_sfx.play()
+		last_can_state = can.state
+
+
 func _build_camera() -> void:
 	match_camera = Camera2D.new()
-	match_camera.zoom = Vector2.ONE * 1.5
+	match_camera.zoom = Vector2.ONE * CAMERA_NORMAL_ZOOM
 	match_camera.position = _spawn_point(int(LanSession.member(LanSession.local_id()).get("slot", 0)))
 	add_child(match_camera)
 	_update_camera(1.0)
@@ -755,6 +813,7 @@ func _build_camera() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	_update_match_sfx()
 	_update_intro_visual()
 	_update_tag_announcement()
 	_update_camera(delta)
@@ -781,7 +840,7 @@ func _update_camera(delta: float) -> void:
 	if actor == null: return
 	var viewport_size := get_viewport_rect().size
 	var subject: Vector2 = actor.global_position
-	var max_zoom := 1.5
+	var max_zoom := CAMERA_NORMAL_ZOOM
 	var following_throw := false
 	if stage in ["throw_off", "active"]:
 		var own_slipper: Node2D = actor.active_slipper
@@ -810,24 +869,24 @@ func _update_camera(delta: float) -> void:
 		camera_return_at = 0.0
 		camera_following_slipper = false
 	if following_throw:
-		max_zoom = 1.42
-	elif actor.attack_state == actor.AttackState.CHARGING:
-		max_zoom = 1.25
+		max_zoom = CAMERA_SLIPPER_ZOOM
+	elif actor.attack_state == actor.AttackState.CHARGING or actor.taya_stun_aiming:
+		max_zoom = CAMERA_AIM_ZOOM
 	# Frame the can along with the local player or their slipper, including a little space around both.
 	var can_position: Vector2 = can.global_position
 	var focus: Vector2 = (subject + can_position) * 0.5 + Vector2(0, -55)
 	var span: Vector2 = (subject - can_position).abs() + Vector2(320, 340)
 	var target_zoom := minf(max_zoom, minf(viewport_size.x / span.x, viewport_size.y / span.y))
-	target_zoom = clampf(target_zoom, 0.9, 1.5)
+	target_zoom = clampf(target_zoom, 0.9, CAMERA_NORMAL_ZOOM)
 	var visible_half := viewport_size / (target_zoom * 2.0)
-	if visible_half.x * 2.0 < ARENA.size.x:
-		focus.x = clampf(focus.x, ARENA.position.x + visible_half.x, ARENA.end.x - visible_half.x)
+	if visible_half.x * 2.0 < CAMERA_BOUNDS.size.x:
+		focus.x = clampf(focus.x, CAMERA_BOUNDS.position.x + visible_half.x, CAMERA_BOUNDS.end.x - visible_half.x)
 	else:
-		focus.x = ARENA.get_center().x
-	if visible_half.y * 2.0 < ARENA.size.y:
-		focus.y = clampf(focus.y, ARENA.position.y + visible_half.y, ARENA.end.y - visible_half.y)
+		focus.x = CAMERA_BOUNDS.get_center().x
+	if visible_half.y * 2.0 < CAMERA_BOUNDS.size.y:
+		focus.y = clampf(focus.y, CAMERA_BOUNDS.position.y + visible_half.y, CAMERA_BOUNDS.end.y - visible_half.y)
 	else:
-		focus.y = ARENA.get_center().y
+		focus.y = CAMERA_BOUNDS.get_center().y
 	var weight := 1.0 - exp(-delta / (0.16 if following_throw else 0.26))
 	match_camera.position = match_camera.position.lerp(focus, weight)
 	match_camera.zoom = match_camera.zoom.lerp(Vector2.ONE * target_zoom, weight)

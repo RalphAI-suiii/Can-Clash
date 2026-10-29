@@ -1,5 +1,17 @@
 # Design decisions
 
+## Guided Practice — 2026-10-29
+
+- Practice stays in the existing clubhouse scene and uses the same player, can, slipper, charge, lunge, tag, and stun scripts as the game. It starts after character selection, marks a temporary blue toe-line, checks actual actions, then changes the local actor from thrower to Taya for can recovery and tag drills. Leonardo and Kay skip the three-orb special lesson because their specials are not assigned yet.
+- The tutorial is solo and changes no network rules or protocol identifiers. Restart restores the course; Free practice removes its movement/throw restriction. Godot 4.7.2 passed scripted thrower checkpoints and real can pickup/reset, Space lunge, contact tag, and stun probes; a normal-resolution guide render was reviewed. Human playthrough and input timing still need review.
+- On 2026-10-29, each lesson now holds its success state until Continue, including the handoff to Taya and the final completion screen. Mouse diagrams and keycaps replace long button-name instructions. The tutorial can marker is fitted around the visible standing can, and Taya steps aside after automatic reset so the result can be seen. A Godot 4.7.2 scripted full-course check passed with a wait assertion at every step; rendered mouse-icon and can-reset views were reviewed. Human input pacing remains unverified.
+- A later Practice correction restores the can's original base when Taya training starts. Thrower-phase automatic stand-up can move the can's `base` to its landing spot; without restoring it, Taya reset placed the standing can away from the fixed yellow marker. The full-course check now simulates this shifted base, asserts the original base is restored, and verifies the can resets exactly there. Godot 4.7.2 headless and rendered checks passed.
+
+## Throw-off and can-impact sound — 2026-10-29
+
+- Use short original synthesized cues for the opening sliding title, each of the final 3–2–1 counts, throw opening, and a hollow can impact. The five-second run to the toe-line now always finishes so early arrivals still see and hear the full countdown. Each client plays a cue once from replicated stage/deadline and can state; the host remains responsible for hit physics. The can snapshot includes impact strength for matching pitch and level on joiners.
+- LAN/online identifiers advance to `canclash-lan-abilities-13` / `canclash-rules-17` because the run-to-line timing and can snapshot changed. Godot 4.7.2 `tests/match_sfx_smoke.gd` passed title, all three synchronized counts, early arrival hold, throw opening, weak/strong can hits, and impact snapshot checks. Physical cross-PC listening remains unverified.
+
 ## Can ring and tag handoff — 2026-10-27
 
 - The latest visual correction keeps one yellow ring fixed on the can's ground base through standing, toppled, and carried states. The match disables the can-attached ring, so the marker never travels with a flung can. This supersedes the earlier temporary choice to hide both rings on impact. Taya's standing-can clearance is now 100 pixels, down from 115; toppled and carried cans remain accessible for automatic recovery.
@@ -345,3 +357,35 @@ Record each resolved decision here with its date and rationale.
 - The standing can's slipper-hit radius is 24 pixels, close to its painted width instead of the former 35-pixel target. The aiming guide shows only its first eight path points and no exact landing crosshair, so players still see release direction without a full solution.
 - A perfect green release launches 20% faster than the normal charge-speed formula. Can knockback, hop, and spin now scale with the slipper's actual impact speed and charge; wall and floor bounces and friction still determine where it settles. These are provisional match-balance values.
 - Godot 4.7.2 headless checks passed `tests/guard_circle_impact_smoke.gd`, `tests/can_tumble_smoke.gd`, and `tests/skill_throw_smoke.gd`. The new check covers all eight approach directions, toppled-can access, reset clearance, green speed, and a fast hit that carries the can over 150 pixels from its base. Rendered match play and physical LAN are not yet verified. The older `tests/gameplay_rules_smoke.gd` currently stops at its stale 600-second timer assertion; the match duration has since changed.
+
+## Close-contact tags and player spacing — 2026-10-27
+
+- Player blocking uses a fixed eight-corner convex footprint around the lower body and shoes rather than the whole sprite silhouette. Hair, hats, and arms can visually overlap as players pass behind one another; feet remain blocked. The footprint is derived from each neutral sprite, with Leonardo and Kay's wider source art tuned separately.
+- Taya's automatic contact-tag distance is 54 world pixels in the integrated match, down from 132. Ordinary movement collision still triggers a tag on actual body contact. Lunge recovery and post-tag separation use a 90-pixel scene clearance multiplied by actor scale, avoiding the former oversized gap.
+- LAN/online compatibility identifiers advance to `canclash-lan-abilities-10` / `canclash-rules-14` because older clients would predict a different collider and tag range.
+- Godot 4.7.2 measured player contact at 40–54 pixels in all eight directions at match scale; the host emits no tag at 90 pixels and emits one at 50. Tag reset, can guard, Leonardo/Kay match, and two-process localhost LAN handoff checks passed. A physical cross-PC match remains unverified.
+
+## Taya's facing-direction dash — 2026-10-27
+
+- Space commits Taya to a straight dash in the character's visible eight-way facing direction. The dash no longer picks a nearby thrower, curves toward a moving target, or uses the cursor as a fallback. The existing ray check only permits a pass-through of a thrower directly in that path when Taya can land beyond them; it does not change the dash direction. Actual contact still uses the close-range tag rule.
+- LAN/online identifiers advance to `canclash-lan-abilities-11` / `canclash-rules-15` so mismatched dash behavior cannot join the same match. Godot 4.7.2's facing-dash smoke check passed cursor-away, off-path thrower, straight-path tag, and collision restoration scenarios. Physical cross-PC play remains unverified.
+
+## Wider personal match camera — 2026-10-27
+
+- Keep the existing local Camera2D in each player's match process. Its normal maximum zoom is 1.25 instead of 1.5, so more of the court is visible while the player and can remain in frame. Thrower charging or Taya stun aiming widens further to 1.05; following an airborne slipper uses 1.18. These values only affect presentation.
+- Clamp camera framing to the full 1920×1080 court artwork rather than the smaller collision arena, so the wider view can still pan with the local player. Godot 4.7.2's `tests/match_camera_smoke.gd` checked normal/charging zoom, visible player and can, player-dependent panning, and a 960×540 window resize. Rendered normal and aiming views were reviewed in `tests/match_camera_{normal,aim}.png`. The LAN protocol remains at `canclash-lan-abilities-11` because camera framing is local.
+
+## Smaller match players — 2026-10-27
+
+- Set the shared match and waiting-room actor root scale to 0.52, about 10% below the prior 0.576. Court art, obstacles, can, movement speeds, and camera zoom stay at their existing world sizes. Root scaling keeps every role's sprite, foot collider, shadow, and throw origin aligned; overhead text still counter-scales for readability.
+- Reduce the host's contact-tag reach from 54 to 49 world pixels to follow the smaller bodies. Lunge landing and tag separation already multiply their clearance by actor scale. Keep the can guard boundary at its world position, preserving can-gameplay distances.
+- Correct AtlasTexture padding when fitting Leonardo and Kay's lower-body colliders, placing their collision shapes at their visible feet. LAN/online identifiers advance to `canclash-lan-abilities-12` / `canclash-rules-16` so old clients with larger or misaligned colliders cannot join. Godot 4.7.2 measured player contact at 36–49 pixels in all eight directions; a tag at 45 pixels and no tag at 90 passed. All seven characters were checked against fences and corners across the three maps. The facing dash, can guard, tag reset, Leonardo/Kay match, player/can camera framing, and a two-process localhost LAN handoff passed. Normal-match and collider renders were reviewed. Physical cross-PC play remains unverified.
+
+## Idle and side movement art — 2026-10-28
+
+- Give Head Band, Glasses Thrower, and Curly Haired a truly neutral eight-direction idle rather than holding the first walking stride. Use a separate four-phase side walk and faster, leaning side sprint for each; mirror the right-side cycle for left movement. Preserve each authored left-facing idle drawing without mirroring it.
+- Normalize the newly drawn poses by visible alpha height and anchor their shoes to the actor origin. This is visual-only, so it does not change the host's movement or collision rules or the LAN compatibility identifier. The older six-direction walk/sprint art stays in place until a replacement passes pose consistency review.
+
+## LAN joiner visual smoothing — 2026-10-28
+
+- Preserve the existing 30 Hz host snapshot rate and host-owned physics. Smooth only the joiner's can sprite and slipper presentation between snapshots, and keep remote locomotion frames' locally fitted size and foot anchor. Snap on new projectiles, can state changes, and large position corrections. This avoids changing hit/collision decisions or adding bandwidth for a visual fix. LAN/online compatibility identifiers remain unchanged.

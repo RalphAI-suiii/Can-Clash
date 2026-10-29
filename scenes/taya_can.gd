@@ -32,6 +32,7 @@ var angular_speed: float = 0.0
 var squash: float = 0.0
 var settled: bool = true
 var hit_flash_remaining := 0.0
+var impact_audio_strength := 0.0
 var auto_stand_pending := false
 var rest_elapsed := 0.0
 
@@ -192,6 +193,7 @@ func receive_slipper_hit(incoming_velocity: Vector2, charge: float, impact_point
 		return false
 	state = State.TOPPLED
 	hit_flash_remaining = 0.18
+	impact_audio_strength = clampf((incoming_velocity.length() - 200.0) / 850.0, 0.0, 1.0) * 0.7 + clampf(charge, 0.0, 1.0) * 0.3
 	settled = false
 	auto_stand_pending = auto_stand_up
 	rest_elapsed = 0.0
@@ -217,6 +219,7 @@ func receive_slipper_hit(incoming_velocity: Vector2, charge: float, impact_point
 
 func _clear_motion() -> void:
 	velocity = Vector2.ZERO
+	impact_audio_strength = 0.0
 	height = 0.0
 	vertical_speed = 0.0
 	angular_speed = 0.0

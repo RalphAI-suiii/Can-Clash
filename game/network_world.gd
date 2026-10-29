@@ -5,7 +5,8 @@ const SLIPPER = preload("res://scenes/slipper_visual.gd")
 const LAN_SNAPSHOT_INTERVAL := 1.0 / 30.0
 const ONLINE_SNAPSHOT_INTERVAL := 1.0 / 20.0
 const LAN_SMOOTHING_SECONDS := 0.025
-@export_range(0.5, 1.0, 0.001) var player_scale := 0.576
+const LAN_VISUAL_SMOOTHING_SECONDS := 0.05
+@export_range(0.5, 1.0, 0.001) var player_scale := 0.52
 var actors: Dictionary = {}
 var world_tick := 0.0
 var send_tick := 0.0
@@ -14,6 +15,7 @@ var observed_extra_slippers: Dictionary = {}
 var observed_taya_slippers: Dictionary = {}
 var lan_movement: RefCounted
 var lan_remote_motion: Dictionary = {}
+var lan_visual_targets: Dictionary = {}
 var lan_phase := ""
 
 func setup_network_world() -> void:
@@ -201,6 +203,8 @@ func _update_lan_client(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	if LanSession.mode != "lan" or LanSession.is_host(): return
+	var blend := 1.0 - exp(-delta / LAN_SMOOTHING_SECONDS)
+	var visual_blend := 1.0 - exp(-delta / LAN_VISUAL_SMOOTHING_SECONDS)
 	for id in lan_remote_motion.keys():
 		if not actors.has(id):
 			lan_remote_motion.erase(id)
@@ -213,7 +217,22 @@ func _process(delta: float) -> void:
 		if motion.age > 0.06:
 			lead += 0.06 * (1.0 - exp(-(motion.age - 0.06) / 0.06))
 		var target: Vector2 = motion.position + motion.velocity * lead
-		actors[id].position = actors[id].position.lerp(target, 1.0 - exp(-delta / LAN_SMOOTHING_SECONDS))
+		actors[id].position = actors[id].position.lerp(target, blend)
+	for visual in lan_visual_targets.keys():
+		if not is_instance_valid(visual):
+			lan_visual_targets.erase(visual)
+			continue
+		var target: Dictionary = lan_visual_targets[visual]
+		if target.get("global", false):
+			visual.global_position = visual.global_position.lerp(target.position, visual_blend)
+			visual.rotation = lerp_angle(visual.rotation, target.rotation, visual_blend)
+			visual.scale = visual.scale.lerp(target.scale, visual_blend)
+		else:
+			if target.has("height") and (visual.position.distance_to(target.position) > 0.05 or absf(visual.height - target.height) > 0.05 or absf(angle_difference(visual.spin_angle, target.spin)) > 0.005):
+				visual.position = visual.position.lerp(target.position, visual_blend)
+				visual.height = lerpf(visual.height, target.height, visual_blend)
+				visual.spin_angle = lerp_angle(visual.spin_angle, target.spin, visual_blend)
+				visual.queue_redraw()
 
 func _receive_input(id: int, packet: Dictionary) -> void:
 	if LanSession.is_host() and actors.has(id):
@@ -299,7 +318,7 @@ func _snapshot() -> Dictionary:
 		if LanSession.mode == "lan": data["lan_ack"] = actor.lan_processed_input_sequence
 		state.actors.append(data)
 	for can in get_tree().get_nodes_in_group("can_targets"):
-		state.cans.append({"name": String(can.name), "position": can.position, "state": can.state, "height": can.height, "tilt": can.tilt_angle, "settled": can.settled, "flash": can.hit_flash_remaining, "squash": can.squash, "auto_stand": can.auto_stand_pending, "base": can.base.global_position if can.base != null else can.global_position})
+		state.cans.append({"name": String(can.name), "position": can.position, "state": can.state, "height": can.height, "tilt": can.tilt_angle, "settled": can.settled, "flash": can.hit_flash_remaining, "impact": can.impact_audio_strength, "squash": can.squash, "auto_stand": can.auto_stand_pending, "base": can.base.global_position if can.base != null else can.global_position})
 	return state
 
 func _slipper_snapshot(slipper: Node2D) -> Dictionary:
@@ -364,8 +383,11 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 				actor.sprite.frame = data.frame
 			actor.sprite.speed_scale = float(data.get("sprite_speed", 1.0))
 			actor.sprite.flip_h = data.flip
-			actor.sprite.position = data.sprite_pos
-			actor.sprite.scale = data.sprite_scale
+			# A remote walk cycle advances between packets. Keep its own frame's
+			# fitted size and foot anchor instead of copying another frame's fit.
+			if own or reset or changed_animation or not locomotion_loop:
+				actor.sprite.position = data.sprite_pos
+				actor.sprite.scale = data.sprite_scale
 			actor.sprite.rotation = data.rotation
 		var stun_cast: bool = data.taya_stun_aiming or LanSession.clock_time() < actor.taya_stun_cast_until
 		actor.sprite.visible = data.attack == actor.AttackState.FREE and not data.carrying and data.taya_action == "" and not stun_cast
@@ -427,26 +449,54 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 	for data in snapshot.get("cans", []):
 		var can := get_node_or_null(NodePath(data.name))
 		if can != null:
+			var visual: Sprite2D = can.can_sprite
+			var previous_position: Vector2 = visual.global_position
+			var previous_rotation: float = visual.rotation
+			var previous_scale: Vector2 = visual.scale
+			var previous_state: int = can.state
+			var seen: bool = lan_visual_targets.has(visual)
 			can.position = data.position
 			can.state = data.state
 			can.height = data.height
 			can.tilt_angle = data.tilt
 			can.settled = data.settled
 			can.squash = data.squash
+			can.hit_flash_remaining = float(data.get("flash", 0.0))
+			can.impact_audio_strength = float(data.get("impact", 0.0))
 			can.auto_stand_pending = data.auto_stand
 			if can.base != null and not can.base.global_position.is_equal_approx(data.base):
 				can.base.global_position = data.base
 				queue_redraw()
 			can.can_sprite.modulate = Color(2.0, 1.8, 1.1) if data.flash > 0.0 else Color.WHITE
 			can._refresh_visual()
+			if LanSession.mode == "lan":
+				var target := {"position": visual.global_position, "rotation": visual.rotation, "scale": visual.scale, "global": true}
+				if seen and not phase_changed and previous_state == can.state and can.state != can.State.CARRIED and previous_position.distance_to(visual.global_position) < 160.0:
+					visual.global_position = previous_position
+					visual.rotation = previous_rotation
+					visual.scale = previous_scale
+				lan_visual_targets[visual] = target
 
 func _apply_slipper_snapshot(slipper: Node2D, actor: CharacterBody2D, data: Dictionary) -> void:
 	slipper.throw_owner = actor
 	slipper.outline_color = actor.player_color
-	slipper.position = data.position
+	var previous_height: float = slipper.height
+	var previous_spin: float = slipper.spin_angle
+	var snap := true
+	if LanSession.mode == "lan":
+		var seen: bool = lan_visual_targets.has(slipper)
+		snap = not seen or slipper.position.distance_to(data.position) > 160.0
+		if snap:
+			slipper.position = data.position
+		lan_visual_targets[slipper] = {"position": data.position, "height": data.height, "spin": data.spin}
+	else:
+		slipper.position = data.position
 	slipper.velocity = data.velocity
 	slipper.height = data.height
 	slipper.spin_angle = data.spin
+	if LanSession.mode == "lan" and not snap:
+		slipper.height = previous_height
+		slipper.spin_angle = previous_spin
 	slipper.charge_ratio = data.charge
 	slipper.resting = data.resting
 	slipper.floor_bounces = data.bounces

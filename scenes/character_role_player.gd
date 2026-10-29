@@ -5,6 +5,12 @@ extends "res://scenes/player_movement_neutral.gd"
 @export var relaxed_cardinal: Texture2D
 @export var relaxed_diagonal: Texture2D
 @export var release_sheet: Texture2D
+@export var neutral_idle_sheet: Texture2D
+@export var side_walk_sheet: Texture2D
+@export var side_sprint_sheet: Texture2D
+
+const POLISHED_HEIGHT := 210.0
+var polished_bounds: Dictionary = {}
 
 
 func _ready() -> void:
@@ -25,6 +31,8 @@ func _ready() -> void:
 	sprint_cardinal_y_offset = 0.0
 	taya_visual.configure(frames, scale_at_rest)
 	super._ready()
+	sprite.frame_changed.connect(_fit_polished_frame)
+	_fit_polished_frame()
 
 
 func _normalized_frames(source: SpriteFrames) -> SpriteFrames:
@@ -88,7 +96,60 @@ func _normalized_frames(source: SpriteFrames) -> SpriteFrames:
 					texture.region = Rect2(Vector2(frame, row) * cell, cell)
 					texture.filter_clip = true
 					result.add_frame(name, texture)
+		_install_polished_frames(result, direction)
 	return result
+
+
+func _install_polished_frames(frames: SpriteFrames, direction: String) -> void:
+	if neutral_idle_sheet != null:
+		var order := ["down", "left", "up", "right", "down_left", "up_left", "up_right", "down_right"]
+		var index := order.find(direction)
+		var texture := _polished_cell(neutral_idle_sheet, index % 4, index / 4, 4, 2)
+		for prefix in ["", "taya_"]:
+			var name := StringName(prefix + "idle_" + direction)
+			frames.clear(name)
+			frames.set_animation_speed(name, 1.0)
+			frames.add_frame(name, texture)
+	if direction not in ["left", "right"]:
+		return
+	for action in ["walk", "sprint"]:
+		var sheet := side_walk_sheet if action == "walk" else side_sprint_sheet
+		if sheet == null:
+			continue
+		for prefix in ["", "taya_"]:
+			var name := StringName(prefix + action + "_" + direction)
+			frames.clear(name)
+			frames.set_animation_speed(name, 6.0 if action == "walk" else 8.0)
+			for column in range(4):
+				frames.add_frame(name, _polished_cell(sheet, column, 0, 4, 1))
+
+
+func _polished_cell(sheet: Texture2D, column: int, row: int, columns: int, rows: int) -> AtlasTexture:
+	var texture := AtlasTexture.new()
+	texture.atlas = sheet
+	var from := Vector2(floorf(float(column) * sheet.get_width() / columns), floorf(float(row) * sheet.get_height() / rows))
+	var to := Vector2(floorf(float(column + 1) * sheet.get_width() / columns), floorf(float(row + 1) * sheet.get_height() / rows))
+	texture.region = Rect2(from, to - from)
+	texture.filter_clip = true
+	return texture
+
+
+func _fit_polished_frame() -> void:
+	var animation_name := String(sprite.animation)
+	if not ("idle_" in animation_name or "walk_" in animation_name or "sprint_" in animation_name):
+		return
+	var texture: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if not texture is AtlasTexture:
+		return
+	var id := texture.get_instance_id()
+	if not polished_bounds.has(id):
+		polished_bounds[id] = texture.get_image().get_used_rect()
+	var bounds: Rect2i = polished_bounds[id]
+	if bounds.size.y <= 0:
+		return
+	var fitted_scale := POLISHED_HEIGHT / float(bounds.size.y)
+	sprite.scale = Vector2.ONE * fitted_scale
+	sprite.position = Vector2(0.0, -(float(bounds.end.y) - texture.get_size().y * 0.5) * fitted_scale)
 
 
 func _copy_frames(target: SpriteFrames, source: SpriteFrames, name: StringName, original: StringName, looped: bool, speed: float, select_three: bool = false) -> void:
@@ -136,7 +197,17 @@ func _trim_recovery_frame(texture: Texture2D) -> Texture2D:
 
 func _play(action: String, direction: Vector2) -> void:
 	super._play(action, direction)
-	sprite.flip_h = DIRECTIONS[(roundi(direction.angle() / (PI / 4.0)) + 8) % 8] == "left"
+	# The new idle sheet contains a separately drawn left pose; only the
+	# right-facing side gait is mirrored for left movement.
+	var direction_name: String = DIRECTIONS[(roundi(direction.angle() / (PI / 4.0)) + 8) % 8]
+	sprite.flip_h = direction_name == "left" and (action != "idle" or neutral_idle_sheet == null)
+	_fit_polished_frame()
+	if action == "idle" and neutral_idle_sheet != null:
+		# A slow, tiny weight shift gives the one-pose idle a pulse without
+		# moving its feet or changing the character's size.
+		var lean := sin(Time.get_ticks_msec() * 0.0016) * deg_to_rad(0.6)
+		sprite.rotation = lean
+		sprite.position.x = sin(lean) * POLISHED_HEIGHT * 0.5
 
 
 func _set_attack_visual(sector: int, _releasing: bool) -> void:
