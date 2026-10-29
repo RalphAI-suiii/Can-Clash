@@ -941,7 +941,7 @@ func _update_throw_status() -> void:
 	elif is_taya and tag_delay_remaining() > 0.0:
 		throw_status.text = "TAGGING IN %d" % ceili(tag_delay_remaining())
 	elif is_taya:
-		throw_status.text = "STUN %.0fs" % ceilf(taya_stun_ready_at - LanSession.clock_time()) if LanSession.clock_time() < taya_stun_ready_at else "RMB  STUN READY"
+		throw_status.text = "STUN %.0fs" % ceilf(taya_stun_ready_at - LanSession.clock_time()) if LanSession.clock_time() < taya_stun_ready_at else "%s  STUN READY" % UserSettings.short_binding_text("special")
 	elif special_armed:
 		throw_status.text = "SPECIAL ARMED"
 	elif attack_state == AttackState.CHARGING:
@@ -1002,7 +1002,7 @@ func _draw() -> void:
 				draw_arc(center, 20.0, 0.0, TAU, 32, Color("b2a08a"), 2.0, true)
 	if has_thrower_special() and skill_charge == 3:
 		draw_rect(Rect2(-95, 122, 190, 34), Color("241a17"))
-		draw_string(SKILL_FONT, Vector2(-90, 149), "ARMED" if special_armed else "RMB  SPECIAL", HORIZONTAL_ALIGNMENT_CENTER, 180, 22, Color("fff1b1"))
+		draw_string(SKILL_FONT, Vector2(-90, 149), "ARMED" if special_armed else "%s  SPECIAL" % UserSettings.short_binding_text("special"), HORIZONTAL_ALIGNMENT_CENTER, 180, 22, Color("fff1b1"))
 	if LanSession.clock_time() < ability_glow_until:
 		draw_arc(Vector2(0, -115), 106.0, 0, TAU, 48, Color(player_color.lightened(0.5), 0.75), 7.0, true)
 	if is_stunned():

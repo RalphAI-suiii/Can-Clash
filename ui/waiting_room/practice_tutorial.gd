@@ -235,6 +235,12 @@ func _set_lesson(next_lesson: int) -> void:
 	control_icon.queue_redraw()
 	control_hint.visible = hints[lesson] != ""
 	control_caption.text = "LEFT CLICK" if hints[lesson] == "left_mouse" else "RIGHT CLICK" if hints[lesson] == "right_mouse" else "MOVE" if hints[lesson] == "WASD" else "SPRINT" if hints[lesson] == "SHIFT" else "LUNGE" if hints[lesson] == "SPACE" else ""
+	if UserSettings.active_mode() == "controller":
+		control_icon.hide()
+		var action := "throw" if hints[lesson] == "left_mouse" else "special" if hints[lesson] == "right_mouse" else "sprint" if hints[lesson] == "SHIFT" else "lunge" if hints[lesson] == "SPACE" else ""
+		control_caption.text = UserSettings.short_binding_text(action) if not action.is_empty() else "LEFT STICK" if hints[lesson] == "WASD" else ""
+	else:
+		control_icon.show()
 	free_button.text = "Free practice" if lesson != Lesson.DONE else "Keep practicing"
 	_update_feedback()
 

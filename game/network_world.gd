@@ -186,7 +186,7 @@ func _physics_process(delta: float) -> void:
 			var active: Node2D = actors.get(LanSession.local_id())
 			if active != null:
 				var enabled := _local_inputs_enabled() and _actor_inputs_enabled(active)
-				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled and not active.movement_locked else Vector2.ZERO, "aim": active.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": active.charge_id})
+				LanSession.send_input({"move": Input.get_vector("left", "right", "up", "down") if enabled and not active.movement_locked else Vector2.ZERO, "aim": UserSettings.aim_position(active), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and UserSettings.throw_pressed(get_viewport()), "charge_id": active.charge_id})
 
 func _publish_lan_snapshot() -> void:
 	if LanSession.mode == "lan" and LanSession.is_host(): LanSession.publish_world(_snapshot())
@@ -195,7 +195,7 @@ func _update_lan_client(delta: float) -> void:
 	var actor: CharacterBody2D = actors.get(LanSession.local_id())
 	if actor == null or lan_movement == null: return
 	var enabled: bool = _local_inputs_enabled() and _actor_inputs_enabled(actor) and lan_movement.fresh()
-	var packet := {"move": Input.get_vector("left", "right", "up", "down") if enabled and not actor.movement_locked else Vector2.ZERO, "aim": actor.get_global_mouse_position(), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null, "charge_id": actor.charge_id}
+	var packet := {"move": Input.get_vector("left", "right", "up", "down") if enabled and not actor.movement_locked else Vector2.ZERO, "aim": UserSettings.aim_position(actor), "sprint": enabled and Input.is_action_pressed("sprint"), "interact": enabled and Input.is_action_pressed("interact"), "lunge": enabled and Input.is_action_pressed("lunge"), "throw": enabled and UserSettings.throw_pressed(get_viewport()), "charge_id": actor.charge_id}
 	LanSession.send_input(packet)
 	var movable: bool = enabled and not actor.is_stunned() and not actor.taya_stun_aiming and LanSession.clock_time() >= actor.taya_stun_cast_until and actor.attack_state == actor.AttackState.FREE and actor.taya_action == &""
 	if not actor.is_taya and packet["throw"] and actor.throw_target_ready() and not is_instance_valid(actor.active_slipper): movable = false

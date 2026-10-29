@@ -429,18 +429,21 @@ func _taya_stun_spawned(_actor: CharacterBody2D, slipper: Node2D) -> void:
 	)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event is InputEventMouseButton:
+	if not event.is_action_pressed("special") and not event.is_action_released("special"):
 		return
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index != MOUSE_BUTTON_RIGHT or stage != "active":
+	if stage != "active":
 		return
-	if mouse_event.pressed and get_viewport().gui_get_hovered_control() != null:
+	if event.is_action_pressed("special") and event is InputEventMouseButton and get_viewport().gui_get_hovered_control() != null:
 		return
-	var aim := get_global_mouse_position()
+	var pressed := event.is_action_pressed("special")
+	var local_actor: Node2D = actors.get(LanSession.local_id())
+	if not is_instance_valid(local_actor):
+		return
+	var aim := UserSettings.aim_position(local_actor)
 	if LanSession.is_host():
-		_skill_requested(LanSession.local_id(), mouse_event.pressed, aim)
+		_skill_requested(LanSession.local_id(), pressed, aim)
 	else:
-		LanSession.request_skill(mouse_event.pressed, aim)
+		LanSession.request_skill(pressed, aim)
 	get_viewport().set_input_as_handled()
 
 func _skill_requested(id: int, pressed: bool, aim: Vector2) -> void:

@@ -29,6 +29,8 @@ func _ready() -> void:
 	close_button.pressed.connect(_hide_local_popup)
 	backdrop.gui_input.connect(_on_backdrop_input)
 	$Avatar.pressed.connect(_show_customization)
+	$Settings.pressed.connect(_show_settings)
+	play_local.grab_focus()
 	if LanSession.has_meta("notice"):
 		var notice = UI.modal(self, "ROOM CLOSED", str(LanSession.get_meta("notice")))
 		notice.content.add_child(UI.button("Back to menu", notice.layer.queue_free))
@@ -92,6 +94,17 @@ func _show_customization() -> void:
 	screen.connect("closed", func() -> void:
 		name_input.text = UserSettings.display_name
 		layer.queue_free()
+	)
+	layer.add_child(screen)
+
+func _show_settings() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 20
+	add_child(layer)
+	var screen := preload("res://ui/settings/settings.tscn").instantiate()
+	screen.closed.connect(func() -> void:
+		layer.queue_free()
+		$Settings.grab_focus()
 	)
 	layer.add_child(screen)
 

@@ -389,3 +389,9 @@ Record each resolved decision here with its date and rationale.
 ## LAN joiner visual smoothing — 2026-10-28
 
 - Preserve the existing 30 Hz host snapshot rate and host-owned physics. Smooth only the joiner's can sprite and slipper presentation between snapshots, and keep remote locomotion frames' locally fitted size and foot anchor. Snap on new projectiles, can state changes, and large position corrections. This avoids changing hit/collision decisions or adding bandwidth for a visual fix. LAN/online compatibility identifiers remain unchanged.
+
+# Controls settings — 2026-10-29
+
+- The main-menu gear opens a Controls screen. Keyboard/mouse and controller layouts are stored separately in the existing profile file, and each gameplay action can be rebound. Duplicate bindings swap the old assignment. A chosen controller falls back to keyboard/mouse while disconnected and resumes after reconnection.
+- Controller defaults: left stick movement, right stick aim, left trigger sprint, right trigger hold/release throw, right bumper special or Taya stun, A slipper pickup, and B lunge. Controller aim holds its last stick direction when released. Windows handles Bluetooth pairing; the game binds to the first connected controller on each PC. Gameplay and LAN packet formats are unchanged.
+- Godot 4.7.2 passed `tests/controller_controls_smoke.gd` and a rendered Settings review at `tests/settings_preview.png`. Physical controller feel and cross-PC LAN play remain to be checked.

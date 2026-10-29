@@ -60,11 +60,11 @@ func _movement_input() -> Vector2:
 
 
 func _throw_pressed() -> bool:
-	return bool(network_input.get("throw", false)) if network_controlled else Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and get_viewport().gui_get_hovered_control() == null
+	return bool(network_input.get("throw", false)) if network_controlled else UserSettings.throw_pressed(get_viewport())
 
 
 func _aim_position() -> Vector2:
-	return network_input.get("aim", global_position + facing * 300.0) if network_controlled else get_global_mouse_position()
+	return network_input.get("aim", global_position + facing * 300.0) if network_controlled else UserSettings.aim_position(self)
 
 
 func _ready() -> void:

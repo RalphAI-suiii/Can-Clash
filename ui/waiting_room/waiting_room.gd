@@ -160,15 +160,17 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if LanSession.mode != "practice" or not is_instance_valid(player) or is_instance_valid(selection_overlay) or not event is InputEventMouseButton:
+	if LanSession.mode != "practice" or not is_instance_valid(player) or is_instance_valid(selection_overlay):
 		return
-	var click := event as InputEventMouseButton
-	if click.button_index != MOUSE_BUTTON_RIGHT or click.pressed and get_viewport().gui_get_hovered_control() != null:
+	if not event.is_action_pressed("special") and not event.is_action_released("special"):
+		return
+	var pressed := event.is_action_pressed("special")
+	if pressed and event is InputEventMouseButton and get_viewport().gui_get_hovered_control() != null:
 		return
 	if player.is_taya:
-		if click.pressed: player.begin_taya_stun_aim()
-		else: player.release_taya_stun(get_global_mouse_position())
-	elif click.pressed and player.has_thrower_special() and player.skill_charge == 3:
+		if pressed: player.begin_taya_stun_aim()
+		else: player.release_taya_stun(UserSettings.aim_position(player))
+	elif pressed and player.has_thrower_special() and player.skill_charge == 3:
 		player.special_armed = not player.special_armed
 		player.queue_redraw()
 	get_viewport().set_input_as_handled()
